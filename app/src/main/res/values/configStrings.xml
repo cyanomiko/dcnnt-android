@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="conf_app_uin_title">Device UIN</string>
+    <string name="conf_app_name_title">Device name</string>
+    <string name="conf_app_description_title">Device info</string>
+    <string name="conf_app_password_title">Device password</string>
+    <string name="conf_app_cellularData_title">Cellular data</string>
+    <string name="conf_app_cellularData_info">Allow operation through cellular network</string>
+    <string name="conf_app_notificationListenerService_title">Notification service</string>
+    <string name="conf_app_notificationListenerService_info">Allow access to notifications</string>
+</resources>

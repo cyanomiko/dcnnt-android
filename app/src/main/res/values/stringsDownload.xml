@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="button_download">Download</string>
+    <string name="sort_by_name">Sort by name</string>
+    <string name="sort_by_type">Sort by type</string>
+    <string name="sort_by_size">Sort by size</string>
+    <string name="no_files_info">No files info</string>
+    <string name="no_shared_files">No shared files</string>
+    <string name="unit_bytes">bytes</string>
+    <string name="unit_entries">entries</string>
+    <string name="status_cancel">Canceled</string>
+    <string name="action_open">Open</string>
+    <string name="action_share">Share</string>
+    <string name="notification_download">Download</string>
+    <string name="notification_download_complete">Download complete</string>
+</resources>

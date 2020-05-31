@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="button_upload">Upload</string>
+    <string name="notification_upload">Upload</string>
+    <string name="notification_upload_complete">Upload complete</string>
+    <string name="no_files_selected">No files selected...</string>
+</resources>

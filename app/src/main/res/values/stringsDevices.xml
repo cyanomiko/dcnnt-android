@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_device_name">Common</string>
+    <string name="selected_device">Selected device</string>
+    <string name="device_uin">UIN</string>
+    <string name="device_name">Name</string>
+    <string name="device_description">Description</string>
+    <string name="device_password">Password</string>
+    <string name="device_search">Search</string>
+    <string name="device_search_in_progress">Searching…</string>
+    <string name="device_no_at_all">No known devices</string>
+    <string name="device_offline">offline</string>
+</resources>

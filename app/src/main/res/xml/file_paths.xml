@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <paths name="file_paths">
+        <external-path name="storage" path="/" />
+    </paths>
+</resources>
