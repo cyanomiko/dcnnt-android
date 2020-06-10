@@ -1,0 +1,11 @@
+<b>Device Connect</b>
+
+Yet another tool to connect Android phone with desktop similar to KDE Connect. 
+
+Features:  
+* Lightweight and fast
+* AES-256 encryption with password
+* Upload files from phone to desktop
+* Download files from pre-defined directories at desktop to phone
+* Show phone notification on desktop
+* Execute pre-defined commands on desktop
