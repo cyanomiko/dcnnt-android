@@ -119,7 +119,7 @@ class DCNotificationListenerService : NotificationListenerService() {
             }
         } else {
             availableDevices.forEach {
-                sendNotificationToDevice(notification, it, null)
+                sendNotificationToDevice(notification, it, icon)
             }
         }
     }
