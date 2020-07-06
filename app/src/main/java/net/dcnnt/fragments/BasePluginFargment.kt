@@ -75,7 +75,7 @@ class DeviceSelectView(context: Context) : SelectInputView(context) {
                 }
             }
             title = context.getString(R.string.selected_device)
-            text = options[0].title
+            text = options[index ?: 0].title
         }
         onUpdateOptons?.invoke(index, selectionChanged or (index != indexPre), options)
     }
