@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -15,6 +17,8 @@ import android.view.inputmethod.EditorInfo
 import android.widget.*
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
+import androidx.core.widget.doAfterTextChanged
+import androidx.core.widget.doOnTextChanged
 import net.dcnnt.R
 import net.dcnnt.core.APP
 import net.dcnnt.ui.*
@@ -124,11 +128,14 @@ class NotificationsFragment(toolbarView: Toolbar): BasePluginFargment(toolbarVie
             isSingleLine = true
             imeOptions = EditorInfo.IME_ACTION_SEARCH
             hint = context.getString(R.string.search)
-            setOnEditorActionListener { textView, i, keyEvent ->
-                Log.d(TAG, "edit: i = $i, evt = $keyEvent, q = ${textView.text}")
-                filterApps(textView.text.toString())
-                true
-            }
+            addTextChangedListener(object : TextWatcher {
+                override fun afterTextChanged(s: Editable?) {
+                    Log.d(TAG, "edit: text = $s")
+                    s?.also { filterApps(it.toString()) }
+                }
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            })
         })
         addView(ScrollView(context).apply {
             addView(VerticalLayout(context).apply { appListView = this })
