@@ -28,11 +28,13 @@ class NotificationsFragment(toolbarView: Toolbar): BasePluginFargment(toolbarVie
     override val TAG = "DC/Notifications"
     var conf: NotificationsPluginConf = APP.pm.getConfig("nots", 0) as NotificationsPluginConf
     var appListView: LinearLayout? = null
+    var appFilterView: EditText? = null
     val appFiltersTextViews = hashMapOf<String, TextView>()
     val apps = hashMapOf<String, AppInfo>()
     val appNotsSettingsViews = hashMapOf<String, View>()
 
     fun updateInstalledApps(context: Context, systemApps: Boolean?) {
+        appFilterView?.isEnabled = false
         synchronized(apps) {
             apps.clear()
             context.packageManager.getInstalledPackages(0).forEach { p ->
@@ -49,6 +51,7 @@ class NotificationsFragment(toolbarView: Toolbar): BasePluginFargment(toolbarVie
                 }
             }
         }
+        appFilterView?.isEnabled = true
     }
 
     fun updateAppsFilters() {
@@ -116,6 +119,7 @@ class NotificationsFragment(toolbarView: Toolbar): BasePluginFargment(toolbarVie
         padding = context.dip(6)
         addView(createDeviceSelectView(context, availableOnly = false, addCommon = true))
         addView(EditText(context).apply {
+            appFilterView = this
             maxLines = 1
             isSingleLine = true
             imeOptions = EditorInfo.IME_ACTION_SEARCH
