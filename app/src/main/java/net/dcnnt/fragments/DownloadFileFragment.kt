@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.ThumbnailUtils
 import android.net.Uri
@@ -26,7 +27,9 @@ import net.dcnnt.ui.*
 import java.io.File
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
+import kotlin.concurrent.withLock
 
 
 enum class FileSort {NAME, TYPE, SIZE}
@@ -125,14 +128,17 @@ class DownloadingFileView(context: Context,
 
     /**
      * Update onClick listeners and thumbnail after successful download
+     * @return thumbnail bitmap or null
      */
-    fun updateSuccess() {
+    fun updateSuccess(): Bitmap? {
+        var res: Bitmap? = null
         actionView.setImageResource(R.drawable.ic_share)
         actionView.setOnClickListener { openOrShare(false) }
         leftView.setOnClickListener { openOrShare(true) }
         try {
             remoteEntry.data?.also { ThumbnailUtils.extractThumbnail(
-                    BitmapFactory.decodeByteArray(it, 0, it.size), iconView.width, iconView.height)?.also { b ->
+                BitmapFactory.decodeByteArray(it, 0, it.size), iconView.width, iconView.height)?.also { b ->
+                    res = b
                     iconView.setImageBitmap(b)
                     iconView.imageTintList = null
                 }
@@ -141,6 +147,7 @@ class DownloadingFileView(context: Context,
             Log.e(TAG, "$e")
         }
         remoteEntry.data = null
+        return res
     }
 
     private fun openOrShare(isOpen: Boolean = true) {
@@ -342,6 +349,9 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
         if (!hasWriteFilePermission) return askWritePermission()
         val device = selectedDevice ?: return
         if (selectedEntries.none { !it.isDir }) return
+        var completionIcon: Bitmap? = null
+        val completionIconLock = ReentrantLock(true)
+        val completionIconCondition = completionIconLock.newCondition()
         selectButton.visibility = View.GONE
         downloadButton.visibility = View.GONE
         cancelButton.visibility = View.VISIBLE
@@ -404,12 +414,19 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
                             }
                         }
                         activity?.runOnUiThread {
-                            selectedEntriesView[it.index]?.also { v ->
-                                v.text = "${it.size} $unitBytesStr - ${res.message}"
-                                if (res.success) {
-                                    v.updateSuccess()
-                                } else {
-                                    v.actionView.setImageResource(R.drawable.ic_block)
+                            completionIconLock.withLock {
+                                selectedEntriesView[it.index]?.also { v ->
+                                    v.text = "${it.size} $unitBytesStr - ${res.message}"
+                                    if (res.success) {
+                                        if (selectedEntries.size == 1) {
+                                            completionIcon = v.updateSuccess()
+                                            completionIconCondition.signalAll()
+                                        } else {
+                                            v.updateSuccess()
+                                        }
+                                    } else {
+                                        v.actionView.setImageResource(R.drawable.ic_block)
+                                    }
                                 }
                             }
                         }
@@ -427,7 +444,10 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
             if ( selectedEntries.all { it.status == FileEntryStatus.CANCEL } ) {
                 notification.complete(notificationDownloadCanceledStr, "")
             } else {
-                notification.complete(notificationDownloadCompleteStr, "")
+                completionIconLock.withLock {
+                    completionIconCondition.awaitNanos(500000000L)
+                    notification.complete(notificationDownloadCompleteStr, "", completionIcon)
+                }
             }
             pluginRunning.set(false)
         }
