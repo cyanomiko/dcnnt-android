@@ -441,12 +441,15 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
                 selectButton.visibility = View.VISIBLE
                 downloadButton.visibility = View.GONE
             }
+            val total = selectedEntries.size
             if ( selectedEntries.all { it.status == FileEntryStatus.CANCEL } ) {
-                notification.complete(notificationDownloadCanceledStr, "")
+                notification.complete(notificationDownloadCanceledStr,"0/$total")
             } else {
                 completionIconLock.withLock {
                     completionIconCondition.awaitNanos(500000000L)
-                    notification.complete(notificationDownloadCompleteStr, "", completionIcon)
+                    val done = selectedEntries.count { it.status == FileEntryStatus.DONE }
+                    notification.complete(notificationDownloadCompleteStr,
+                        "$done/$total", completionIcon)
                 }
             }
             pluginRunning.set(false)
