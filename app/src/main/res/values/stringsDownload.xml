@@ -13,4 +13,5 @@
     <string name="action_share">Share</string>
     <string name="notification_download">Download</string>
     <string name="notification_download_complete">Download complete</string>
+    <string name="notification_download_canceled">Download canceled</string>
 </resources>

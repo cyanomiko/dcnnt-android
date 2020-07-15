@@ -185,6 +185,7 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
     private lateinit var statusCancelStr: String
     private lateinit var notificationDownloadStr: String
     private lateinit var notificationDownloadCompleteStr: String
+    private lateinit var notificationDownloadCanceledStr: String
 
     override fun prepareToolbar() {
         toolbarView.menu.also { menu ->
@@ -423,7 +424,11 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
                 selectButton.visibility = View.VISIBLE
                 downloadButton.visibility = View.GONE
             }
-            notification.complete(notificationDownloadCompleteStr, "")
+            if ( selectedEntries.all { it.status == FileEntryStatus.CANCEL } ) {
+                notification.complete(notificationDownloadCanceledStr, "")
+            } else {
+                notification.complete(notificationDownloadCompleteStr, "")
+            }
             pluginRunning.set(false)
         }
     }
@@ -485,6 +490,7 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
         statusCancelStr = getString(R.string.status_cancel)
         notificationDownloadStr = getString(R.string.notification_download)
         notificationDownloadCompleteStr = getString(R.string.notification_download_complete)
+        notificationDownloadCanceledStr = getString(R.string.notification_download_canceled)
         mainView?.also { return it }
         container?.context?.also { return fragmentMainView(it).apply { mainView = this } }
         return null
