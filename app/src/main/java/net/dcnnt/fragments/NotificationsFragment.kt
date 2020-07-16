@@ -37,6 +37,25 @@ class NotificationsFragment(toolbarView: Toolbar): BasePluginFargment(toolbarVie
     val apps = hashMapOf<String, AppInfo>()
     val appNotsSettingsViews = hashMapOf<String, View>()
 
+    override fun prepareToolbar() {
+        toolbarView.menu.also { menu ->
+            menu.clear()
+            menu.add(R.string.disable_all).setOnMenuItemClickListener { disableAllEntries() }
+        }
+    }
+
+    private fun updateFilterViews() {
+        appFiltersTextViews.keys.forEach {
+            appFiltersTextViews[it]?.text = conf.getFilter(it).toString()
+        }
+    }
+
+    private fun disableAllEntries(): Boolean {
+        conf.setFilterForAll(NotificationFilter.NO)
+        updateFilterViews()
+        return true
+    }
+
     fun updateInstalledApps(context: Context, systemApps: Boolean?) {
         appFilterView?.isEnabled = false
         synchronized(apps) {

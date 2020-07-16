@@ -32,6 +32,17 @@ class NotificationsPluginConf(directory: String, uin: Int): PluginConf(directory
         extra.put(pkg, filter.value)
         if (pre != filter) dump()
     }
+
+    fun setFilterForAll(filter: NotificationFilter) {
+        var needDump = false
+        filters.keys.forEach { pkg ->
+            val pre = filters[pkg]
+            filters[pkg] = filter
+            extra.put(pkg, filter.value)
+            if (pre != filter) needDump = true
+        }
+        if (needDump) dump()
+    }
 }
 
 class NotificationsPlugin(app: App, device: Device): Plugin<NotificationsPluginConf>(app, device) {
