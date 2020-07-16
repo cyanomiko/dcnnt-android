@@ -41,6 +41,7 @@ class NotificationsFragment(toolbarView: Toolbar): BasePluginFargment(toolbarVie
         toolbarView.menu.also { menu ->
             menu.clear()
             menu.add(R.string.disable_all).setOnMenuItemClickListener { disableAllEntries() }
+            menu.add(R.string.as_common).setOnMenuItemClickListener { copyEntriesFromCommon() }
         }
     }
 
@@ -52,6 +53,12 @@ class NotificationsFragment(toolbarView: Toolbar): BasePluginFargment(toolbarVie
 
     private fun disableAllEntries(): Boolean {
         conf.setFilterForAll(NotificationFilter.NO)
+        updateFilterViews()
+        return true
+    }
+
+    private fun copyEntriesFromCommon(): Boolean {
+        conf.copyFilters(APP.pm.getConfig("nots", 0) as NotificationsPluginConf)
         updateFilterViews()
         return true
     }
