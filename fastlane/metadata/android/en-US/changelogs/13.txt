@@ -1,0 +1,4 @@
+* Made app movable to SD card
+* Fixed bug in device selection menu
+* Additional options in notification plugin settings
+* Add thumbnail to download file notification
