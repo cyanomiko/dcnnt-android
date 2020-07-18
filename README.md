@@ -3,6 +3,10 @@
 Yet another tool to connect Android phone with desktop similar to KDE Connect.
 Android client for https://github.com/cyanomiko/dcnnt-py
 
+[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png"
+     alt="Get it on F-Droid"
+     height="80">](https://f-droid.org/packages/net.dcnnt/)
+
 ## Features
 
 * Lightweight and fast
