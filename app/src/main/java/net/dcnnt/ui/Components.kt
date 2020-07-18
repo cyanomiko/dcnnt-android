@@ -166,19 +166,19 @@ open class SelectInputView(context: Context) : ListTileView(context) {
         val dialogIndex = index ?: return
         AlertDialog.Builder(context).apply {
             setNegativeButton("Cansel") { _, _ -> }
-            setPositiveButton("OK") { _, _ -> index?.also { handleInput(it, options[it].value) } }
+            setPositiveButton("OK") { _, _ -> index?.also { handleInput(it, options[it]) } }
             setTitle(title)
             setSingleChoiceItems(Array(options.size) { options[it].title }, dialogIndex) { d, i ->
                 index = i
-                index?.also { handleInput(it, options[it].value) }
+                index?.also { handleInput(it, options[it]) }
                 d.dismiss()
             }
         }.create().show()
     }
 
-    fun handleInput(index: Int, input: Any) {
-        text = input.toString()
-        onInput?.invoke(index, input)
+    fun handleInput(index: Int, input: Option) {
+        text = input.title
+        onInput?.invoke(index, input.value)
     }
 }
 
