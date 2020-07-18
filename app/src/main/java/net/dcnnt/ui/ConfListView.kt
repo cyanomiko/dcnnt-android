@@ -29,7 +29,7 @@ open class ConfListView(context: Context) : VerticalLayout(context) {
             ConfTypes.BOOL -> createBoolInput((entry as? BoolEntry) ?: return null, t, s)
             ConfTypes.INT -> createIntInput((entry as? IntEntry) ?: return null, t, s)
             ConfTypes.STRING -> createStringInput((entry as? StringEntry) ?: return null, t, s)
-            else -> null
+            ConfTypes.SELECT -> createSelectInput((entry as? SelectEntry) ?: return null, t, s)
         }
     }
 
@@ -53,11 +53,16 @@ open class ConfListView(context: Context) : VerticalLayout(context) {
         onInput = { v -> entry.updateValue(v) }
     }
 
-    // ToDo: This function, probably changes in SelectEntry class
-    private fun createSelectTnput(entry: SelectEntry, label: String, info: String): SelectInputView {
+    private fun createSelectInput(entry: SelectEntry, label: String, info: String): SelectInputView {
         return SelectInputView(context).apply {
             title = label
-            text = entry.value
+            text = entry.valueText(context)
+            options = MutableList(entry.options.size) { i ->
+                val opt = entry.options[i]
+                Option(context.getString(opt.title), opt.value)
+            }
+            index = entry.valueIndex()
+            onInput = { _, v -> entry.updateValue(v) }
         }
     }
 }

@@ -1,5 +1,6 @@
 package net.dcnnt.core
 
+import android.content.Context
 import android.util.Log
 import org.json.JSONObject
 import java.io.File
@@ -45,6 +46,8 @@ abstract class DCConfEntry<T: Any>(private val conf: DCConf, val name: String, o
         }
         return false
     }
+
+    open fun valueText(context: Context): String = value.toString()
 }
 
 class IntEntry(conf: DCConf, name: String,
@@ -76,12 +79,22 @@ class BoolEntry(conf: DCConf, name: String,
 data class SelectOption(val value: String, val title: Int)
 
 class SelectEntry(conf: DCConf, name: String,
-                  private val options: List<SelectOption>,
+                  val options: List<SelectOption>,
                   default: Int): DCConfEntry<String>(conf, name, options[default].value) {
     override val type = ConfTypes.SELECT
     override fun check(value: Any?): Boolean {
         if (value is String) return List(options.size){ options[it].value }.contains(value)
         return false
+    }
+
+    override fun valueText(context: Context): String {
+        for (option in options) if (option.value == value) return context.getString(option.title)
+        return "UNKNOWN"
+    }
+
+    fun valueIndex(): Int? {
+        for (it in options.withIndex()) if (it.value.value == value) return it.index
+        return null
     }
 }
 
