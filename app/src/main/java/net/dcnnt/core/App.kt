@@ -49,7 +49,9 @@ class App : Application() {
         }
         Log.i(TAG, "Fetch data directory...")
         directory = applicationInfo.dataDir
-        Log.i(TAG, "Creste config $directory/conf.json")
+        Log.i(TAG, "Init crash logger...")
+        initCrashHandler()
+        Log.i(TAG, "Create config $directory/conf.json")
         conf = AppConf("$directory/conf.json")
         Log.i(TAG, "Create DM...")
         dm = DeviceManager("$directory/devices")
@@ -65,6 +67,13 @@ class App : Application() {
         pm.init()
         Log.i(TAG, "Load PM...")
         pm.load()
+    }
+
+    private fun initCrashHandler() {
+        val oldHandler = Thread.getDefaultUncaughtExceptionHandler()
+        if (oldHandler !is DCCrashHandler) {
+            Thread.setDefaultUncaughtExceptionHandler(DCCrashHandler(this, oldHandler))
+        }
     }
 
     private fun createNotificationChannels() {
