@@ -26,6 +26,7 @@ import net.dcnnt.ui.*
 class FileEntryView(context: Context,
                     val fragment: UploadFileFragment,
                     val entry: FileEntry): EntryView(context) {
+    private val THUMBNAIL_SIZE_THRESHOLD = 10 * 1024 * 1024
     var thumbnailLoaded = false
     init {
         title = entry.name
@@ -63,6 +64,7 @@ class FileEntryView(context: Context,
 
     fun loadThumbnail() {
         val bitmap: Bitmap
+        if (entry.size > THUMBNAIL_SIZE_THRESHOLD) return
         try {
             bitmap = ThumbnailUtils.extractThumbnail(
                 BitmapFactory.decodeByteArray(
