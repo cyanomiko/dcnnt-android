@@ -13,8 +13,8 @@ class DCCrashHandler(val app: App, private val defaultHandler: Thread.UncaughtEx
         val oldCrushLogs = directory.listFiles()?.filter {
             it.isFile and it.absolutePath.endsWith(SUFFIX)
         }?.sortedByDescending { it.lastModified() } ?: listOf()
-        if (oldCrushLogs.size > MAX_FILES) {
-            oldCrushLogs[0].delete()
+        if (oldCrushLogs.size >= MAX_FILES) {
+            oldCrushLogs.lastOrNull()?.delete()
         }
         val file = File("${app.directory}/log/${System.currentTimeMillis()}$SUFFIX")
         val writer = file.printWriter()
