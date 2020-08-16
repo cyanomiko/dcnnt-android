@@ -20,6 +20,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.graphics.drawable.toBitmap
 import net.dcnnt.R
 import net.dcnnt.core.*
 import net.dcnnt.plugins.FileTransferPlugin
@@ -100,6 +101,7 @@ class DownloadingFileView(context: Context,
                           private val fragment: DownloadFileFragment,
                           private val remoteEntry: RemoteEntry): EntryView(context) {
     val TAG = "DC/DownloadingFileView"
+    val notification = ProgressNotification(context)
     init {
         title = remoteEntry.name
         text = "${remoteEntry.size} ${context.getString(R.string.unit_bytes)}"
@@ -127,29 +129,64 @@ class DownloadingFileView(context: Context,
     }
 
     /**
-     * Update onClick listeners and thumbnail after successful download
-     * @return thumbnail bitmap or null
+     * Get thumbnail for downloaded file
+     * @return bitmap or null
      */
-    fun updateSuccess(): Bitmap? {
-        var res: Bitmap? = null
-        actionView.setImageResource(R.drawable.ic_share)
-        actionView.setOnClickListener { openOrShare(false) }
-        leftView.setOnClickListener { openOrShare(true) }
+    fun getThumbnail(): Bitmap? {
         try {
             remoteEntry.data?.also { ThumbnailUtils.extractThumbnail(
                 BitmapFactory.decodeByteArray(it, 0, it.size), iconView.width, iconView.height)?.also { b ->
-                    res = b
-                    iconView.setImageBitmap(b)
-                    iconView.imageTintList = null
+                    return b
                 }
             }
+            iconView.drawable.toBitmap(iconView.width, iconView.height)
         } catch (e: IllegalArgumentException) {
             Log.e(TAG, "$e")
         }
-        remoteEntry.data = null
-        return res
+        return null
     }
 
+    /**
+     * Update onClick listeners and set image thumbnail if available after successful download
+     */
+    private fun updateSuccess(bitmap: Bitmap?) {
+        actionView.setImageResource(R.drawable.ic_share)
+        actionView.setOnClickListener { openOrShare(false) }
+        leftView.setOnClickListener { openOrShare(true) }
+        bitmap?.also {
+            iconView.setImageBitmap(it)
+            iconView.imageTintList = null
+        }
+    }
+
+    /**
+     * Update view, notifications and listeners on end of download
+     */
+    fun updateOnEnd(res: DCResult, unitBytesStr: String, doNotificationStuff: Boolean,
+                    notificationDownloadCanceledStr: String, notificationDownloadCompleteStr: String,
+                    notificationDownloadFailedStr: String, waitingCount: Int, currentNum: Int) {
+        val icon = getThumbnail()
+        text = "${remoteEntry.size} $unitBytesStr - ${res.message}"
+        if (res.success) {
+            updateSuccess(icon)
+        } else {
+            actionView.setImageResource(R.drawable.ic_block)
+        }
+        if (!doNotificationStuff) return
+        if (remoteEntry.status == FileEntryStatus.CANCEL) {
+            notification.complete(notificationDownloadCanceledStr, "$currentNum/$waitingCount - ${remoteEntry.name}")
+        } else {
+            if (res.success) {
+                notification.complete(notificationDownloadCompleteStr, "$currentNum/$waitingCount - ${remoteEntry.name}", icon)
+            } else {
+                notification.complete(notificationDownloadFailedStr, "$currentNum/$waitingCount - ${remoteEntry.name} : ${res.message}", icon)
+            }
+        }
+    }
+
+    /**
+     * Handle click on share icon or any other place in view
+     */
     private fun openOrShare(isOpen: Boolean = true) {
         val file = remoteEntry.localFile ?: return
         val uri = FileProvider.getUriForFile(context.applicationContext, "net.dcnnt", file)
@@ -186,6 +223,7 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
     private var downloadViewMode = false
     private var mainView: View? = null
     private var sortBy: FileSort = FileSort.NAME
+    private var downloadNotificationPolicy = APP.conf.downloadNotificationPolicy.value
     private lateinit var notification: ProgressNotification
     private lateinit var noSharedFilesStr: String
     private lateinit var unitBytesStr: String
@@ -193,6 +231,7 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
     private lateinit var notificationDownloadStr: String
     private lateinit var notificationDownloadCompleteStr: String
     private lateinit var notificationDownloadCanceledStr: String
+    private lateinit var notificationDownloadFailedStr: String
 
     override fun prepareToolbar() {
         toolbarView.menu.also { menu ->
@@ -345,29 +384,96 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
         }
     }
 
+    private fun notifyDownloadStart(waiting: List<RemoteEntry>, currentNum: Int, current: RemoteEntry,
+                                    totalSize: Long, totalDoneSize: Long, currentDoneSize: Long) {
+        val policy = APP.conf.downloadNotificationPolicy.value
+        val currentName = current.name
+        val n: ProgressNotification = when (policy) {
+            "one" -> notification
+            "all" -> selectedEntriesView[current.index]?.notification ?: return
+            else -> return
+        }
+        if ((n.isNew and (policy == "one")) or (policy == "all")) {
+            n.create(R.drawable.ic_download, notificationDownloadStr,
+            "0/${current.size} - $currentName", 1000)
+        } else if (policy == "one") {
+            val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
+            n.update("$currentNum/${waiting.size} - $currentName", progress, true)
+        }
+    }
+
+    private fun notifyDownloadProgress(waiting: List<RemoteEntry>, currentNum: Int, current: RemoteEntry,
+                                       totalSize: Long, totalDoneSize: Long, currentDoneSize: Long) {
+        val policy = APP.conf.downloadNotificationPolicy.value
+        val currentName = current.name
+        val n: ProgressNotification = when (policy) {
+            "one" -> notification
+            "all" -> selectedEntriesView[current.index]?.notification ?: return
+            else -> return
+        }
+        if (policy == "all") {
+            val progress = if (current.size > 0) (1000L * currentDoneSize) / current.size else 1000L
+            n.update("$currentNum/${waiting.size} - $currentName", progress)
+        } else if (policy == "one") {
+            val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
+            n.update("$currentNum/${waiting.size} - $currentName", progress)
+        }
+    }
+
+    private fun notifyDownloadEnd(waiting: List<RemoteEntry>, currentNum: Int, current: RemoteEntry,
+                                  totalSize: Long, totalDoneSize: Long, result: DCResult) {
+        val policy = APP.conf.downloadNotificationPolicy.value
+        val currentName = current.name
+        selectedEntriesView[current.index]?.also { v ->
+            activity?.runOnUiThread {
+                v.updateOnEnd(
+                    result,
+                    unitBytesStr,
+                    policy == "all",
+                    notificationDownloadCanceledStr,
+                    notificationDownloadCompleteStr,
+                    notificationDownloadFailedStr,
+                    waiting.size,
+                    currentNum
+                )
+            }
+        }
+        if (policy == "one") {
+            if (currentNum == (waiting.size - 1)) {
+                if (selectedEntries.all { it.status == FileEntryStatus.CANCEL }) {
+                    notification.complete(notificationDownloadCanceledStr,"${waiting.size}/${waiting.size}")
+                } else {
+                    notification.complete(notificationDownloadCompleteStr, "${waiting.size}/${waiting.size}")
+                }
+            } else {
+                val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
+                notification.update("$currentNum/${waiting.size} - $currentName", progress, true)
+            }
+        }
+    }
+
     fun downloadFiles(context: Context) {
         if (!hasWriteFilePermission) return askWritePermission()
         val device = selectedDevice ?: return
         if (selectedEntries.none { !it.isDir }) return
-        var completionIcon: Bitmap? = null
-        val completionIconLock = ReentrantLock(true)
-        val completionIconCondition = completionIconLock.newCondition()
         selectButton.visibility = View.GONE
         downloadButton.visibility = View.GONE
         cancelButton.visibility = View.VISIBLE
         enableDownloadView(context)
+        val waitingEntries = selectedEntries.filter { (it.status == FileEntryStatus.WAIT) and !it.isDir }
+        var totalSize = (LongArray(waitingEntries.size) { waitingEntries[it].size }).sum()
+        var totalDoneSize = 0L
+        var totalDoneSizePre = 0L
+        downloadNotificationPolicy = APP.conf.downloadNotificationPolicy.value
         thread {
             pluginRunning.set(true)
             try {
                 FileTransferPlugin(APP, device).apply {
                     init()
                     connect()
-                    val waitingEntries = selectedEntries.filter { (it.status == FileEntryStatus.WAIT) and !it.isDir }
-                    notification.create(R.drawable.ic_download,
-                                  notificationDownloadStr,
-                            "0/${waitingEntries.size}",
-                                  1000L * waitingEntries.size)
                     waitingEntries.forEachIndexed { index, it ->
+                        var currentDoneSize = 0L
+                        totalDoneSizePre = totalDoneSize
                         synchronized(it) {
                             if (it.status != FileEntryStatus.WAIT) {
                                 Log.d(TAG, "Skip ${it.index} (${it.name})")
@@ -377,6 +483,7 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
                                         actionView.setImageResource(R.drawable.ic_block)
                                     }
                                 }
+                                totalSize -= it.size
                                 return@forEachIndexed
                             }
                             if (breakTransfer) {
@@ -387,8 +494,13 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
                         }
                         var progress = 0
                         var res: DCResult
+                        notifyDownloadStart(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
                         try {
                             res = downloadFile(it, context.contentResolver) { cur: Long, total: Long, _: Long ->
+                                if (cur > currentDoneSize) {
+                                    totalDoneSize += cur - currentDoneSize
+                                    currentDoneSize = cur
+                                }
                                 val progressCur = (1000 * cur / total).toInt()
                                 breakTransfer = it.status == FileEntryStatus.CANCEL
                                 activity?.runOnUiThread {
@@ -397,8 +509,7 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
                                         if (progressCur != progress) {
                                             progress = progressCur
                                             v.progressView.progress = progressCur
-                                            notification.update("$index/${waitingEntries.size}",
-                                                   (1000L * index) + progressCur)
+                                            notifyDownloadProgress(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
                                         }
                                     }
                                 }
@@ -406,51 +517,29 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
                         } catch (e: Exception) {
                             res = DCResult(false, e.message ?: "$e")
                         }
-                        (res.data as? File)?.also { file ->
-                            if (res.success) {
+                        if (res.success) {
+                            (res.data as? File)?.also { file ->
                                 it.localFile = file
                                 context.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
                                     Uri.fromFile(file)))
                             }
+                            totalDoneSize = totalDoneSizePre + it.size
+                        } else {
+                            totalSize -= it.size
+                            totalDoneSize = totalDoneSizePre
                         }
-                        activity?.runOnUiThread {
-                            completionIconLock.withLock {
-                                selectedEntriesView[it.index]?.also { v ->
-                                    v.text = "${it.size} $unitBytesStr - ${res.message}"
-                                    if (res.success) {
-                                        if (selectedEntries.size == 1) {
-                                            completionIcon = v.updateSuccess()
-                                            completionIconCondition.signalAll()
-                                        } else {
-                                            v.updateSuccess()
-                                        }
-                                    } else {
-                                        v.actionView.setImageResource(R.drawable.ic_block)
-                                    }
-                                }
-                            }
-                        }
+                        notifyDownloadEnd(waitingEntries, index + 1, it, totalSize, totalDoneSize, res)
                     }
                 }
             } catch (e: Exception) {
                 showError(context, e)
                 Log.e(TAG, "$e")
+                throw e
             }
             activity?.runOnUiThread {
                 cancelButton.visibility = View.GONE
                 selectButton.visibility = View.VISIBLE
                 downloadButton.visibility = View.GONE
-            }
-            val total = selectedEntries.size
-            if ( selectedEntries.all { it.status == FileEntryStatus.CANCEL } ) {
-                notification.complete(notificationDownloadCanceledStr,"0/$total")
-            } else {
-                completionIconLock.withLock {
-                    completionIconCondition.awaitNanos(500000000L)
-                    val done = selectedEntries.count { it.status == FileEntryStatus.DONE }
-                    notification.complete(notificationDownloadCompleteStr,
-                        "$done/$total", completionIcon)
-                }
             }
             pluginRunning.set(false)
         }
@@ -514,6 +603,7 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
         notificationDownloadStr = getString(R.string.notification_download)
         notificationDownloadCompleteStr = getString(R.string.notification_download_complete)
         notificationDownloadCanceledStr = getString(R.string.notification_download_canceled)
+        notificationDownloadFailedStr = getString(R.string.notification_download_failed)
         mainView?.also { return it }
         container?.context?.also { return fragmentMainView(it).apply { mainView = this } }
         return null

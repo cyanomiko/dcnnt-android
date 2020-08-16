@@ -22,6 +22,11 @@ class AppConf(path: String): DCConf(path) {
         "P" + Random.nextBytes(100).filter { (it > 96) and (it < 123) }.toByteArray().toString()).init()
     val cellularData = BoolEntry(this, "cellularData", false).init()
     val notificationListenerService = BoolEntry(this, "notificationListenerService", false).init()
+    val downloadNotificationPolicy = SelectEntry(this, "downloadNotificationPolicy", listOf(
+        SelectOption("no", R.string.conf_app_downloadNotificationPolicy_no),
+        SelectOption("one", R.string.conf_app_downloadNotificationPolicy_one),
+        SelectOption("all", R.string.conf_app_downloadNotificationPolicy_all)
+    ), 1).init()
 }
 
 

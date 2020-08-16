@@ -6,6 +6,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import kotlin.concurrent.thread
 
+
 /**
  * Supply class to show progress notifications
  */
@@ -13,8 +14,9 @@ class ProgressNotification(val context: Context) {
     private val uiProgressMax = 100
     private var uiProgressCur = 0
     private var notificationId: Int = 0
-    private var progressMax: Long = 0L
+    private var progressMax: Long = 1000L
     private var builder = NotificationCompat.Builder(context, "net.dcnnt.progress")
+    var isNew = true
 
     /**
      * Create and show new progress notification
@@ -34,6 +36,7 @@ class ProgressNotification(val context: Context) {
                .setDefaults(0)
                .setProgress(uiProgressMax, uiProgressCur, false)
         NotificationManagerCompat.from(context).notify(notificationId, builder.build())
+        isNew = false
     }
 
     /**
@@ -41,9 +44,9 @@ class ProgressNotification(val context: Context) {
      * @param text - one line of text for notification (percentage added automatically)
      * @param progressCur - current progress of ongoing operation
      */
-    fun update(text: String, progressCur: Long) {
+    fun update(text: String, progressCur: Long, forceUpdate: Boolean = false) {
         val uiProgressNew = ((100 * progressCur) / progressMax).toInt()
-        if (uiProgressCur == uiProgressNew) return
+        if ((uiProgressCur == uiProgressNew) and !forceUpdate) return
         uiProgressCur = uiProgressNew
         builder.setContentText("$text ($uiProgressCur%)")
                .setProgress(uiProgressMax, uiProgressCur, false)
