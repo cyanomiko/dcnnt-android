@@ -102,9 +102,9 @@ abstract class Plugin<T: PluginConf>(val app: App, val device: Device) {
 
     fun read(): ByteArray {
         val lb = readAll(4)
-        Log.d(TAG, "Length bytes: [${lb[0]} ${lb[1]} ${lb[2]} ${lb[3]}]")
+//        Log.d(TAG, "Length bytes: [${lb[0]} ${lb[1]} ${lb[2]} ${lb[3]}]")
         val length = uIntFromBytes(lb)
-        Log.d(TAG, "Length to read = $length")
+//        Log.d(TAG, "Length to read = $length")
         return decrypt(readAll(length), device.keyRecv) ?: byteArrayOf()
     }
 

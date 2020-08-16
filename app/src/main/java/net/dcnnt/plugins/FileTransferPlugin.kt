@@ -155,7 +155,7 @@ class FileTransferPlugin(app: App, device: Device): Plugin<FileTransferPluginCon
                     sock.close()
                     return DCResult(false, "Canceled")
                 }
-                Log.d(TAG, "recBytes = $recBytes, entry.size = ${entry.size}")
+//                Log.d(TAG, "recBytes = $recBytes, entry.size = ${entry.size}")
                 buf = read()
                 fd.write(buf)
                 dataBuf?.put(buf)
