@@ -13,4 +13,6 @@
     <string name="conf_app_downloadNotificationPolicy_no">Do not show</string>
     <string name="conf_app_downloadNotificationPolicy_one">One for all files</string>
     <string name="conf_app_downloadNotificationPolicy_all">For every file</string>
+    <string name="conf_app_autoSearch_title">Auto-search devices</string>
+    <string name="conf_app_autoSearch_info">Search devices automatically on app opening</string>
 </resources>
