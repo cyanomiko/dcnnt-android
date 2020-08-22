@@ -322,4 +322,11 @@ class UploadFileFragment(toolbarView: Toolbar,
         }
         return null
     }
+
+    override fun onStart() {
+        super.onStart()
+        if (APP.conf.autoSearch.value and !APP.dm.searchDone) {
+            deviceSelectView?.refreshDevices()
+        }
+    }
 }

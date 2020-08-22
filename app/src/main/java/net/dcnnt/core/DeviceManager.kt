@@ -57,6 +57,7 @@ class DeviceManager(val path: String) {
     private val searchingNow = AtomicBoolean(false)
     val commonDevice: Device
             get() = Device(APP.dm, 0, "Common", "All devices", PORT, "server", "")
+    var searchDone = false
 
     fun init() {
         if (!directory.exists()) directory.mkdirs()
@@ -112,6 +113,7 @@ class DeviceManager(val path: String) {
 
     fun search(appConf: AppConf, timeout: Int = 10, triesRead: Int = 100, triesSend: Int = 4,
                onAvailableDevice: ((Device) -> Unit)? = null): Boolean {
+        searchDone = true
         lastSearchTimestamp = System.currentTimeMillis() / 1000L
         var responseCounter: Int = 0
         val request = JSONObject(mapOf(

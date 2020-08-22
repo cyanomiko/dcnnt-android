@@ -24,6 +24,7 @@ class DeviceManagerFragment(toolbarView: Toolbar): DCFragment(toolbarView) {
     val TAG = "DC/DMFragment"
     lateinit var deviceListView: VerticalLayout
     private lateinit var deviceNotAtAllStr: String
+    private lateinit var searchButton: Button
 
     fun deviceEntryView(context: Context, device: Device) = EntryView(context).apply {
         title = "${device.uin} - ${device.name}"
@@ -60,29 +61,32 @@ class DeviceManagerFragment(toolbarView: Toolbar): DCFragment(toolbarView) {
         }
     }
 
+    fun startDeviceSearch(context: Context) {
+        thread {
+            if (APP.dm.searching.compareAndSet(false, true)) {
+                activity?.runOnUiThread {
+                    searchButton.isClickable = false
+                    searchButton.text = context.getString(R.string.device_search_in_progress)
+                    searchButton.refreshDrawableState()
+                }
+                APP.dm.search(APP.conf)
+                activity?.runOnUiThread { updateDeviceListView() }
+                APP.dm.searching.set(false)
+                activity?.runOnUiThread {
+                    searchButton.text = context.getString(R.string.device_search)
+                    searchButton.isClickable = true
+                    searchButton.refreshDrawableState()
+                }
+            }
+        }
+    }
+
     fun fragmentMainView(context: Context): View = VerticalLayout(context).apply {
         padding = context.dip(6)
         addView(Button(context).apply {
+            searchButton = this
             text = context.getString(R.string.device_search)
-            setOnClickListener {
-                thread {
-                    if (APP.dm.searching.compareAndSet(false, true)) {
-                        activity?.runOnUiThread {
-                            this.isClickable = false
-                            this.text = context.getString(R.string.device_search_in_progress)
-                            this.refreshDrawableState()
-                        }
-                        APP.dm.search(APP.conf)
-                        activity?.runOnUiThread { updateDeviceListView() }
-                        APP.dm.searching.set(false)
-                        activity?.runOnUiThread {
-                            this.text = context.getString(R.string.device_search)
-                            this.isClickable = true
-                            this.refreshDrawableState()
-                        }
-                    }
-                }
-            }
+            setOnClickListener { startDeviceSearch(context) }
         })
         addView(ScrollView(context).apply {
             addView(VerticalLayout(context).apply {
@@ -107,5 +111,12 @@ class DeviceManagerFragment(toolbarView: Toolbar): DCFragment(toolbarView) {
             return mainView
         }
         return null
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (APP.conf.autoSearch.value and !APP.dm.searchDone) {
+            startDeviceSearch(context ?: return)
+        }
     }
 }
