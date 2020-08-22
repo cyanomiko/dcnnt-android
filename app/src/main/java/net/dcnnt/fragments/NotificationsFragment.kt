@@ -139,6 +139,7 @@ class NotificationsFragment(toolbarView: Toolbar): BasePluginFargment(toolbarVie
 
     override fun onSelectedDeviceChanged() {
         val uin = selectedDevice?.uin ?: 0
+        toolbarView.menu.getItem(1).isVisible = (uin != 0)
         conf = APP.pm.getConfig("nots", selectedDevice?.uin ?: 0) as NotificationsPluginConf
         Log.d(TAG, "Conf for device $uin: ${conf.uin}")
         updateAppsFilters()
