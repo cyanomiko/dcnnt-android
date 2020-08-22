@@ -1,6 +1,8 @@
 package net.dcnnt.ui
 
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -58,11 +60,12 @@ class ProgressNotification(val context: Context) {
      * @param title - new title of notification
      * @param text - new text of notification  (percentage added automatically)
      */
-    fun complete(title: String, text: String, icon: Bitmap? = null) {
+    fun complete(title: String, text: String, icon: Bitmap? = null, intent: Intent? = null) {
         builder.setContentTitle(title)
                .setContentText("$text (100%)")
                .setProgress(0, 0, false)
-        icon?.also { builder.setLargeIcon(icon) }
+        icon?.also { builder.setLargeIcon(it) }
+        intent?.also { builder.setContentIntent(PendingIntent.getActivity(context, 113, intent, 0)) }
         with(NotificationManagerCompat.from(context)) {
             notify(notificationId, builder.build())
             thread {

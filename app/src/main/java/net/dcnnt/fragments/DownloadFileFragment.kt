@@ -159,6 +159,22 @@ class DownloadingFileView(context: Context,
         }
     }
 
+    fun createFileIntent(isOpen: Boolean = true): Intent? {
+        val file = remoteEntry.localFile ?: return null
+        val uri = FileProvider.getUriForFile(context.applicationContext, "net.dcnnt", file)
+        val mime = mimeTypeByPath(file.path)
+        val action = if (isOpen) Intent.ACTION_VIEW else Intent.ACTION_SEND
+        val intent = Intent(action)
+        intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        if (isOpen) {
+            intent.setDataAndNormalize(uri)
+        } else {
+            intent.putExtra(Intent.EXTRA_STREAM, uri)
+            intent.type = mime
+        }
+        return intent
+    }
+
     /**
      * Update view, notifications and listeners on end of download
      */
@@ -177,7 +193,8 @@ class DownloadingFileView(context: Context,
             notification.complete(notificationDownloadCanceledStr, "$currentNum/$waitingCount - ${remoteEntry.name}")
         } else {
             if (res.success) {
-                notification.complete(notificationDownloadCompleteStr, "$currentNum/$waitingCount - ${remoteEntry.name}", icon)
+                val intent = createFileIntent(true)
+                notification.complete(notificationDownloadCompleteStr, "$currentNum/$waitingCount - ${remoteEntry.name}", icon, intent)
             } else {
                 notification.complete(notificationDownloadFailedStr, "$currentNum/$waitingCount - ${remoteEntry.name} : ${res.message}", icon)
             }
@@ -188,20 +205,8 @@ class DownloadingFileView(context: Context,
      * Handle click on share icon or any other place in view
      */
     private fun openOrShare(isOpen: Boolean = true) {
-        val file = remoteEntry.localFile ?: return
-        val uri = FileProvider.getUriForFile(context.applicationContext, "net.dcnnt", file)
-        val mime = mimeTypeByPath(file.path)
-        val action = if (isOpen) Intent.ACTION_VIEW else Intent.ACTION_SEND
+        val intent = createFileIntent(isOpen) ?: return
         val actionName = context.getString(if (isOpen) R.string.action_open else R.string.action_share)
-        val intent = Intent(action)
-        intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-        Log.d(TAG, "$actionName $uri, mime = $mime")
-        if (isOpen) {
-            intent.setDataAndNormalize(uri)
-        } else {
-            intent.putExtra(Intent.EXTRA_STREAM, uri)
-            intent.type = mime
-        }
         context.startActivity(Intent.createChooser(intent, "$actionName ${remoteEntry.name}"))
     }
 }
