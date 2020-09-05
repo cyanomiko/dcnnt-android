@@ -95,3 +95,9 @@ fun fileIcon(name: String?, mime: String?): Int {
     if (name?.endsWith("apk", false) == true) return R.drawable.ic_android
     return R.drawable.ic_file
 }
+
+fun nowString(): String {
+    val now = Calendar.getInstance()
+    return "${now.get(Calendar.YEAR)}-${now.get(Calendar.MONTH)}-${now.get(Calendar.DAY_OF_MONTH)}_" +
+            "${now.get(Calendar.HOUR_OF_DAY)}-${now.get(Calendar.MINUTE)}-${now.get(Calendar.SECOND)}"
+}
