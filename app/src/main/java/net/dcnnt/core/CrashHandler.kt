@@ -16,7 +16,7 @@ class DCCrashHandler(val app: App, private val defaultHandler: Thread.UncaughtEx
         if (oldCrushLogs.size >= MAX_FILES) {
             oldCrushLogs.lastOrNull()?.delete()
         }
-        val file = File("${app.directory}/log/${System.currentTimeMillis()}$SUFFIX")
+        val file = File("${app.directory}/log/${nowString()}$SUFFIX")
         val writer = file.printWriter()
         exception.printStackTrace(writer)
         writer.flush()
