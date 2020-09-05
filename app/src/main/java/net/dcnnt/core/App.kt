@@ -8,8 +8,17 @@ import android.os.Build
 import android.util.Log
 import net.dcnnt.MainActivity
 import net.dcnnt.R
+import java.io.File
+import java.io.InputStream
+import java.io.OutputStream
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.zip.ZipEntry
+import java.util.zip.ZipFile
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 import kotlin.random.Random
+import kotlin.time.seconds
 
 
 class AppConf(path: String): DCConf(path) {
@@ -90,6 +99,55 @@ class App : Application() {
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
+    }
+
+    private fun writeFileToArchive(zip: ZipOutputStream, file: File) {
+        zip.putNextEntry(ZipEntry(file.name))
+        val buf = file.readBytes()
+        zip.write(buf)
+        Log.d(TAG, "write ${buf.size} bytes to ${file.absolutePath}")
+        zip.closeEntry()
+    }
+
+    fun dumpSettingsToFile(outputStream: OutputStream): Boolean {
+        val zip = ZipOutputStream(outputStream)
+        zip.putNextEntry(ZipEntry("dcnnt.timestamp.txt"))
+        zip.write(nowString().toByteArray())
+        zip.closeEntry()
+        writeFileToArchive(zip, File(conf.path))
+        File(dm.path).listFiles()?.forEach { writeFileToArchive(zip, it) }
+        File(pm.directory).listFiles()?.forEach { writeFileToArchive(zip, it) }
+        zip.close()
+        outputStream.close()
+        return true
+    }
+
+    fun dropSettings() {
+        File(conf.path).delete()
+        File(dm.path).listFiles()?.forEach { if ("$it".endsWith(dm.EXTENSION)) it.delete() }
+        File(pm.directory).listFiles()?.forEach { if ("$it".endsWith(pm.SUFFIX)) it.delete() }
+    }
+
+    fun loadSettingsFromFile(inputStream: InputStream): Boolean {
+        val zip = ZipInputStream(inputStream)
+        val files = mutableMapOf<String, ByteArray>()
+        // Unpack zipfile to memory
+        while (true) files[(zip.nextEntry ?: break).name] = zip.readBytes()
+        // Check mark file
+        if (!files.containsKey("dcnnt.timestamp.txt")) return false
+        // Remove old settings
+        dropSettings()
+        // Write new settings
+        files.forEach {
+            if (it.key == "conf.json") {
+                File(conf.path).writeBytes(it.value)
+            } else if (it.key.endsWith(dm.EXTENSION)) {
+                File("${dm.path}/${it.key}").writeBytes(it.value)
+            } else if (it.key.endsWith(pm.SUFFIX)) {
+                File("${pm.directory}/${it.key}").writeBytes(it.value)
+            }
+        }
+        return true
     }
 
     override fun onCreate() {

@@ -12,6 +12,7 @@ import android.util.Log
 import android.view.Gravity
 import android.view.Menu
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -24,8 +25,11 @@ import com.google.android.material.navigation.NavigationView
 import net.dcnnt.core.APP
 import net.dcnnt.core.ENABLED_NOTIFICATION_LISTENERS
 import net.dcnnt.fragments.*
-import net.dcnnt.ui.*
+import net.dcnnt.ui.DCFragment
+import net.dcnnt.ui.LParam
+import net.dcnnt.ui.VerticalLayout
 import kotlin.system.exitProcess
+
 
 /**
  * Simple navigation facility for app
@@ -160,10 +164,10 @@ class MainActivity : AppCompatActivity() {
     /**
      * Restart app using alarm
      */
-    fun restartApp(context: Context): Boolean {
-        val intent = Intent(context, MainActivity::class.java)
-        val mPendingIntent = PendingIntent.getActivity(context, CODE_RESTART, intent, PendingIntent.FLAG_CANCEL_CURRENT)
-        val mgr = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    fun restartApp(): Boolean {
+        val intent = Intent(this, MainActivity::class.java)
+        val mPendingIntent = PendingIntent.getActivity(this, CODE_RESTART, intent, PendingIntent.FLAG_CANCEL_CURRENT)
+        val mgr = this.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 100, mPendingIntent)
         exitProcess(0)
     }
@@ -176,7 +180,7 @@ class MainActivity : AppCompatActivity() {
             setTitle(R.string.restart_dialog_title)
             setMessage(R.string.restart_dialog_text)
             setNeutralButton(R.string.cancel) { _, _ ->  }
-            setNegativeButton(R.string.restart) { _, _ -> restartApp(this@MainActivity) }
+            setNegativeButton(R.string.restart) { _, _ -> restartApp() }
             setPositiveButton(R.string.stop) { _, _ -> exitProcess(0) }
         }.create().show()
     }
@@ -310,6 +314,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        val fragment = navigation.currentFragment
+        Log.d(TAG, "requestCode = $requestCode, resultCode = $resultCode")
+        if (!fragment.onActivityResult(this, requestCode, resultCode, data)) return
         when (requestCode) {
             CODE_NOTIFICATIONS -> onNotificationAccessActivityResult()
             else -> {

@@ -188,6 +188,7 @@ class PluginManager(val app: App, val directory: String, private val pluginMarks
     val TAG = "DC/PM"
     private val configs = mutableMapOf<Pair<String, Int>, PluginConf>()
     val dir = File(directory)
+    val SUFFIX = ".conf.json"
 
     fun init() {
         if (!dir.exists()) dir.mkdirs()

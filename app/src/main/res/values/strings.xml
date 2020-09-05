@@ -32,4 +32,7 @@
     <string name="ok">OK</string>
     <string name="delete_device_title">Delete device?</string>
     <string name="delete_device_warning">This action can\'t be undone</string>
+    <string name="dump_settings">Save settings</string>
+    <string name="load_settings">Load settings</string>
+    <string name="drop_settings">Drop settings</string>
 </resources>
