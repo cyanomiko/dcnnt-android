@@ -11,6 +11,7 @@ import android.webkit.MimeTypeMap
 import net.dcnnt.R
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.text.SimpleDateFormat
 import java.util.*
 
 
@@ -97,7 +98,5 @@ fun fileIcon(name: String?, mime: String?): Int {
 }
 
 fun nowString(): String {
-    val now = Calendar.getInstance()
-    return "${now.get(Calendar.YEAR)}-${now.get(Calendar.MONTH)}-${now.get(Calendar.DAY_OF_MONTH)}_" +
-            "${now.get(Calendar.HOUR_OF_DAY)}-${now.get(Calendar.MINUTE)}-${now.get(Calendar.SECOND)}"
+    return SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(Calendar.getInstance().time)
 }
