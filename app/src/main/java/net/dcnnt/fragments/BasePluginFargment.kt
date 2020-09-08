@@ -102,7 +102,7 @@ class DeviceSelectView(context: Context) : SelectInputView(context) {
 }
 
 
-abstract class BasePluginFargment(toolbarView: Toolbar): DCFragment(toolbarView) {
+abstract class BasePluginFargment: DCFragment() {
     open val TAG = "DC/PluginUI"
     open var deviceSelectView: DeviceSelectView? = null
     val selectedDevice: Device?

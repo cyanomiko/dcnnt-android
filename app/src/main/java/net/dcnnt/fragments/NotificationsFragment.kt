@@ -28,7 +28,7 @@ import kotlin.concurrent.thread
 data class AppInfo(val name: String, val title: String,
                    val icon: ImageView, val isSystem: Boolean, var filter: NotificationFilter)
 
-class NotificationsFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView) {
+class NotificationsFragment: BasePluginFargment() {
     override val TAG = "DC/Notifications"
     var conf: NotificationsPluginConf = APP.pm.getConfig("nots", 0) as NotificationsPluginConf
     var appListView: LinearLayout? = null
@@ -36,8 +36,10 @@ class NotificationsFragment(toolbarView: Toolbar): BasePluginFargment(toolbarVie
     val appFiltersTextViews = hashMapOf<String, TextView>()
     val apps = hashMapOf<String, AppInfo>()
     val appNotsSettingsViews = hashMapOf<String, View>()
+    var toolbarView: Toolbar? = null
 
-    override fun prepareToolbar() {
+    override fun prepareToolbar(toolbarView: Toolbar) {
+        this.toolbarView = toolbarView
         toolbarView.menu.also { menu ->
             menu.clear()
             menu.add(R.string.disable_all).setOnMenuItemClickListener { disableAllEntries() }
@@ -139,7 +141,7 @@ class NotificationsFragment(toolbarView: Toolbar): BasePluginFargment(toolbarVie
 
     override fun onSelectedDeviceChanged() {
         val uin = selectedDevice?.uin ?: 0
-        toolbarView.menu.getItem(1).isVisible = (uin != 0)
+        toolbarView?.menu?.getItem(1)?.isVisible = (uin != 0)
         conf = APP.pm.getConfig("nots", selectedDevice?.uin ?: 0) as NotificationsPluginConf
         Log.d(TAG, "Conf for device $uin: ${conf.uin}")
         updateAppsFilters()

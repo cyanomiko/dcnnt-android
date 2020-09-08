@@ -20,6 +20,7 @@ import android.graphics.BitmapFactory
 import android.media.ThumbnailUtils
 import android.os.Parcelable
 import androidx.appcompat.widget.Toolbar
+import androidx.core.os.bundleOf
 import net.dcnnt.ui.*
 
 
@@ -85,8 +86,7 @@ class FileEntryView(context: Context,
 }
 
 
-class UploadFileFragment(toolbarView: Toolbar,
-                         private val intent: Intent? = null): BasePluginFargment(toolbarView) {
+class UploadFileFragment: BasePluginFargment() {
     override val TAG = "DC/UploadUI"
     private val READ_REQUEST_CODE = 42
     private lateinit var selectButton: Button
@@ -97,11 +97,19 @@ class UploadFileFragment(toolbarView: Toolbar,
     val pluginRunning = AtomicBoolean(false)
     private lateinit var filesView: LinearLayout
     private var mainView: View? = null
+    private var intent: Intent? = null
     private lateinit var notification: ProgressNotification
     private lateinit var unitBytesStr: String
     private lateinit var statusCancelStr: String
     private lateinit var notificationUploadStr: String
     private lateinit var notificationUploadCompleteStr: String
+
+    companion object {
+        private const val ARG_INTENT = "intent"
+        fun newInstance(intent: Intent? = null) = UploadFileFragment().apply {
+            arguments = bundleOf(ARG_INTENT to intent)
+        }
+    }
 
     private fun selectFiles() {
         startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
@@ -321,6 +329,11 @@ class UploadFileFragment(toolbarView: Toolbar,
             }
         }
         return null
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        intent = arguments?.getParcelable(ARG_INTENT)
     }
 
     override fun onStart() {

@@ -20,7 +20,7 @@ import net.dcnnt.ui.*
 import kotlin.concurrent.thread
 
 
-class DeviceManagerFragment(toolbarView: Toolbar): DCFragment(toolbarView) {
+class DeviceManagerFragment: DCFragment() {
     val TAG = "DC/DMFragment"
     lateinit var deviceListView: VerticalLayout
     private lateinit var deviceNotAtAllStr: String

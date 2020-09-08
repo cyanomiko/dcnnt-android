@@ -21,13 +21,13 @@ import net.dcnnt.ui.ConfListView
 import net.dcnnt.ui.DCFragment
 
 
-class SettingsFragment(toolbarView: Toolbar): DCFragment(toolbarView) {
+class SettingsFragment: DCFragment() {
     val TAG = "DC/SettingsFragment"
     private var notificationConfView: BoolInputView? = null
     private val CODE_SAVE_SETTINGS = 141
     private val CODE_LOAD_SETTINGS = 142
 
-    override fun prepareToolbar() {
+    override fun prepareToolbar(toolbarView: Toolbar) {
         toolbarView.menu.also { menu ->
             menu.clear()
             menu.add(R.string.dump_settings).setOnMenuItemClickListener { dumpSettings() }

@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ScrollView
 import androidx.appcompat.widget.Toolbar
+import androidx.core.os.bundleOf
 import net.dcnnt.R
 import net.dcnnt.core.*
 import net.dcnnt.ui.DCFragment
@@ -15,9 +16,16 @@ import net.dcnnt.ui.TextInputView
 import net.dcnnt.ui.VerticalLayout
 
 
-class DeviceEditFragment(toolbarView: Toolbar, val uin: Int): DCFragment(toolbarView) {
+class DeviceEditFragment: DCFragment() {
     val TAG = "DC/DeviceEditFragment"
-    val device = APP.dm.devices[uin]
+    var device: Device? = null
+
+    companion object {
+        private const val ARG_UIN = "uin"
+        fun newInstance(uin: Int) = DeviceEditFragment().apply {
+            arguments = bundleOf(ARG_UIN to uin)
+        }
+    }
 
     fun fragmentMainView(context: Context) = ScrollView(context).apply {
         addView(VerticalLayout(context).apply {
@@ -52,6 +60,11 @@ class DeviceEditFragment(toolbarView: Toolbar, val uin: Int): DCFragment(toolbar
                 }
             })
         })
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        device = APP.dm.devices[arguments?.getInt(ARG_UIN) ?: return]
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

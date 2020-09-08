@@ -212,7 +212,7 @@ class DownloadingFileView(context: Context,
 }
 
 
-class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView) {
+class DownloadFileFragment: BasePluginFargment() {
     override val TAG = "DC/DownloadUI"
     val selectedEntries = mutableListOf<RemoteEntry>()
     val selectedEntriesView = mutableMapOf<Long, DownloadingFileView>()
@@ -238,7 +238,7 @@ class DownloadFileFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView
     private lateinit var notificationDownloadCanceledStr: String
     private lateinit var notificationDownloadFailedStr: String
 
-    override fun prepareToolbar() {
+    override fun prepareToolbar(toolbarView: Toolbar) {
         toolbarView.menu.also { menu ->
             menu.clear()
             menu.add(R.string.sort_by_name).setOnMenuItemClickListener { setSorting(context, FileSort.NAME) }

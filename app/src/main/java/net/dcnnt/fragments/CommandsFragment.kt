@@ -16,7 +16,7 @@ import net.dcnnt.ui.*
 import kotlin.concurrent.thread
 
 
-class CommandsFragment(toolbarView: Toolbar): BasePluginFargment(toolbarView) {
+class CommandsFragment: BasePluginFargment() {
     override val TAG = "DC/Commands"
     var remoteCommands: List<RemoteCommand> = listOf()
     var commandsListView: LinearLayout? = null

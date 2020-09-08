@@ -47,13 +47,13 @@ class Navigation(private val toolbarView: Toolbar,
      */
     fun start() {
         val transaction = supportFragmentManager.beginTransaction()
-        val fragment = DeviceManagerFragment(toolbarView)
+        val fragment = DeviceManagerFragment()
         transaction.add(fragmentContainerId, fragment)
         transaction.commit()
         usedFargments["/dm"] = fragment
         stack.add("/dm")
         currentFragment = fragment
-        fragment.prepareToolbar()
+        fragment.prepareToolbar(toolbarView)
     }
 
     /**
@@ -65,23 +65,22 @@ class Navigation(private val toolbarView: Toolbar,
     fun go(link: String, args: List<Any?>, createNew: Boolean = false) {
         val key = "$link : $args"
         ((if (createNew) null else usedFargments[key]) ?: when (link) {
-            "/dm" -> DeviceManagerFragment(toolbarView)
-            "/settings" -> SettingsFragment(toolbarView)
+            "/dm" -> DeviceManagerFragment()
+            "/settings" -> SettingsFragment()
             "/device" -> {
                 val uin = args.firstOrNull()
                 Log.i(TAG, "args = $args, uin = $uin")
                 when(uin is Int) {
-                    true -> DeviceEditFragment(toolbarView, uin)
+                    true -> DeviceEditFragment.newInstance(uin)
                     false -> null
                 }
             }
-            "/download" -> DownloadFileFragment(toolbarView)
-            "/upload" -> UploadFileFragment(
-                toolbarView,
+            "/download" -> DownloadFileFragment()
+            "/upload" -> UploadFileFragment.newInstance(
                 args.filterIsInstance<Intent>().firstOrNull()
             )
-            "/commands" -> CommandsFragment(toolbarView)
-            "/notifications" -> NotificationsFragment(toolbarView)
+            "/commands" -> CommandsFragment()
+            "/notifications" -> NotificationsFragment()
             else -> null
         })?.also { fragment ->
             supportFragmentManager.beginTransaction().also { transaction ->
@@ -91,7 +90,7 @@ class Navigation(private val toolbarView: Toolbar,
                 transaction.commit()
             }
             currentFragment = fragment
-            fragment.prepareToolbar()
+            fragment.prepareToolbar(toolbarView)
         }
     }
 
@@ -110,7 +109,7 @@ class Navigation(private val toolbarView: Toolbar,
                     it.commit()
                 }
                 currentFragment = fragment
-                fragment.prepareToolbar()
+                fragment.prepareToolbar(toolbarView)
                 return true
             }
         }
