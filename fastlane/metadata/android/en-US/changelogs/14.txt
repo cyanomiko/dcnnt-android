@@ -1,0 +1,5 @@
+* Import/export app data
+* Auto-search devices
+* Crush logs
+* Enhanced notifications for downloads
+* Fixed some bugs and crushes
