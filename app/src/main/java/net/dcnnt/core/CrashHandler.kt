@@ -4,11 +4,12 @@ import java.io.File
 
 
 class DCCrashHandler(val app: App, private val defaultHandler: Thread.UncaughtExceptionHandler?): Thread.UncaughtExceptionHandler {
-    private val SUFFIX = ".crash.txt"
+    val SUFFIX = ".crash.txt"
     private val MAX_FILES = 10
+    val path = "${app.directory}/log"
 
     override fun uncaughtException(thread: Thread, exception: Throwable) {
-        val directory = File("${app.directory}/log")
+        val directory = File(path)
         if (!directory.exists()) directory.mkdirs()
         val oldCrushLogs = directory.listFiles()?.filter {
             it.isFile and it.absolutePath.endsWith(SUFFIX)

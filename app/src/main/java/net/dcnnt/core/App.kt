@@ -50,6 +50,7 @@ class App : Application() {
     lateinit var pm: PluginManager
     lateinit var downloadsDirectory: Uri
     lateinit var rootDirectory: Uri
+    lateinit var crashHandler: DCCrashHandler
     var activity: MainActivity? = null
     val isDCNotificationListenerServiceRunning = AtomicBoolean(false)
 
@@ -87,7 +88,9 @@ class App : Application() {
     private fun initCrashHandler() {
         val oldHandler = Thread.getDefaultUncaughtExceptionHandler()
         if (oldHandler !is DCCrashHandler) {
-            Thread.setDefaultUncaughtExceptionHandler(DCCrashHandler(this, oldHandler))
+            Thread.setDefaultUncaughtExceptionHandler(DCCrashHandler(this, oldHandler).apply {
+                crashHandler = this
+            })
         }
     }
 

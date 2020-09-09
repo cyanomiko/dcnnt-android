@@ -81,6 +81,7 @@ class Navigation(private val toolbarView: Toolbar,
             )
             "/commands" -> CommandsFragment()
             "/notifications" -> NotificationsFragment()
+            "/log" -> LogDirectoryFragment()
             else -> null
         })?.also { fragment ->
             supportFragmentManager.beginTransaction().also { transaction ->
@@ -140,21 +141,23 @@ class MainActivity : AppCompatActivity() {
         navMenuEl.menu.also {
             it.add(0, Menu.FIRST + 0, Menu.NONE, R.string.menu_devices)
             it.add(0, Menu.FIRST + 1, Menu.NONE, R.string.menu_settings)
-            it.add(0, Menu.FIRST + 2, Menu.NONE, R.string.menu_upload)
-            it.add(0, Menu.FIRST + 3, Menu.NONE, R.string.menu_download)
-            it.add(0, Menu.FIRST + 4, Menu.NONE, R.string.menu_commands)
-            it.add(0, Menu.FIRST + 5, Menu.NONE, R.string.menu_notifications)
-            it.add(0, Menu.FIRST + 6, Menu.NONE, R.string.menu_exit)
+            it.add(0, Menu.FIRST + 2, Menu.NONE, R.string.menu_logs)
+            it.add(0, Menu.FIRST + 3, Menu.NONE, R.string.menu_upload)
+            it.add(0, Menu.FIRST + 4, Menu.NONE, R.string.menu_download)
+            it.add(0, Menu.FIRST + 5, Menu.NONE, R.string.menu_commands)
+            it.add(0, Menu.FIRST + 6, Menu.NONE, R.string.menu_notifications)
+            it.add(0, Menu.FIRST + 7, Menu.NONE, R.string.menu_exit)
         }
         navMenuEl.setNavigationItemSelectedListener {
             drawerEl.closeDrawer(navMenuEl)
             if (it.itemId == Menu.FIRST + 0) navigation.go("/dm", listOf())
             if (it.itemId == Menu.FIRST + 1) navigation.go("/settings", listOf())
-            if (it.itemId == Menu.FIRST + 2) navigation.go("/upload", listOf())
-            if (it.itemId == Menu.FIRST + 3) navigation.go("/download", listOf())
-            if (it.itemId == Menu.FIRST + 4) navigation.go("/commands", listOf())
-            if (it.itemId == Menu.FIRST + 5) navigation.go("/notifications", listOf())
-            if (it.itemId == Menu.FIRST + 6) exitDialog()
+            if (it.itemId == Menu.FIRST + 2) navigation.go("/log", listOf())
+            if (it.itemId == Menu.FIRST + 3) navigation.go("/upload", listOf())
+            if (it.itemId == Menu.FIRST + 4) navigation.go("/download", listOf())
+            if (it.itemId == Menu.FIRST + 5) navigation.go("/commands", listOf())
+            if (it.itemId == Menu.FIRST + 6) navigation.go("/notifications", listOf())
+            if (it.itemId == Menu.FIRST + 7) exitDialog()
             return@setNavigationItemSelectedListener true
         }
         navigation.start()
