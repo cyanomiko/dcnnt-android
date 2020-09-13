@@ -18,6 +18,7 @@ class ProgressNotification(val context: Context) {
     private var notificationId: Int = 0
     private var progressMax: Long = 1000L
     private var builder = NotificationCompat.Builder(context, "net.dcnnt.progress")
+    private var smallIconId: Int? = null
     var isNew = true
 
     /**
@@ -30,6 +31,7 @@ class ProgressNotification(val context: Context) {
     fun create(iconId: Int, title: String, text: String, max: Long) {
         notificationId = (System.currentTimeMillis() and 0xFFFFFF).toInt()
         progressMax = max
+        smallIconId = iconId
         builder.setSmallIcon(iconId)
                .setContentTitle(title)
                .setContentText("$text (0%)")
@@ -52,6 +54,7 @@ class ProgressNotification(val context: Context) {
         uiProgressCur = uiProgressNew
         builder.setContentText("$text ($uiProgressCur%)")
                .setProgress(uiProgressMax, uiProgressCur, false)
+        smallIconId?.also { builder.setSmallIcon(it) }
         NotificationManagerCompat.from(context).notify(notificationId, builder.build())
     }
 
@@ -64,6 +67,7 @@ class ProgressNotification(val context: Context) {
         builder.setContentTitle(title)
                .setContentText("$text (100%)")
                .setProgress(0, 0, false)
+        smallIconId?.also { builder.setSmallIcon(it) }
         icon?.also { builder.setLargeIcon(it) }
         intent?.also { builder.setContentIntent(PendingIntent.getActivity(context, 113, intent, 0)) }
         with(NotificationManagerCompat.from(context)) {
