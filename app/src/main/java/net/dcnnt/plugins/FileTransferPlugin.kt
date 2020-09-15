@@ -12,16 +12,6 @@ import java.io.File
 import java.nio.ByteBuffer
 
 
-data class RemoteEntry(val name: String, val size: Long, val index: Long? = null, val children: List<RemoteEntry>? = null) {
-    val isDir: Boolean = (index == null)
-    var progress: Int = 0
-    var localUri: Uri? = null
-    var localFile: File? = null
-    var status = FileEntryStatus.WAIT
-    var data: ByteArray? = null
-}
-
-
 class FileTransferPluginConf(directory: String, uin: Int):
     PluginConf(directory, "file", uin) {
     val downloadDir = StringEntry(this, "downloadDir", 0, 4096, "").init()
@@ -48,30 +38,30 @@ class FileTransferPlugin(app: App, device: Device): Plugin<FileTransferPluginCon
         return true
     }
 
-    fun processRemoteDirData(data: JSONArray): List<RemoteEntry> {
-        val result = mutableListOf<RemoteEntry>()
+    private fun processRemoteDirData(data: JSONArray): List<FileEntry> {
+        val result = mutableListOf<FileEntry>()
         for (i in 0 until data.length()) data.optJSONObject(i)?.also {
             val name = it.getString("name")
-            val node_type = it.getString("node_type")
+            val nodeType = it.getString("node_type")
             val size = it.getLong("size")
-            when (node_type) {
-                "file" -> result.add(RemoteEntry(name, size, index = it.getLong("index")))
-                "directory" -> result.add(RemoteEntry(name, size,
-                    children = processRemoteDirData(it.getJSONArray("children"))))
+            when (nodeType) {
+                "file" -> result.add(FileEntry(name, size, remoteIndex = it.getLong("index")))
+                "directory" -> result.add(FileEntry(name, size,
+                    remoteChildren = processRemoteDirData(it.getJSONArray("children"))))
             }
         }
         result.sortWith(compareBy { "${!it.isDir}${it.name}" })
         return result
     }
 
-    fun listRemoteDir(path: List<String>): RemoteEntry {
+    fun listRemoteDir(path: List<String>): FileEntry {
         val res = rpc("list", mapOf())
         Log.d(TAG, "$res")
         if (res is JSONArray) {
-            return RemoteEntry("${device.name} shared files",
-                res.length().toLong(), children = processRemoteDirData(res))
+            return FileEntry("${device.name} shared files",
+                res.length().toLong(), remoteChildren = processRemoteDirData(res))
         }
-        return RemoteEntry("${device.name} shared files", 0, children = listOf())
+        return FileEntry("${device.name} shared files", 0, remoteChildren = listOf())
     }
 
     fun uploadFile(file: FileEntry, contentResolver: ContentResolver,
@@ -79,8 +69,8 @@ class FileTransferPlugin(app: App, device: Device): Plugin<FileTransferPluginCon
         val inp = if (file.data != null) {
             ByteArrayInputStream(file.data)
         } else {
-            contentResolver.openInputStream(file.uri)
-                ?: return DCResult(false, "URI open fail")
+            val uri = file.localUri ?: return DCResult(false, "No URI presented")
+            contentResolver.openInputStream(uri) ?: return DCResult(false, "URI open fail")
         }
         val size = file.size
         val resp = (rpc("upload", mapOf("name" to file.name, "size" to size))
@@ -112,7 +102,7 @@ class FileTransferPlugin(app: App, device: Device): Plugin<FileTransferPluginCon
         return DCResult(false,"Rejected by server")
     }
 
-    fun safeFile(file: File): File? {
+    private fun safeFile(file: File): File? {
         if (!file.exists()) return file
         for (i in 1 .. 0xFFFF) {
             val safeFile = File("${file.parent ?: "/"}/${file.nameWithoutExtension}_$i.${file.extension}")
@@ -121,7 +111,7 @@ class FileTransferPlugin(app: App, device: Device): Plugin<FileTransferPluginCon
         return null
     }
 
-    fun downloadFile(entry: RemoteEntry, contentResolver: ContentResolver,
+    fun downloadFile(entry: FileEntry, contentResolver: ContentResolver,
                      progressCallback: (cur: Long, total: Long, part: Long) -> Unit): DCResult {
         if (Environment.getExternalStorageState() != Environment.MEDIA_MOUNTED) {
             return DCResult(false,"Storage not mounted")
@@ -129,15 +119,15 @@ class FileTransferPlugin(app: App, device: Device): Plugin<FileTransferPluginCon
         val downloadsDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).absolutePath
         val file = safeFile(File("$downloadsDirectory/$directory/${entry.name}"))
             ?: return DCResult(false, "Could not create safe name for file")
-        Log.d(TAG, "Safe name for file ${file.absolutePath}")
         entry.localFile = file
+        Log.d(TAG, "Safe name for file ${file.absolutePath}")
         val uri = Uri.fromFile(file)
         entry.localUri = uri
         Log.d(TAG, "Open new file URI: $uri")
         val fd = contentResolver.openOutputStream(uri)
             ?: return DCResult(false, "Could not open file")
         Log.d(TAG, "send request")
-        val resp = (rpc("download", mapOf("index" to entry.index, "size" to entry.size)) as? JSONObject)
+        val resp = (rpc("download", mapOf("index" to entry.remoteIndex, "size" to entry.size)) as? JSONObject)
             ?: return DCResult(false,"Incorrect response")
         var recBytes: Long = 0
         var buf: ByteArray
@@ -163,7 +153,7 @@ class FileTransferPlugin(app: App, device: Device): Plugin<FileTransferPluginCon
                 progressCallback(recBytes, entry.size, PART.toLong())
             }
             rpcSend("confirm", mapOf("code" to 0))
-            entry.status = FileEntryStatus.DONE
+            entry.status = FileStatus.DONE
             return DCResult(true,"OK", data = entry.name)
         }
         return DCResult(false,"Request rejected")

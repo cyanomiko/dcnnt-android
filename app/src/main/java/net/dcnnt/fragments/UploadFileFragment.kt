@@ -38,21 +38,21 @@ class FileEntryView(context: Context,
             setImageResource(R.drawable.ic_cancel)
             setOnClickListener { onCancel() }
         }
-        fragment.selectedEntriesView[entry.uri] = this
+        fragment.selectedEntriesView[entry.localUri] = this
     }
 
     private fun onCancel() {
         synchronized(entry) {
             when (entry.status) {
-                FileEntryStatus.WAIT -> {
+                FileStatus.WAIT -> {
                     this.visibility = View.GONE
-                    entry.status = FileEntryStatus.CANCEL
+                    entry.status = FileStatus.CANCEL
                     if (!fragment.pluginRunning.get()) {
                         fragment.selectedList.remove(entry)
                     }
                 }
-                FileEntryStatus.RUN -> {
-                    entry.status = FileEntryStatus.CANCEL
+                FileStatus.RUN -> {
+                    entry.status = FileStatus.CANCEL
                 }
                 else -> {
                 }
@@ -69,7 +69,7 @@ class FileEntryView(context: Context,
         try {
             bitmap = ThumbnailUtils.extractThumbnail(
                 BitmapFactory.decodeByteArray(
-                    context?.contentResolver?.openInputStream(entry.uri)?.readBytes() ?: return,
+                    context?.contentResolver?.openInputStream(entry.localUri ?: return)?.readBytes() ?: return,
                     0, entry.size.toInt()
                 ),
                 iconView.width, iconView.height
@@ -93,7 +93,7 @@ class UploadFileFragment: BasePluginFargment() {
     private lateinit var uploadButton: Button
     private lateinit var cancelButton: Button
     val selectedList = mutableListOf<FileEntry>()
-    val selectedEntriesView = mutableMapOf<Uri, FileEntryView>()
+    val selectedEntriesView = mutableMapOf<Uri?, FileEntryView>()
     val pluginRunning = AtomicBoolean(false)
     private lateinit var filesView: LinearLayout
     private var mainView: View? = null
@@ -103,6 +103,8 @@ class UploadFileFragment: BasePluginFargment() {
     private lateinit var statusCancelStr: String
     private lateinit var notificationUploadStr: String
     private lateinit var notificationUploadCompleteStr: String
+    private lateinit var notificationUploadCanceledStr: String
+    private lateinit var notificationUploadFailedStr: String
 
     companion object {
         private const val ARG_INTENT = "intent"
@@ -131,17 +133,17 @@ class UploadFileFragment: BasePluginFargment() {
                 FileTransferPlugin(APP, device).apply {
                     init()
                     connect()
-                    val waitingEntries = selectedList.filter { it.status == FileEntryStatus.WAIT }
+                    val waitingEntries = selectedList.filter { it.status == FileStatus.WAIT }
                     notification.create(R.drawable.ic_upload,
                         notificationUploadStr,
                         "0/${waitingEntries.size}",
                         1000L * waitingEntries.size)
                     waitingEntries.forEachIndexed { index, it ->
                         synchronized(it) {
-                            if (it.status != FileEntryStatus.WAIT) {
-                                Log.d(TAG, "Skip ${it.uri} (${it.name})")
-                                if (it.status == FileEntryStatus.CANCEL) {
-                                    selectedEntriesView[it.uri]?.apply {
+                            if (it.status != FileStatus.WAIT) {
+                                Log.d(TAG, "Skip ${it.localUri} (${it.name})")
+                                if (it.status == FileStatus.CANCEL) {
+                                    selectedEntriesView[it.localUri]?.apply {
                                         text = "${it.size} $unitBytesStr - $statusCancelStr"
                                         actionView.setImageResource(R.drawable.ic_block)
                                     }
@@ -149,20 +151,20 @@ class UploadFileFragment: BasePluginFargment() {
                                 return@forEachIndexed
                             }
                             breakTransfer = false
-                            it.status = FileEntryStatus.RUN
+                            it.status = FileStatus.RUN
                         }
-                        Log.d(TAG, "Upload ${it.uri} (${it.name})")
+                        Log.d(TAG, "Upload ${it.localUri} (${it.name})")
                         var progress = 0
                         var res: DCResult
                         activity?.runOnUiThread {
-                            selectedEntriesView[it.uri]?.also { v -> v.text = "0/${it.size} $unitBytesStr" }
+                            selectedEntriesView[it.localUri]?.also { v -> v.text = "0/${it.size} $unitBytesStr" }
                         }
                         try {
                             res = uploadFile(it, context.contentResolver) { cur: Long, total: Long, _: Long ->
                                 val progressCur = (1000 * cur / total).toInt()
-                                breakTransfer = it.status == FileEntryStatus.CANCEL
+                                breakTransfer = it.status == FileStatus.CANCEL
                                 activity?.runOnUiThread {
-                                    selectedEntriesView[it.uri]?.also { v ->
+                                    selectedEntriesView[it.localUri]?.also { v ->
                                         v.text = "$cur/$total $unitBytesStr"
                                         if (progressCur != progress) {
                                             progress = progressCur
@@ -176,10 +178,10 @@ class UploadFileFragment: BasePluginFargment() {
                         } catch (e: Exception) {
                             res = DCResult(false, e.message ?: "$e")
                         }
-                        it.status = FileEntryStatus.DONE
+                        it.status = FileStatus.DONE
                         Log.d(TAG, "Upload done (${it.name}) - ${res.message}")
                         activity?.runOnUiThread {
-                            selectedEntriesView[it.uri]?.apply {
+                            selectedEntriesView[it.localUri]?.apply {
                                 text = "${it.size} $unitBytesStr - ${res.message}"
                                 actionView.setImageResource(when(res.success) {
                                     true -> R.drawable.ic_done
@@ -206,8 +208,8 @@ class UploadFileFragment: BasePluginFargment() {
     fun cancelAllFiles() {
         selectedList.forEach {
             synchronized(it) {
-                if ((it.status == FileEntryStatus.WAIT) or (it.status == FileEntryStatus.RUN)) {
-                    it.status = FileEntryStatus.CANCEL
+                if ((it.status == FileStatus.WAIT) or (it.status == FileStatus.RUN)) {
+                    it.status = FileStatus.CANCEL
                 }
             }
         }
@@ -301,7 +303,7 @@ class UploadFileFragment: BasePluginFargment() {
                     .filter { c -> c.isLetterOrDigit() or (c == '_') }
                 val data = text.toByteArray()
                 val uriFake = Uri.fromParts("data", "", "")
-                selectedList.add(FileEntry(uriFake, "$title.txt", data.size.toLong(), data))
+                selectedList.add(FileEntry( "$title.txt", data.size.toLong(), localUri = uriFake, data = data))
             } else {
                 selectedList.add(getFileInfoFromUri(context, uri) ?: return)
             }
@@ -319,6 +321,8 @@ class UploadFileFragment: BasePluginFargment() {
         statusCancelStr = getString(R.string.status_cancel)
         notificationUploadStr = getString(R.string.notification_upload)
         notificationUploadCompleteStr = getString(R.string.notification_upload_complete)
+        notificationUploadCanceledStr = getString(R.string.notification_upload_canceled)
+        notificationUploadFailedStr = getString(R.string.notification_upload_failed)
         mainView?.also { return it }
         container?.context?.also { context ->
             notification = ProgressNotification(context)

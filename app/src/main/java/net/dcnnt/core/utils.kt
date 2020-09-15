@@ -14,9 +14,21 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-
-enum class FileEntryStatus { WAIT, RUN, CANCEL, DONE, FAIL }
-data class FileEntry(val uri: Uri, val name: String, val size: Long, var data: ByteArray? = null, var status: FileEntryStatus = FileEntryStatus.WAIT)
+enum class FileStatus { WAIT, RUN, CANCEL, DONE, FAIL }
+data class FileEntry(
+    val name: String,
+    val size: Long,
+    var status: FileStatus = FileStatus.WAIT,
+    var data: ByteArray? = null,
+    var localUri: Uri? = null,
+    var localFile: File? = null,
+    val remoteIndex: Long? = null,
+    val remoteChildren: List<FileEntry>? = null
+) {
+    val isDir: Boolean = ((remoteIndex == null) and (remoteChildren != null))
+    val isLocal: Boolean = ((remoteIndex == null) and (remoteChildren == null))
+    val isRemote: Boolean = !isLocal
+}
 
 fun getFileInfoFromUri(context: Context, uri: Uri): FileEntry? {
     when {
@@ -28,12 +40,12 @@ fun getFileInfoFromUri(context: Context, uri: Uri): FileEntry? {
                 val name = getString(nameIndex)
                 val size = getLong(sizeIndex)
                 close()
-                return FileEntry(uri, name, size)
+                return FileEntry(name, size, localUri = uri)
             }
         }
         "${uri.scheme}".toLowerCase(Locale.ROOT) == "file" -> {
             File(uri.path ?: return null).let {
-                return FileEntry(uri, it.name, it.length())
+                return FileEntry(it.name, it.length(), localUri = uri)
             }
         }
     }

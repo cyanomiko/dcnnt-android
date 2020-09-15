@@ -1,7 +1,6 @@
 package net.dcnnt.fragments
 
 import android.Manifest
-import net.dcnnt.plugins.RemoteEntry
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -38,7 +37,7 @@ enum class FileSort {NAME, TYPE, SIZE}
 
 class RemoteEntryView(context: Context,
                       private val fragment: DownloadFileFragment,
-                      private val remoteEntry: RemoteEntry,
+                      private val remoteEntry: FileEntry,
                       private val isUp: Boolean = false): EntryView(context) {
     private val fragmentContext = context
     private val sizeUnits = context.getString(if (remoteEntry.isDir) R.string.unit_entries else R.string.unit_bytes)
@@ -99,7 +98,7 @@ class RemoteEntryView(context: Context,
 
 class DownloadingFileView(context: Context,
                           private val fragment: DownloadFileFragment,
-                          private val remoteEntry: RemoteEntry): EntryView(context) {
+                          private val remoteEntry: FileEntry): EntryView(context) {
     val TAG = "DC/DownloadingFileView"
     val notification = ProgressNotification(context)
     init {
@@ -109,20 +108,20 @@ class DownloadingFileView(context: Context,
         iconView.setImageResource(fileIconByPath(remoteEntry.name))
         actionView.setImageResource(R.drawable.ic_cancel)
         actionView.setOnClickListener { onActionViewClicked() }
-        fragment.selectedEntriesView[remoteEntry.index as Long] = this
+        fragment.selectedEntriesView[remoteEntry.remoteIndex as Long] = this
     }
 
     private fun onActionViewClicked() {
         synchronized(remoteEntry) {
             when (remoteEntry.status) {
-                FileEntryStatus.WAIT -> {
+                FileStatus.WAIT -> {
                     this.visibility = View.GONE
-                    remoteEntry.status = FileEntryStatus.CANCEL
+                    remoteEntry.status = FileStatus.CANCEL
                     if (!fragment.pluginRunning.get()) {
                         fragment.selectedEntries.remove(remoteEntry)
                     }
                 }
-                FileEntryStatus.RUN -> { remoteEntry.status = FileEntryStatus.CANCEL }
+                FileStatus.RUN -> { remoteEntry.status = FileStatus.CANCEL }
                 else -> {}
             }
         }
@@ -162,7 +161,7 @@ class DownloadingFileView(context: Context,
     fun createFileIntent(isOpen: Boolean = true): Intent? {
         val file = remoteEntry.localFile ?: return null
         val uri = FileProvider.getUriForFile(context.applicationContext, "net.dcnnt", file)
-        val mime = mimeTypeByPath(file.path)
+        val mime = mimeTypeByPath(uri.toString())
         val action = if (isOpen) Intent.ACTION_VIEW else Intent.ACTION_SEND
         val intent = Intent(action)
         intent.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -189,7 +188,7 @@ class DownloadingFileView(context: Context,
             actionView.setImageResource(R.drawable.ic_block)
         }
         if (!doNotificationStuff) return
-        if (remoteEntry.status == FileEntryStatus.CANCEL) {
+        if (remoteEntry.status == FileStatus.CANCEL) {
             notification.complete(notificationDownloadCanceledStr, "$currentNum/$waitingCount - ${remoteEntry.name}")
         } else {
             if (res.success) {
@@ -214,15 +213,15 @@ class DownloadingFileView(context: Context,
 
 class DownloadFileFragment: BasePluginFargment() {
     override val TAG = "DC/DownloadUI"
-    val selectedEntries = mutableListOf<RemoteEntry>()
+    val selectedEntries = mutableListOf<FileEntry>()
     val selectedEntriesView = mutableMapOf<Long, DownloadingFileView>()
     private val WRITE_EXTERNAL_STORAGE_CODE = 1
     private lateinit var selectButton: Button
     private lateinit var downloadButton: Button
     private lateinit var cancelButton: Button
     private var hasWriteFilePermission = false
-    private var remotePath = mutableListOf<RemoteEntry>()
-    private var remoteRoot: RemoteEntry = RemoteEntry("root", 0, children = listOf())
+    private var remotePath = mutableListOf<FileEntry>()
+    private var remoteRoot: FileEntry = FileEntry("root", 0, remoteChildren = listOf())
     val pluginRunning = AtomicBoolean(false)
     private lateinit var filesView: VerticalLayout
     private var downloadViewMode = false
@@ -268,7 +267,7 @@ class DownloadFileFragment: BasePluginFargment() {
         }
     }
 
-    fun setFileSelection(entry: RemoteEntry, value: Boolean) {
+    fun setFileSelection(entry: FileEntry, value: Boolean) {
         if (value) {
             selectedEntries.add(entry)
         } else {
@@ -276,16 +275,16 @@ class DownloadFileFragment: BasePluginFargment() {
         }
     }
 
-    fun setDirSelection(entry: RemoteEntry, value: Boolean) {
+    fun setDirSelection(entry: FileEntry, value: Boolean) {
         setFileSelection(entry, value)
-        entry.children?.forEach {
+        entry.remoteChildren?.forEach {
             setFileSelection(it, value)
             if (it.isDir) setDirSelection(it, value)
         }
     }
 
     private fun updateFilesView(context: Context) {
-        val rootChildren = remoteRoot.children ?: return showNoSharedFilesMessage(context)
+        val rootChildren = remoteRoot.remoteChildren ?: return showNoSharedFilesMessage(context)
         if (rootChildren.isEmpty()) return showNoSharedFilesMessage(context)
         if (rootChildren.size == 1) {
             openRemoteDir(context, rootChildren[0])
@@ -302,7 +301,7 @@ class DownloadFileFragment: BasePluginFargment() {
         filesView.addView(TextBlockView(context, noSharedFilesStr))
     }
 
-    private fun showRemoteDir(context: Context, entry: RemoteEntry) {
+    private fun showRemoteDir(context: Context, entry: FileEntry) {
         downloadButton.visibility = View.VISIBLE
         cancelButton.visibility = View.GONE
         selectButton.visibility = View.VISIBLE
@@ -313,21 +312,21 @@ class DownloadFileFragment: BasePluginFargment() {
             else -> remotePath[remotePath.lastIndex - 1]
         }?.also {
             filesView.addView(RemoteEntryView(context, this,
-                RemoteEntry("..", it.size, null, listOf()), true))
+                FileEntry("..", it.size, FileStatus.WAIT, remoteChildren = listOf()), true))
         }
         when (sortBy) {
-            FileSort.NAME -> entry.children?.sortedBy { "${!it.isDir} ${it.name.toUpperCase(Locale.getDefault())}" }
-            FileSort.TYPE -> entry.children?.sortedBy {
+            FileSort.NAME -> entry.remoteChildren?.sortedBy { "${!it.isDir} ${it.name.toUpperCase(Locale.getDefault())}" }
+            FileSort.TYPE -> entry.remoteChildren?.sortedBy {
                 val locale = Locale.getDefault()
                 val extensionUpper = it.name.split('.').lastOrNull()?.toUpperCase(locale) ?: ""
                 val nameUpper = it.name.toUpperCase(locale)
                 "${!it.isDir} $extensionUpper $nameUpper"
             }
-            FileSort.SIZE -> entry.children?.sortedBy { if (it.isDir) it.size else (0xFFFFFFFF + it.size) }
+            FileSort.SIZE -> entry.remoteChildren?.sortedBy { if (it.isDir) it.size else (0xFFFFFFFF + it.size) }
         }?.forEach { filesView.addView(RemoteEntryView(context, this, it)) }
     }
 
-    fun openRemoteDir(context: Context, entry: RemoteEntry) {
+    fun openRemoteDir(context: Context, entry: FileEntry) {
         remotePath.add(entry)
         showRemoteDir(context, entry)
     }
@@ -350,8 +349,8 @@ class DownloadFileFragment: BasePluginFargment() {
     private fun cancelAllFiles() {
         selectedEntries.forEach {
             synchronized(it) {
-                if ((it.status == FileEntryStatus.WAIT) or (it.status == FileEntryStatus.RUN)) {
-                    it.status = FileEntryStatus.CANCEL
+                if ((it.status == FileStatus.WAIT) or (it.status == FileStatus.RUN)) {
+                    it.status = FileStatus.CANCEL
                 }
             }
         }
@@ -389,13 +388,13 @@ class DownloadFileFragment: BasePluginFargment() {
         }
     }
 
-    private fun notifyDownloadStart(waiting: List<RemoteEntry>, currentNum: Int, current: RemoteEntry,
+    private fun notifyDownloadStart(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
                                     totalSize: Long, totalDoneSize: Long, currentDoneSize: Long) {
         val policy = APP.conf.downloadNotificationPolicy.value
         val currentName = current.name
         val n: ProgressNotification = when (policy) {
             "one" -> notification
-            "all" -> selectedEntriesView[current.index]?.notification ?: return
+            "all" -> selectedEntriesView[current.remoteIndex]?.notification ?: return
             else -> return
         }
         if ((n.isNew and (policy == "one")) or (policy == "all")) {
@@ -407,13 +406,13 @@ class DownloadFileFragment: BasePluginFargment() {
         }
     }
 
-    private fun notifyDownloadProgress(waiting: List<RemoteEntry>, currentNum: Int, current: RemoteEntry,
+    private fun notifyDownloadProgress(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
                                        totalSize: Long, totalDoneSize: Long, currentDoneSize: Long) {
         val policy = APP.conf.downloadNotificationPolicy.value
         val currentName = current.name
         val n: ProgressNotification = when (policy) {
             "one" -> notification
-            "all" -> selectedEntriesView[current.index]?.notification ?: return
+            "all" -> selectedEntriesView[current.remoteIndex]?.notification ?: return
             else -> return
         }
         if (policy == "all") {
@@ -425,11 +424,11 @@ class DownloadFileFragment: BasePluginFargment() {
         }
     }
 
-    private fun notifyDownloadEnd(waiting: List<RemoteEntry>, currentNum: Int, current: RemoteEntry,
+    private fun notifyDownloadEnd(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
                                   totalSize: Long, totalDoneSize: Long, result: DCResult) {
         val policy = APP.conf.downloadNotificationPolicy.value
         val currentName = current.name
-        selectedEntriesView[current.index]?.also { v ->
+        selectedEntriesView[current.remoteIndex]?.also { v ->
             activity?.runOnUiThread {
                 v.updateOnEnd(
                     result,
@@ -445,7 +444,7 @@ class DownloadFileFragment: BasePluginFargment() {
         }
         if (policy == "one") {
             if (currentNum == (waiting.size - 1)) {
-                if (selectedEntries.all { it.status == FileEntryStatus.CANCEL }) {
+                if (selectedEntries.all { it.status == FileStatus.CANCEL }) {
                     notification.complete(notificationDownloadCanceledStr,"${waiting.size}/${waiting.size}")
                 } else {
                     notification.complete(notificationDownloadCompleteStr, "${waiting.size}/${waiting.size}")
@@ -465,7 +464,7 @@ class DownloadFileFragment: BasePluginFargment() {
         downloadButton.visibility = View.GONE
         cancelButton.visibility = View.VISIBLE
         enableDownloadView(context)
-        val waitingEntries = selectedEntries.filter { (it.status == FileEntryStatus.WAIT) and !it.isDir }
+        val waitingEntries = selectedEntries.filter { (it.status == FileStatus.WAIT) and !it.isDir }
         var totalSize = (LongArray(waitingEntries.size) { waitingEntries[it].size }).sum()
         var totalDoneSize = 0L
         var totalDoneSizePre = 0L
@@ -480,10 +479,10 @@ class DownloadFileFragment: BasePluginFargment() {
                         var currentDoneSize = 0L
                         totalDoneSizePre = totalDoneSize
                         synchronized(it) {
-                            if (it.status != FileEntryStatus.WAIT) {
-                                Log.d(TAG, "Skip ${it.index} (${it.name})")
-                                if (it.status == FileEntryStatus.CANCEL) {
-                                    selectedEntriesView[it.index]?.apply {
+                            if (it.status != FileStatus.WAIT) {
+                                Log.d(TAG, "Skip ${it.remoteIndex} (${it.name})")
+                                if (it.status == FileStatus.CANCEL) {
+                                    selectedEntriesView[it.remoteIndex]?.apply {
                                         text = "${it.size} $unitBytesStr - $statusCancelStr"
                                         actionView.setImageResource(R.drawable.ic_block)
                                     }
@@ -495,7 +494,7 @@ class DownloadFileFragment: BasePluginFargment() {
                                 breakTransfer = false
                                 connect()
                             }
-                            it.status = FileEntryStatus.RUN
+                            it.status = FileStatus.RUN
                         }
                         var progress = 0
                         var res: DCResult
@@ -507,9 +506,9 @@ class DownloadFileFragment: BasePluginFargment() {
                                     currentDoneSize = cur
                                 }
                                 val progressCur = (1000 * cur / total).toInt()
-                                breakTransfer = it.status == FileEntryStatus.CANCEL
+                                breakTransfer = it.status == FileStatus.CANCEL
                                 activity?.runOnUiThread {
-                                    selectedEntriesView[it.index]?.also { v ->
+                                    selectedEntriesView[it.remoteIndex]?.also { v ->
                                         v.text = "$cur/$total $unitBytesStr"
                                         if (progressCur != progress) {
                                             progress = progressCur
