@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="conf_app_uin_title">UIN do dispositivo</string>
+    <string name="conf_app_name_title">Nome do dispositivo</string>
+    <string name="conf_app_description_title">Informações do dispositivo</string>
+    <string name="conf_app_password_title">Senha do dispositivo</string>
+    <string name="conf_app_cellularData_title">Dados móveis</string>
+    <string name="conf_app_cellularData_info">Permitir a operação através da rede celular</string>
+    <string name="conf_app_notificationListenerService_title">Serviço de Notificação</string>
+    <string name="conf_app_notificationListenerService_info">Permitir o acesso a notificações</string>
+    <string name="conf_app_downloadNotificationPolicy_title">Notificações sobre download</string>
+    <string name="conf_app_downloadNotificationPolicy_info">Como mostrar notificações para arquivos baixados</string>
+    <string name="conf_app_downloadNotificationPolicy_no">Não mostrar</string>
+    <string name="conf_app_downloadNotificationPolicy_one">Uma para todos os arquivos</string>
+    <string name="conf_app_downloadNotificationPolicy_all">Para cada arquivo</string>
+    <string name="conf_app_autoSearch_title">Encontrar automaticamente os dispositivos</string>
+    <string name="conf_app_autoSearch_info">Encontre os dispositivos automaticamente ao iniciar o aplicativo</string>
+</resources>
