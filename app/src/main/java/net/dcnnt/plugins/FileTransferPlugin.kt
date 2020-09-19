@@ -1,14 +1,17 @@
 package net.dcnnt.plugins
 
 import android.content.ContentResolver
+import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
+import androidx.documentfile.provider.DocumentFile
 import net.dcnnt.core.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.OutputStream
 import java.nio.ByteBuffer
 
 
@@ -25,16 +28,18 @@ class FileTransferPlugin(app: App, device: Device): Plugin<FileTransferPluginCon
     override val MARK = "file"
     override val NAME = "File Transfer"
     var breakTransfer = false
-    lateinit var directory: String
+    lateinit var downloadDir: DocumentFile
+    lateinit var context: Context
 
     companion object {
         const val PART = 65532
         const val THUMBNAIL_THRESHOLD = 10 * 1024 * 1024
     }
 
-    override fun init(): Boolean {
-        super.init()
-        directory = conf.downloadDir.value
+    override fun init(context: Context?): Boolean {
+        super.init(context)
+        this.context = context ?: throw PluginException("No context passed")
+        downloadDir = DocumentFile.fromTreeUri(this.context, Uri.parse(app.conf.downloadDirectory.value)) ?: throw PluginException("Couldn't open download dir")
         return true
     }
 
@@ -102,11 +107,25 @@ class FileTransferPlugin(app: App, device: Device): Plugin<FileTransferPluginCon
         return DCResult(false,"Rejected by server")
     }
 
-    private fun safeFile(file: File): File? {
+    private fun _safeFile(file: File): File? {
         if (!file.exists()) return file
         for (i in 1 .. 0xFFFF) {
             val safeFile = File("${file.parent ?: "/"}/${file.nameWithoutExtension}_$i.${file.extension}")
             if (!safeFile.exists()) return safeFile
+        }
+        return null
+    }
+
+    private fun safeFileName(initialName: String): String? {
+        val existingNames: MutableSet<String> = mutableSetOf()
+        downloadDir.listFiles().forEach { f -> f.name?.also { existingNames.add(it) } }
+        if (!existingNames.contains(initialName)) return initialName
+        val file = File(initialName)
+        val name = file.nameWithoutExtension
+        val extension = file.extension
+        for (i in 1 .. 0xFFFF) {
+            val newName = "$name-$i.$extension"
+            if (!existingNames.contains(newName)) return newName
         }
         return null
     }
@@ -116,12 +135,11 @@ class FileTransferPlugin(app: App, device: Device): Plugin<FileTransferPluginCon
         if (Environment.getExternalStorageState() != Environment.MEDIA_MOUNTED) {
             return DCResult(false,"Storage not mounted")
         }
-        val downloadsDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).absolutePath
-        val file = safeFile(File("$downloadsDirectory/$directory/${entry.name}"))
-            ?: return DCResult(false, "Could not create safe name for file")
-        entry.localFile = file
-        Log.d(TAG, "Safe name for file ${file.absolutePath}")
-        val uri = Uri.fromFile(file)
+        val fileName = safeFileName(entry.name)
+            ?: return DCResult(false, "No safe name for file")
+        val file = downloadDir.createFile("*/*", fileName)
+            ?: return DCResult(false, "Failed to create file")
+        val uri = file.uri
         entry.localUri = uri
         Log.d(TAG, "Open new file URI: $uri")
         val fd = contentResolver.openOutputStream(uri)

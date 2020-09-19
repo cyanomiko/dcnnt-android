@@ -364,7 +364,7 @@ class DownloadFileFragment: BasePluginFargment() {
                 thread {
                     pluginRunning.set(true)
                     try {
-                        plugin.init()
+                        plugin.init(context)
                         plugin.connect()
                         remoteRoot = plugin.listRemoteDir(listOf("/"))
                         remotePath.clear()
@@ -473,7 +473,7 @@ class DownloadFileFragment: BasePluginFargment() {
             pluginRunning.set(true)
             try {
                 FileTransferPlugin(APP, device).apply {
-                    init()
+                    init(context)
                     connect()
                     waitingEntries.forEachIndexed { index, it ->
                         var currentDoneSize = 0L

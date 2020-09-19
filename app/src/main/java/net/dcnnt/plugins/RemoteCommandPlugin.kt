@@ -17,11 +17,6 @@ class RemoteCommandPlugin(app: App, device: Device): Plugin<RemoteCommandPluginC
     override val MARK = "rcmd"
     override val NAME = "Remote Commands"
 
-    override fun init(): Boolean {
-        super.init()
-        return true
-    }
-
     fun list(): List<RemoteCommand> {
         val res = (rpc("list", mapOf()) as? JSONArray) ?: return listOf()
         val commandsList = mutableListOf<RemoteCommand>()

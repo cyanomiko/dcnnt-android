@@ -1,5 +1,6 @@
 package net.dcnnt.core
 
+import android.content.Context
 import android.util.Log
 import net.dcnnt.plugins.FileTransferPluginConf
 import net.dcnnt.plugins.NotificationsPluginConf
@@ -46,8 +47,9 @@ class PluginConnectionHeader (val preamble: ByteArray,
 
 data class DCResult(val success: Boolean, val message: String, val data: Any? = null)
 
-class DCTimeoutException(message:String): Exception(message)
-class DCAuthException(message:String): Exception(message)
+open class PluginException(message: String): Exception(message)
+class DCTimeoutException(message: String): PluginException(message)
+class DCAuthException(message: String): PluginException(message)
 
 abstract class Plugin<T: PluginConf>(val app: App, val device: Device) {
     abstract val TAG: String
@@ -108,7 +110,7 @@ abstract class Plugin<T: PluginConf>(val app: App, val device: Device) {
         return decrypt(readAll(length), device.keyRecv) ?: byteArrayOf()
     }
 
-    open fun init(): Boolean {
+    open fun init(context: Context? = null): Boolean {
         byteMark = MARK.toByteArray()
         conf = (app.pm.getConfig(MARK, device.uin) as? T) ?: return false
         return true

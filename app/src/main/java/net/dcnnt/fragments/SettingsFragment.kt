@@ -3,7 +3,10 @@ package net.dcnnt.fragments
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -19,13 +22,17 @@ import net.dcnnt.core.nowString
 import net.dcnnt.ui.BoolInputView
 import net.dcnnt.ui.ConfListView
 import net.dcnnt.ui.DCFragment
+import net.dcnnt.ui.TextInputView
 
 
 class SettingsFragment: DCFragment() {
     val TAG = "DC/SettingsFragment"
     private var notificationConfView: BoolInputView? = null
+    private var downloadDirectoryView: TextInputView? = null
     private val CODE_SAVE_SETTINGS = 141
     private val CODE_LOAD_SETTINGS = 142
+    private val CODE_SELECT_DOWNLOAD_DIRECTORY = 143
+    private lateinit var confListView: ConfListView
 
     override fun prepareToolbar(toolbarView: Toolbar) {
         toolbarView.menu.also { menu ->
@@ -85,6 +92,11 @@ class SettingsFragment: DCFragment() {
                 Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show()
             }
         }
+        if ((requestCode == CODE_SELECT_DOWNLOAD_DIRECTORY) and (resultCode == Activity.RESULT_OK)) {
+            Log.d(TAG, "Tree URI: $uri")
+            APP.conf.downloadDirectory.setValue(uri.toString())
+            updateDownloadDirectoryView()
+        }
         return true
     }
 
@@ -97,14 +109,31 @@ class SettingsFragment: DCFragment() {
         APP.conf.notificationListenerService.updateValue(view.value)
     }
 
+    fun updateDownloadDirectoryView() {
+        (confListView.confViews[APP.conf.downloadDirectory.name] as? TextInputView)?.also {
+            it.text = Uri.decode(APP.conf.downloadDirectory.value.split("/").last())
+        }
+    }
+
     fun fragmentMainView(context: Context) = ScrollView(context).apply {
         addView(ConfListView(context).apply {
+            confListView = this
             init(APP.conf)
             (confViews[APP.conf.notificationListenerService.name] as? BoolInputView)?.also {
                 notificationConfView = it
                 it.onInput = { _ ->
                     context.startActivity(Intent(ACTION_NOTIFICATION_LISTENER_SETTINGS))
                     checkNotificationAccess()
+                }
+            }
+            (confViews[APP.conf.downloadDirectory.name] as? TextInputView)?.also {
+                downloadDirectoryView = it
+                it.setOnClickListener {
+                    activity?.startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            putExtra(DocumentsContract.EXTRA_INITIAL_URI, APP.conf.downloadDirectory.value)
+                        }
+                    }, CODE_SELECT_DOWNLOAD_DIRECTORY)
                 }
             }
         })
@@ -114,6 +143,7 @@ class SettingsFragment: DCFragment() {
         super.onResume()
         Log.d(TAG, "onResume")
         checkNotificationAccess()
+        updateDownloadDirectoryView()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

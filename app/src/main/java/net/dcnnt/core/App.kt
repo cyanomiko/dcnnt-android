@@ -37,6 +37,8 @@ class AppConf(path: String): DCConf(path) {
         SelectOption("one", R.string.conf_app_downloadNotificationPolicy_one),
         SelectOption("all", R.string.conf_app_downloadNotificationPolicy_all)
     ), 1).init()
+    val downloadDirectory = StringEntry(this, "downloadDirectory", 0, 200,
+        "content://com.android.providers.downloads.documents/tree/downloads").init()
 }
 
 
