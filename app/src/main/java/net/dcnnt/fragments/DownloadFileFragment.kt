@@ -521,11 +521,6 @@ class DownloadFileFragment: BasePluginFargment() {
                             res = DCResult(false, e.message ?: "$e")
                         }
                         if (res.success) {
-                            (res.data as? File)?.also { file ->
-                                it.localFile = file
-                                context.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
-                                    Uri.fromFile(file)))
-                            }
                             totalDoneSize = totalDoneSizePre + it.size
                         } else {
                             totalSize -= it.size

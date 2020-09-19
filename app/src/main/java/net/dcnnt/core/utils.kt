@@ -21,7 +21,6 @@ data class FileEntry(
     var status: FileStatus = FileStatus.WAIT,
     var data: ByteArray? = null,
     var localUri: Uri? = null,
-    var localFile: File? = null,
     val remoteIndex: Long? = null,
     val remoteChildren: List<FileEntry>? = null
 ) {
