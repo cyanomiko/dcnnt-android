@@ -159,8 +159,7 @@ class DownloadingFileView(context: Context,
     }
 
     fun createFileIntent(isOpen: Boolean = true): Intent? {
-        val file = remoteEntry.localFile ?: return null
-        val uri = FileProvider.getUriForFile(context.applicationContext, "net.dcnnt", file)
+        val uri = remoteEntry.localUri ?: return null
         val mime = mimeTypeByPath(uri.toString())
         val action = if (isOpen) Intent.ACTION_VIEW else Intent.ACTION_SEND
         val intent = Intent(action)
