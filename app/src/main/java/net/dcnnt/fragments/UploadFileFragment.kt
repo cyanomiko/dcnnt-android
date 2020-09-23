@@ -131,7 +131,7 @@ class UploadFileFragment: BasePluginFargment() {
             pluginRunning.set(true)
             try {
                 FileTransferPlugin(APP, device).apply {
-                    init()
+                    init(context)
                     connect()
                     val waitingEntries = selectedList.filter { it.status == FileStatus.WAIT }
                     notification.create(R.drawable.ic_upload,
