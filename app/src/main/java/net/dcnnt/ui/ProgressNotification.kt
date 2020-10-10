@@ -27,8 +27,11 @@ class ProgressNotification(val context: Context) {
      * @param title - title text
      * @param text - one line notification text (percentage added automatically)
      * @param max - max progress (internal value, not used in progress bar directly)
+     * @param icon - optional large icon
+     * @param intent - optional intent for notification
      */
-    fun create(iconId: Int, title: String, text: String, max: Long) {
+    fun create(iconId: Int, title: String, text: String, max: Long,
+               icon: Bitmap? = null, intent: Intent? = null) {
         notificationId = (System.currentTimeMillis() and 0xFFFFFF).toInt()
         progressMax = max
         smallIconId = iconId
@@ -39,6 +42,8 @@ class ProgressNotification(val context: Context) {
                .setOnlyAlertOnce(true)
                .setDefaults(0)
                .setProgress(uiProgressMax, uiProgressCur, false)
+        icon?.also { builder.setLargeIcon(it) }
+        intent?.also { builder.setContentIntent(PendingIntent.getActivity(context, 113, intent, 0)) }
         NotificationManagerCompat.from(context).notify(notificationId, builder.build())
         isNew = false
     }
@@ -62,6 +67,8 @@ class ProgressNotification(val context: Context) {
      * Update notification to display completion of operation
      * @param title - new title of notification
      * @param text - new text of notification  (percentage added automatically)
+     * @param icon - optional large icon
+     * @param intent - optional intent for notification
      */
     fun complete(title: String, text: String, icon: Bitmap? = null, intent: Intent? = null) {
         builder.setContentTitle(title)
