@@ -21,90 +21,17 @@ import android.media.ThumbnailUtils
 import android.os.Parcelable
 import androidx.appcompat.widget.Toolbar
 import androidx.core.os.bundleOf
+import net.dcnnt.MainActivity
 import net.dcnnt.ui.*
 
 
-class FileEntryView(context: Context,
-                    val fragment: UploadFileFragment,
-                    val entry: FileEntry): EntryView(context) {
-    private val THUMBNAIL_SIZE_THRESHOLD = 10 * 1024 * 1024
-    var thumbnailLoaded = false
-    init {
-        title = entry.name
-        text = "${entry.size} bytes"
-        progressView.progress = 0
-        iconView.setImageResource(fileIconByPath(entry.name))
-        actionView.apply {
-            setImageResource(R.drawable.ic_cancel)
-            setOnClickListener { onCancel() }
-        }
-        fragment.selectedEntriesView[entry.localUri] = this
-    }
-
-    private fun onCancel() {
-        synchronized(entry) {
-            when (entry.status) {
-                FileStatus.WAIT -> {
-                    this.visibility = View.GONE
-                    entry.status = FileStatus.CANCEL
-                    if (!fragment.pluginRunning.get()) {
-                        fragment.selectedList.remove(entry)
-                    }
-                }
-                FileStatus.RUN -> {
-                    entry.status = FileStatus.CANCEL
-                }
-                else -> {
-                }
-            }
-            if (fragment.selectedList.size == 0) {
-                fragment.updateFilesView(context)
-            }
-        }
-    }
-
-    fun loadThumbnail() {
-        val bitmap: Bitmap
-        if (entry.size > THUMBNAIL_SIZE_THRESHOLD) return
-        try {
-            bitmap = ThumbnailUtils.extractThumbnail(
-                BitmapFactory.decodeByteArray(
-                    context?.contentResolver?.openInputStream(entry.localUri ?: return)?.readBytes() ?: return,
-                    0, entry.size.toInt()
-                ),
-                iconView.width, iconView.height
-            )
-        } catch (e: Exception) {
-            return
-        }
-        fragment.activity?.runOnUiThread {
-            iconView.imageTintList = null
-            iconView.setImageBitmap(bitmap)
-        }
-        thumbnailLoaded = true
-    }
-}
-
-
-class UploadFileFragment: BasePluginFargment() {
+class UploadFileFragment: BaseFileFragment() {
     override val TAG = "DC/UploadUI"
     private val READ_REQUEST_CODE = 42
-    private lateinit var selectButton: Button
-    private lateinit var uploadButton: Button
-    private lateinit var cancelButton: Button
-    val selectedList = mutableListOf<FileEntry>()
-    val selectedEntriesView = mutableMapOf<Uri?, FileEntryView>()
-    val pluginRunning = AtomicBoolean(false)
     private lateinit var filesView: LinearLayout
     private var mainView: View? = null
     private var intent: Intent? = null
     private lateinit var notification: ProgressNotification
-    private lateinit var unitBytesStr: String
-    private lateinit var statusCancelStr: String
-    private lateinit var notificationUploadStr: String
-    private lateinit var notificationUploadCompleteStr: String
-    private lateinit var notificationUploadCanceledStr: String
-    private lateinit var notificationUploadFailedStr: String
 
     companion object {
         private const val ARG_INTENT = "intent"
@@ -113,19 +40,72 @@ class UploadFileFragment: BasePluginFargment() {
         }
     }
 
-    private fun selectFiles() {
-        startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+    override fun selectEntries(context: Context) {
+        activity?.startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
             type = "*/*"
         }, READ_REQUEST_CODE)
     }
 
+    fun loadThumbnails() {
+        for (i in 0 .. 3) {
+            selectedEntriesView.values.forEach {
+                if (!it.thumbnailLoaded) it.updateThumbnail()
+            }
+            Thread.sleep(500)
+        }
+    }
+
+    fun updateEntriesView(context: Context) {
+        selectedView.removeAllViews()
+        selectButton.visibility = View.VISIBLE
+        cancelButton.visibility = View.GONE
+        repeatButton.visibility = View.GONE
+        if (selectedEntries.size == 0) {
+            actionButton.visibility = View.GONE
+            selectedView.addView(TextBlockView(context, noEntriesStr))
+        } else {
+            for (entry in selectedEntries) selectedView.addView(RunningFileView(context, this, entry))
+            thread { loadThumbnails() }
+            actionButton.isClickable = true
+            actionButton.visibility = View.VISIBLE
+        }
+    }
+
+
+    private fun handleSelectEntries(context: Context, resultData: Intent?) {
+        selectedEntries.clear()
+        resultData?.data?.also { selectedEntries.add(getFileInfoFromUri(context, it) ?: return) }
+        resultData?.clipData?.also {
+            Log.d(TAG, "ClipData length = ${it.itemCount}")
+            for (i in 0 until it.itemCount) {
+                Log.d(TAG, it.getItemAt(i).uri.toString())
+                selectedEntries.add(getFileInfoFromUri(context, it.getItemAt(i).uri) ?: continue)
+            }
+        }
+        updateEntriesView(context)
+    }
+
+    override fun processAllEntries(context: Context) {
+        uploadFiles(context)
+    }
+
+    override fun processFailedEntries(context: Context) {
+        synchronized(selectedEntries) {
+            selectedEntries.removeAll { it.status == FileStatus.DONE }
+            selectedEntries.forEach { it.status = FileStatus.WAIT }
+        }
+        updateEntriesView(context)
+        uploadFiles(context)
+    }
+
     private fun uploadFiles(context: Context) {
         val device = selectedDevice ?: return
-        if (selectedList.isEmpty()) return
-        uploadButton.visibility = View.GONE
+        if (selectedEntries.isEmpty()) return
+        actionButton.visibility = View.GONE
         selectButton.visibility = View.GONE
+        repeatButton.visibility = View.GONE
         cancelButton.visibility = View.VISIBLE
         thread {
             pluginRunning.set(true)
@@ -133,9 +113,9 @@ class UploadFileFragment: BasePluginFargment() {
                 FileTransferPlugin(APP, device).apply {
                     init(context)
                     connect()
-                    val waitingEntries = selectedList.filter { it.status == FileStatus.WAIT }
+                    val waitingEntries = selectedEntries.filter { it.status == FileStatus.WAIT }
                     notification.create(R.drawable.ic_upload,
-                        notificationUploadStr,
+                        notificationRunningStr,
                         "0/${waitingEntries.size}",
                         1000L * waitingEntries.size)
                     waitingEntries.forEachIndexed { index, it ->
@@ -143,9 +123,11 @@ class UploadFileFragment: BasePluginFargment() {
                             if (it.status != FileStatus.WAIT) {
                                 Log.d(TAG, "Skip ${it.localUri} (${it.name})")
                                 if (it.status == FileStatus.CANCEL) {
-                                    selectedEntriesView[it.localUri]?.apply {
-                                        text = "${it.size} $unitBytesStr - $statusCancelStr"
-                                        actionView.setImageResource(R.drawable.ic_block)
+                                    activity?.runOnUiThread {
+                                        selectedEntriesView[it.idStr]?.apply {
+                                            text = "${it.size} $unitBytesStr - $statusCancelStr"
+                                            actionView.setImageResource(R.drawable.ic_block)
+                                        }
                                     }
                                 }
                                 return@forEachIndexed
@@ -157,14 +139,14 @@ class UploadFileFragment: BasePluginFargment() {
                         var progress = 0
                         var res: DCResult
                         activity?.runOnUiThread {
-                            selectedEntriesView[it.localUri]?.also { v -> v.text = "0/${it.size} $unitBytesStr" }
+                            selectedEntriesView[it.idStr]?.also { v -> v.text = "0/${it.size} $unitBytesStr" }
                         }
                         try {
                             res = uploadFile(it, context.contentResolver) { cur: Long, total: Long, _: Long ->
                                 val progressCur = (1000 * cur / total).toInt()
                                 breakTransfer = it.status == FileStatus.CANCEL
                                 activity?.runOnUiThread {
-                                    selectedEntriesView[it.localUri]?.also { v ->
+                                    selectedEntriesView[it.idStr]?.also { v ->
                                         v.text = "$cur/$total $unitBytesStr"
                                         if (progressCur != progress) {
                                             progress = progressCur
@@ -178,10 +160,12 @@ class UploadFileFragment: BasePluginFargment() {
                         } catch (e: Exception) {
                             res = DCResult(false, e.message ?: "$e")
                         }
-                        it.status = FileStatus.DONE
+                        if (it.status != FileStatus.CANCEL) {
+                            it.status = if (res.success) FileStatus.DONE else FileStatus.FAIL
+                        }
                         Log.d(TAG, "Upload done (${it.name}) - ${res.message}")
                         activity?.runOnUiThread {
-                            selectedEntriesView[it.localUri]?.apply {
+                            selectedEntriesView[it.idStr]?.apply {
                                 text = "${it.size} $unitBytesStr - ${res.message}"
                                 actionView.setImageResource(when(res.success) {
                                     true -> R.drawable.ic_done
@@ -196,100 +180,24 @@ class UploadFileFragment: BasePluginFargment() {
                 Log.e(TAG, "$e")
             }
             pluginRunning.set(false)
-            notification.complete(notificationUploadCompleteStr, "")
+            notification.complete(notificationCompleteStr, "")
+            val hideRepeatButton = selectedEntries.all { it.status == FileStatus.DONE }
             activity?.runOnUiThread {
                 cancelButton.visibility = View.GONE
                 selectButton.visibility = View.VISIBLE
-                uploadButton.visibility = View.GONE
+                actionButton.visibility = View.GONE
+                repeatButton.visibility = if (hideRepeatButton) View.GONE else View.VISIBLE
             }
         }
     }
 
-    fun cancelAllFiles() {
-        selectedList.forEach {
-            synchronized(it) {
-                if ((it.status == FileStatus.WAIT) or (it.status == FileStatus.RUN)) {
-                    it.status = FileStatus.CANCEL
-                }
-            }
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, resultData: Intent?) {
-        val cntx = context ?: return
-        Log.d(TAG, "requestCode = $requestCode, resultCode = $resultCode, resultData = $resultData")
+    override fun onActivityResult(mainActivity: MainActivity, requestCode: Int,
+                                  resultCode: Int, data: Intent?): Boolean {
+        Log.d(TAG, "requestCode = $requestCode, resultCode = $resultCode, resultData = $data")
         if (requestCode == READ_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
-            selectedList.clear()
-            resultData?.data?.also { selectedList.add(getFileInfoFromUri(cntx, it) ?: return) }
-            resultData?.clipData?.also {
-                Log.d(TAG, "ClipData length = ${it.itemCount}")
-                for (i in 0 until it.itemCount) {
-                    Log.d(TAG, it.getItemAt(i).uri.toString())
-                    selectedList.add(getFileInfoFromUri(cntx, it.getItemAt(i).uri) ?: continue)
-                }
-            }
-            updateFilesView(cntx)
+            handleSelectEntries(context ?: return true, data)
         }
-    }
-
-    fun loadThumbnails() {
-        for (i in 0 .. 3) {
-            selectedEntriesView.values.forEach {
-                if (!it.thumbnailLoaded) it.loadThumbnail()
-            }
-            Thread.sleep(500)
-        }
-    }
-
-    fun updateFilesView(context: Context) {
-        filesView.removeAllViews()
-        selectButton.visibility = View.VISIBLE
-        cancelButton.visibility = View.GONE
-        if (selectedList.size == 0) {
-            uploadButton.isClickable = false
-            uploadButton.visibility = View.GONE
-            filesView.addView(TextBlockView(context, getString(R.string.no_files_selected)))
-        } else {
-            for (info in selectedList) filesView.addView(FileEntryView(context, this, info))
-            thread { loadThumbnails() }
-            uploadButton.isClickable = true
-            uploadButton.visibility = View.VISIBLE
-        }
-    }
-
-    fun fragmentMainView(context: Context) = VerticalLayout(context).apply {
-        padding = context.dip(6)
-        addView(createDeviceSelectView(context))
-        addView(LinearLayout(context).apply {
-            val lp = LinearLayout.LayoutParams(LParam.W,  LParam.W, .5F)
-            addView(Button(context).apply {
-                text = context.getString(R.string.button_select_file)
-                setOnClickListener { selectFiles() }
-                LParam.set(this, lp)
-                selectButton = this
-            })
-            addView(Button(context).apply {
-                text = context.getString(R.string.button_upload)
-                isClickable = false
-                setOnClickListener { uploadFiles(context) }
-                LParam.set(this, lp)
-                uploadButton = this
-            })
-            addView(Button(context).apply {
-                text = context.getString(R.string.button_cancel)
-                setOnClickListener { cancelAllFiles() }
-                LParam.set(this, lp)
-                cancelButton = this
-                visibility = View.GONE
-            })
-        })
-        addView(ScrollView(context).apply {
-            LParam.set(this, LParam.mm())
-            addView(VerticalLayout(context).apply {
-                filesView = this
-                addView(TextBlockView(context, context.getString(R.string.no_files_selected)))
-            })
-        })
+        return true
     }
 
     fun processIntent(context: Context, intent: Intent) {
@@ -303,33 +211,28 @@ class UploadFileFragment: BasePluginFargment() {
                     .filter { c -> c.isLetterOrDigit() or (c == '_') }
                 val data = text.toByteArray()
                 val uriFake = Uri.fromParts("data", "", "")
-                selectedList.add(FileEntry( "$title.txt", data.size.toLong(), localUri = uriFake, data = data))
+                selectedEntries.add(FileEntry( "$title.txt", data.size.toLong(), localUri = uriFake, data = data))
             } else {
-                selectedList.add(getFileInfoFromUri(context, uri) ?: return)
+                selectedEntries.add(getFileInfoFromUri(context, uri) ?: return)
             }
         }
         if (intent.action == Intent.ACTION_SEND_MULTIPLE) {
             intent.getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)?.let {
-                it.forEach { selectedList.add(getFileInfoFromUri(context, (it as? Uri) ?: return) ?: return) }
+                it.forEach { selectedEntries.add(getFileInfoFromUri(context, (it as? Uri) ?: return) ?: return) }
             }
         }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         Log.d(TAG, "onCreateView")
-        unitBytesStr = getString(R.string.unit_bytes)
-        statusCancelStr = getString(R.string.status_cancel)
-        notificationUploadStr = getString(R.string.notification_upload)
-        notificationUploadCompleteStr = getString(R.string.notification_upload_complete)
-        notificationUploadCanceledStr = getString(R.string.notification_upload_canceled)
-        notificationUploadFailedStr = getString(R.string.notification_upload_failed)
         mainView?.also { return it }
         container?.context?.also { context ->
             notification = ProgressNotification(context)
             return fragmentMainView(context).apply {
-                intent?.also { processIntent(context, it) }
-                updateFilesView(context)
+                scrollView.addView(VerticalLayout(context).apply { selectedView = this })
                 mainView = this
+                intent?.also { processIntent(context, it) }
+                updateEntriesView(context)
             }
         }
         return null
@@ -338,6 +241,16 @@ class UploadFileFragment: BasePluginFargment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         intent = arguments?.getParcelable(ARG_INTENT)
+    }
+
+    override fun initStrings() {
+        super.initStrings()
+        noEntriesStr = getString(R.string.no_files_selected)
+        actionStr = getString(R.string.notification_upload)
+        notificationRunningStr = getString(R.string.notification_upload)
+        notificationCompleteStr = getString(R.string.notification_upload_complete)
+        notificationCanceledStr = getString(R.string.notification_upload_canceled)
+        notificationFailedStr = getString(R.string.notification_upload_failed)
     }
 
     override fun onStart() {

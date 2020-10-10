@@ -17,6 +17,8 @@
     <string name="restart_dialog_title">Stop/restart application?</string>
     <string name="restart_dialog_text">Process will be stopped immediately by system call</string>
     <string name="cancel">Cancel</string>
+    <string name="retry">Retry</string>
+    <string name="select">Select</string>
     <string name="restart">Restart</string>
     <string name="stop">Stop</string>
     <string name="sort_by">Sort by</string>

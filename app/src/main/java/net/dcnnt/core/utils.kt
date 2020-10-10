@@ -27,6 +27,7 @@ data class FileEntry(
     val isDir: Boolean = ((remoteIndex == null) and (remoteChildren != null))
     val isLocal: Boolean = ((remoteIndex == null) and (remoteChildren == null))
     val isRemote: Boolean = !isLocal
+    val idStr: String = "$name+$size+$localUri+$remoteIndex"
 }
 
 fun getFileInfoFromUri(context: Context, uri: Uri): FileEntry? {
