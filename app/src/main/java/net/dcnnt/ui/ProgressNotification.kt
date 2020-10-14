@@ -13,6 +13,7 @@ import kotlin.concurrent.thread
  * Supply class to show progress notifications
  */
 class ProgressNotification(val context: Context) {
+    private val minUpdateInterval = 500L
     private val uiProgressMax = 100
     private var uiProgressCur = 0
     private var notificationId: Int = 0
@@ -20,6 +21,7 @@ class ProgressNotification(val context: Context) {
     private var builder = NotificationCompat.Builder(context, "net.dcnnt.progress")
     private var smallIconId: Int? = null
     var isNew = true
+    var lastUpdateTime = 0L
 
     /**
      * Create and show new progress notification
@@ -36,6 +38,7 @@ class ProgressNotification(val context: Context) {
         progressMax = max
         smallIconId = iconId
         builder.setSmallIcon(iconId)
+               .setChannelId("net.dcnnt.progress")
                .setContentTitle(title)
                .setContentText("$text (0%)")
                .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -55,12 +58,17 @@ class ProgressNotification(val context: Context) {
      */
     fun update(text: String, progressCur: Long, forceUpdate: Boolean = false) {
         val uiProgressNew = ((100 * progressCur) / progressMax).toInt()
-        if ((uiProgressCur == uiProgressNew) and !forceUpdate) return
+        val currentTime = System.currentTimeMillis()
+        if (!forceUpdate) {
+            if (currentTime - lastUpdateTime < minUpdateInterval) return
+            if (uiProgressCur == uiProgressNew) return
+        }
         uiProgressCur = uiProgressNew
         builder.setContentText("$text ($uiProgressCur%)")
                .setProgress(uiProgressMax, uiProgressCur, false)
         smallIconId?.also { builder.setSmallIcon(it) }
         NotificationManagerCompat.from(context).notify(notificationId, builder.build())
+        lastUpdateTime = currentTime
     }
 
     /**
