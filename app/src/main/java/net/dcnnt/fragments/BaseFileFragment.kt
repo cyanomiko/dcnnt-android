@@ -97,9 +97,7 @@ class RunningFileView(context: Context,
                         actionView.setImageResource(R.drawable.ic_block)
                     }
                 }
-                FileStatus.DONE -> {
-                    // ToDo: Share downloaded file or do nothing
-                }
+                FileStatus.DONE -> {/* Set it up in other place */}
                 else -> {}
             }
         }
@@ -194,10 +192,9 @@ open class BaseFileFragment: BasePluginFargment() {
     lateinit var repeatButton: Button
     lateinit var selectedView: VerticalLayout
     private var downloadViewMode = false
-    private var mainView: View? = null
+    protected var mainView: View? = null
     lateinit var scrollView: ScrollView
-    private var downloadNotificationPolicy = APP.conf.downloadNotificationPolicy.value
-    private lateinit var notification: ProgressNotification
+    protected lateinit var notification: ProgressNotification
     lateinit var actionStr: String
     lateinit var noEntriesStr: String
     lateinit var unitBytesStr: String
@@ -221,13 +218,14 @@ open class BaseFileFragment: BasePluginFargment() {
         }
     }
 
-    fun showNoEntriesText(context: Context) {
-        actionButton.visibility = View.GONE
-        cancelButton.visibility = View.GONE
-        repeatButton.visibility = View.GONE
-        selectButton.visibility = View.VISIBLE
-        selectedView.removeAllViews()
-        selectedView.addView(TextBlockView(context, noEntriesStr))
+    fun setButtonsVisibilityOnEnd() {
+        val hideRepeatButton = selectedEntries.all { it.status == FileStatus.DONE }
+        activity?.runOnUiThread {
+            cancelButton.visibility = View.GONE
+            selectButton.visibility = View.VISIBLE
+            actionButton.visibility = View.GONE
+            repeatButton.visibility = if (hideRepeatButton) View.GONE else View.VISIBLE
+        }
     }
 
     open fun onSelectedDeviceChanged(context: Context) {}
@@ -303,15 +301,86 @@ open class BaseFileFragment: BasePluginFargment() {
         }
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        Log.d(TAG, "onCreateView, mainView = $mainView, downloadViewMode = $downloadViewMode")
-        mainView?.also { return it }
-        container?.context?.also { return fragmentMainView(it).apply { mainView = this } }
-        return null
-    }
+//    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+//        Log.d(TAG, "onCreateView, mainView = $mainView, downloadViewMode = $downloadViewMode")
+//        mainView?.also { return it }
+//        container?.context?.also { return fragmentMainView(it).apply { mainView = this } }
+//        return null
+//    }
 
     open fun initStrings() {
         unitBytesStr = getString(R.string.unit_bytes)
         statusCancelStr = getString(R.string.status_cancel)
     }
+
+    protected open fun getPolicy(): String = "all"
+
+    protected fun notifyDownloadStart(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
+                                    totalSize: Long, totalDoneSize: Long, currentDoneSize: Long) {
+        val policy = getPolicy()
+        val currentName = current.name
+        val n: ProgressNotification = when (policy) {
+            "one" -> notification
+            "all" -> selectedEntriesView[current.idStr]?.notification ?: return
+            else -> return
+        }
+        if ((n.isNew and (policy == "one")) or (policy == "all")) {
+            n.create(R.drawable.ic_download, notificationRunningStr,
+                "0/${current.size} - $currentName", 1000)
+        } else if (policy == "one") {
+            val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
+            n.update("$currentNum/${waiting.size} - $currentName", progress, true)
+        }
+    }
+
+    protected fun notifyDownloadProgress(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
+                                       totalSize: Long, totalDoneSize: Long, currentDoneSize: Long) {
+        val policy = getPolicy()
+        val currentName = current.name
+        val n: ProgressNotification = when (policy) {
+            "one" -> notification
+            "all" -> selectedEntriesView[current.idStr]?.notification ?: return
+            else -> return
+        }
+        if (policy == "all") {
+            val progress = if (current.size > 0) (1000L * currentDoneSize) / current.size else 1000L
+            n.update("$currentNum/${waiting.size} - $currentName", progress)
+        } else if (policy == "one") {
+            val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
+            n.update("$currentNum/${waiting.size} - $currentName", progress)
+        }
+    }
+
+    protected fun notifyDownloadEnd(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
+                                  totalSize: Long, totalDoneSize: Long, result: DCResult) {
+        val policy = getPolicy()
+        val currentName = current.name
+        selectedEntriesView[current.idStr]?.also { v ->
+            activity?.runOnUiThread {
+                v.updateOnEnd(
+                    result,
+                    unitBytesStr,
+                    policy == "all",
+                    notificationCanceledStr,
+                    notificationCompleteStr,
+                    notificationFailedStr,
+                    waiting.size,
+                    currentNum
+                )
+            }
+        }
+        if (policy == "one") {
+            if (currentNum == waiting.size) {
+                if (selectedEntries.all { it.status == FileStatus.CANCEL }) {
+                    notification.complete(notificationCanceledStr,"${waiting.size}/${waiting.size}")
+                } else {
+                    notification.complete(notificationCompleteStr, "${waiting.size}/${waiting.size}")
+                }
+            } else {
+                val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
+                notification.update("$currentNum/${waiting.size} - $currentName", progress, true)
+            }
+        }
+    }
+
 }

@@ -28,10 +28,7 @@ import net.dcnnt.ui.*
 class UploadFileFragment: BaseFileFragment() {
     override val TAG = "DC/UploadUI"
     private val READ_REQUEST_CODE = 42
-    private lateinit var filesView: LinearLayout
-    private var mainView: View? = null
     private var intent: Intent? = null
-    private lateinit var notification: ProgressNotification
 
     companion object {
         private const val ARG_INTENT = "intent"
@@ -100,6 +97,8 @@ class UploadFileFragment: BaseFileFragment() {
         uploadFiles(context)
     }
 
+    override fun getPolicy(): String = APP.conf.uploadNotificationPolicy.value
+
     private fun uploadFiles(context: Context) {
         val device = selectedDevice ?: return
         if (selectedEntries.isEmpty()) return
@@ -114,11 +113,15 @@ class UploadFileFragment: BaseFileFragment() {
                     init(context)
                     connect()
                     val waitingEntries = selectedEntries.filter { it.status == FileStatus.WAIT }
-                    notification.create(R.drawable.ic_upload,
-                        notificationRunningStr,
-                        "0/${waitingEntries.size}",
-                        1000L * waitingEntries.size)
+                    var totalSize = (LongArray(waitingEntries.size) { waitingEntries[it].size }).sum()
+                    var totalDoneSize = 0L
+                    var totalDoneSizePre = 0L
+//                    notification.create(R.drawable.ic_upload,
+//                        notificationRunningStr,
+//                        "0/${waitingEntries.size}",
+//                        1000L * waitingEntries.size)
                     waitingEntries.forEachIndexed { index, it ->
+                        var currentDoneSize = 0L
                         synchronized(it) {
                             if (it.status != FileStatus.WAIT) {
                                 Log.d(TAG, "Skip ${it.localUri} (${it.name})")
@@ -138,11 +141,16 @@ class UploadFileFragment: BaseFileFragment() {
                         Log.d(TAG, "Upload ${it.localUri} (${it.name})")
                         var progress = 0
                         var res: DCResult
+                        notifyDownloadStart(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
                         activity?.runOnUiThread {
                             selectedEntriesView[it.idStr]?.also { v -> v.text = "0/${it.size} $unitBytesStr" }
                         }
                         try {
                             res = uploadFile(it, context.contentResolver) { cur: Long, total: Long, _: Long ->
+                                if (cur > currentDoneSize) {
+                                    totalDoneSize += cur - currentDoneSize
+                                    currentDoneSize = cur
+                                }
                                 val progressCur = (1000 * cur / total).toInt()
                                 breakTransfer = it.status == FileStatus.CANCEL
                                 activity?.runOnUiThread {
@@ -151,8 +159,9 @@ class UploadFileFragment: BaseFileFragment() {
                                         if (progressCur != progress) {
                                             progress = progressCur
                                             v.progressView.progress = progressCur
-                                            notification.update("$index/${waitingEntries.size}",
-                                            1000L * index + progressCur)
+//                                            notification.update("$index/${waitingEntries.size}",
+//                                            1000L * index + progressCur)
+                                            notifyDownloadProgress(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
                                         }
                                     }
                                 }
@@ -163,31 +172,32 @@ class UploadFileFragment: BaseFileFragment() {
                         if (it.status != FileStatus.CANCEL) {
                             it.status = if (res.success) FileStatus.DONE else FileStatus.FAIL
                         }
-                        Log.d(TAG, "Upload done (${it.name}) - ${res.message}")
-                        activity?.runOnUiThread {
-                            selectedEntriesView[it.idStr]?.apply {
-                                text = "${it.size} $unitBytesStr - ${res.message}"
-                                actionView.setImageResource(when(res.success) {
-                                    true -> R.drawable.ic_done
-                                    false -> R.drawable.ic_block
-                                })
-                            }
+                        if (res.success) {
+                            totalDoneSize = totalDoneSizePre + it.size
+                        } else {
+                            totalSize -= it.size
+                            totalDoneSize = totalDoneSizePre
                         }
+                        notifyDownloadEnd(waitingEntries, index + 1, it, totalSize, totalDoneSize, res)
+//                        Log.d(TAG, "Upload done (${it.name}) - ${res.message}")
+//                        activity?.runOnUiThread {
+//                            selectedEntriesView[it.idStr]?.apply {
+//                                text = "${it.size} $unitBytesStr - ${res.message}"
+//                                actionView.setImageResource(when(res.success) {
+//                                    true -> R.drawable.ic_done
+//                                    false -> R.drawable.ic_block
+//                                })
+//                            }
+//                        }
                     }
                 }
             } catch (e: Exception) {
                 showError(context, e)
                 Log.e(TAG, "$e")
             }
+            //notification.complete(notificationCompleteStr, "")
+            setButtonsVisibilityOnEnd()
             pluginRunning.set(false)
-            notification.complete(notificationCompleteStr, "")
-            val hideRepeatButton = selectedEntries.all { it.status == FileStatus.DONE }
-            activity?.runOnUiThread {
-                cancelButton.visibility = View.GONE
-                selectButton.visibility = View.VISIBLE
-                actionButton.visibility = View.GONE
-                repeatButton.visibility = if (hideRepeatButton) View.GONE else View.VISIBLE
-            }
         }
     }
 
