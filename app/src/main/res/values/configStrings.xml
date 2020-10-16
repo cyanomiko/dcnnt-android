@@ -8,6 +8,8 @@
     <string name="conf_app_cellularData_info">Allow operation through cellular network</string>
     <string name="conf_app_notificationListenerService_title">Notification service</string>
     <string name="conf_app_notificationListenerService_info">Allow access to notifications</string>
+    <string name="conf_app_uploadNotificationPolicy_title">Upload notifications</string>
+    <string name="conf_app_uploadNotificationPolicy_info">How to show notifications for uploaded files</string>
     <string name="conf_app_downloadNotificationPolicy_title">Download notifications</string>
     <string name="conf_app_downloadNotificationPolicy_info">How to show notifications for downloaded files</string>
     <string name="conf_app_downloadNotificationPolicy_no">Do not show</string>
