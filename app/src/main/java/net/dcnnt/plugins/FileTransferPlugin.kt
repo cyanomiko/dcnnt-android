@@ -107,15 +107,6 @@ class FileTransferPlugin(app: App, device: Device): Plugin<FileTransferPluginCon
         return DCResult(false,"Rejected by server")
     }
 
-    private fun _safeFile(file: File): File? {
-        if (!file.exists()) return file
-        for (i in 1 .. 0xFFFF) {
-            val safeFile = File("${file.parent ?: "/"}/${file.nameWithoutExtension}_$i.${file.extension}")
-            if (!safeFile.exists()) return safeFile
-        }
-        return null
-    }
-
     private fun safeFileName(initialName: String): String? {
         val existingNames: MutableSet<String> = mutableSetOf()
         downloadDir.listFiles().forEach { f -> f.name?.also { existingNames.add(it) } }
