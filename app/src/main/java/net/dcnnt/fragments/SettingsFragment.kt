@@ -14,6 +14,7 @@ import android.view.ViewGroup
 import android.widget.ScrollView
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
+import androidx.core.os.bundleOf
 import net.dcnnt.MainActivity
 import net.dcnnt.R
 import net.dcnnt.core.ACTION_NOTIFICATION_LISTENER_SETTINGS
@@ -33,6 +34,15 @@ class SettingsFragment: DCFragment() {
     private val CODE_LOAD_SETTINGS = 142
     private val CODE_SELECT_DOWNLOAD_DIRECTORY = 143
     private lateinit var confListView: ConfListView
+
+    companion object {
+        private const val ARG_ACTION = "action"
+        const val ACTION_NONE = 0
+        const val ACTION_DOWNLOAD_DIR = 1
+        fun newInstance(action: Int) = SettingsFragment().apply {
+            arguments = bundleOf(ARG_ACTION to action)
+        }
+    }
 
     override fun prepareToolbar(toolbarView: Toolbar) {
         toolbarView.menu.also { menu ->
@@ -94,8 +104,9 @@ class SettingsFragment: DCFragment() {
         }
         if ((requestCode == CODE_SELECT_DOWNLOAD_DIRECTORY) and (resultCode == Activity.RESULT_OK)) {
             Log.d(TAG, "Tree URI: $uri")
-            APP.conf.downloadDirectory.setValue(uri.toString())
+            APP.conf.downloadDirectory.updateValue(uri.toString())
             updateDownloadDirectoryView()
+            if (arguments?.getInt(ARG_ACTION) == ACTION_DOWNLOAD_DIR) (activity as? MainActivity)?.navigation?.back()
         }
         return true
     }
@@ -144,6 +155,7 @@ class SettingsFragment: DCFragment() {
         Log.d(TAG, "onResume")
         checkNotificationAccess()
         updateDownloadDirectoryView()
+        if (arguments?.getInt(ARG_ACTION) == ACTION_DOWNLOAD_DIR) downloadDirectoryView?.callOnClick()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

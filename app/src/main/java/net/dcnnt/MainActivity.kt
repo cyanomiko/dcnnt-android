@@ -66,7 +66,10 @@ class Navigation(private val toolbarView: Toolbar,
         val key = "$link : $args"
         ((if (createNew) null else usedFargments[key]) ?: when (link) {
             "/dm" -> DeviceManagerFragment()
-            "/settings" -> SettingsFragment()
+            "/settings" -> {
+                val action = args.firstOrNull()
+                SettingsFragment.newInstance(if (action is Int) action else SettingsFragment.ACTION_NONE)
+            }
             "/device" -> {
                 val uin = args.firstOrNull()
                 Log.i(TAG, "args = $args, uin = $uin")
