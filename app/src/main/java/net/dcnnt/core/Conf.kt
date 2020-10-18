@@ -135,7 +135,7 @@ abstract class DCConf(val path: String) {
         val entriesNames = List(entries.size) { entries[it].name }
         extra.keys().forEach { if (!entriesNames.contains(it)) json.put(it, extra.opt(it)) }
         try {
-            File(path).writeText(json.toString())
+            File(path).writeText(json.toString(2))
             return true
         } catch (e: Exception) {
             Log.e(TAG, "Config '$confName': failed to write JSON to '$path' - $e")
