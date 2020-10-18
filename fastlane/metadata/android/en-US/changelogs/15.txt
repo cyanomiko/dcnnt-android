@@ -1,0 +1,4 @@
+* Initial support for Android 9+
+* Retry failed/canceled file operations
+* Brazilian Portuguese localisation
+* Enhanced notifications for uploads
