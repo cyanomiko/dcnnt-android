@@ -19,6 +19,7 @@
     <string name="cancel">Cancel</string>
     <string name="retry">Retry</string>
     <string name="select">Select</string>
+    <string name="configure">Configure</string>
     <string name="restart">Restart</string>
     <string name="stop">Stop</string>
     <string name="sort_by">Sort by</string>

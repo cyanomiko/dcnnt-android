@@ -2,34 +2,27 @@ package net.dcnnt.fragments
 
 import android.Manifest
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.Button
+import android.widget.ScrollView
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import androidx.core.graphics.drawable.toBitmap
+import androidx.documentfile.provider.DocumentFile
+import net.dcnnt.MainActivity
 import net.dcnnt.R
 import net.dcnnt.core.*
 import net.dcnnt.plugins.FileTransferPlugin
 import net.dcnnt.ui.*
-import java.io.File
 import java.util.*
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
-import kotlin.concurrent.withLock
 
 
 enum class FileSort {NAME, TYPE, SIZE}
@@ -102,6 +95,7 @@ class DownloadFileFragment: BaseFileFragment() {
     private var remotePath = mutableListOf<FileEntry>()
     private var remoteRoot = FileEntry("root", 0, remoteChildren = listOf())
     private var downloadViewMode = false
+    private var downloadDirectoryOk = false
     private var sortBy: FileSort = FileSort.NAME
     private lateinit var noSharedFilesStr: String
 
@@ -271,6 +265,17 @@ class DownloadFileFragment: BaseFileFragment() {
 
     override fun getPolicy(): String = APP.conf.downloadNotificationPolicy.value
 
+    fun checkDownloadDirectory() {
+        downloadDirectoryOk = try {
+            context?.let {
+                DocumentFile.fromTreeUri(it, Uri.parse(APP.conf.downloadDirectory.value))
+                    ?.canWrite()
+            } == true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     fun downloadFiles(context: Context) {
         if (!hasWriteFilePermission) return askWritePermission()
         val device = selectedDevice ?: return
@@ -311,7 +316,6 @@ class DownloadFileFragment: BaseFileFragment() {
                         var res: DCResult
                         notifyDownloadStart(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
                         try {
-                            Log.d(TAG, "T1 = ${System.currentTimeMillis()}")
                             res = downloadFile(it, context.contentResolver) { cur: Long, total: Long, _: Long ->
                                 if (cur > currentDoneSize) {
                                     totalDoneSize += cur - currentDoneSize
@@ -354,13 +358,35 @@ class DownloadFileFragment: BaseFileFragment() {
         }
     }
 
+    fun fragmentConfigureView(context: Context) = ScrollView(context).apply {
+        padding = context.dip(6)
+        addView(VerticalLayout(context).apply {
+            LParam.set(this, LParam.mm())
+            addView(TextBlockView(context, context.getString(R.string.directory_not_set)))
+            addView(Button(context).apply {
+                selectButton = this
+                text = context.getString(R.string.configure)
+                layoutParams = LParam.mw()
+                setOnClickListener {
+                    (activity as? MainActivity)?.navigation?.go(
+                        "/settings", listOf(SettingsFragment.ACTION_DOWNLOAD_DIR))
+                }
+            })
+        })
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mainView?.also { return it }
         container?.context?.also { context ->
             notification = ProgressNotification(context)
-            return fragmentMainView(context).apply {
-                scrollView.addView(VerticalLayout(context).apply { selectedView = this })
-                mainView = this
+            checkDownloadDirectory()
+            if (downloadDirectoryOk) {
+                return fragmentMainView(context).apply {
+                    scrollView.addView(VerticalLayout(context).apply { selectedView = this })
+                    mainView = this
+                }
+            } else {
+                return fragmentConfigureView(context)
             }
         }
         return null

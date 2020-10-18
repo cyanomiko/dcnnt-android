@@ -4,32 +4,21 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.ThumbnailUtils
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.*
-import androidx.appcompat.widget.Toolbar
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ScrollView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
-import androidx.core.graphics.drawable.toBitmap
 import net.dcnnt.R
 import net.dcnnt.core.*
-import net.dcnnt.plugins.FileTransferPlugin
 import net.dcnnt.ui.*
-import java.io.File
-import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.thread
-import kotlin.concurrent.withLock
 
 
 class RunningFileView(context: Context,
@@ -176,8 +165,6 @@ class RunningFileView(context: Context,
 }
 
 
-
-
 open class BaseFileFragment: BasePluginFargment() {
     override val TAG = "DC/FileUI"
     val selectedEntries = mutableListOf<FileEntry>()
@@ -300,13 +287,6 @@ open class BaseFileFragment: BasePluginFargment() {
             else -> {}
         }
     }
-
-//    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-//        Log.d(TAG, "onCreateView, mainView = $mainView, downloadViewMode = $downloadViewMode")
-//        mainView?.also { return it }
-//        container?.context?.also { return fragmentMainView(it).apply { mainView = this } }
-//        return null
-//    }
 
     open fun initStrings() {
         unitBytesStr = getString(R.string.unit_bytes)

@@ -15,4 +15,5 @@
     <string name="notification_download_complete">Download completo</string>
     <string name="notification_download_canceled">Download cancelado</string>
     <string name="notification_download_failed">Falha no download</string>
+    <string name="directory_not_set">O diretório de download não está definido</string>
 </resources>

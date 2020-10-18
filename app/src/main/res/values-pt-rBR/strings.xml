@@ -17,6 +17,9 @@
     <string name="restart_dialog_title">Parar/reiniciar aplicativo?</string>
     <string name="restart_dialog_text">O processo será interrompido imediatamente por uma chamada de sistema</string>
     <string name="cancel">Cancelar</string>
+    <string name="retry">Tentar novamente</string>
+    <string name="select">Selecione</string>
+    <string name="configure">Configurar</string>
     <string name="restart">Reiniciar</string>
     <string name="stop">Parar</string>
     <string name="sort_by">Ordenar por</string>
