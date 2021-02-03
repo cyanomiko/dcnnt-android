@@ -112,13 +112,14 @@ open class TextInputView(context: Context) : ListTileView(context) {
     var onInput: ((String) -> Unit)? = null
     var isNumeric: Boolean = false
 
-    init {
-        setOnClickListener {
-            val dialogInitialText = text
+    companion object {
+        fun inputDialog(context: Context, title: String, initialText: String,
+                        isNumeric: Boolean, handleInput: ((String) -> Unit)) {
             AlertDialog.Builder(context).apply {
                 var textEditView: EditText? = null
                 setNegativeButton(context.getString(R.string.cancel)) { _, _ -> }
-                setPositiveButton(context.getString(R.string.ok)) { _, _ -> handleInput(textEditView?.text.toString()) }
+                setPositiveButton(context.getString(R.string.ok)) { _, _ ->
+                    handleInput(textEditView?.text.toString()) }
                 setTitle(title)
                 setView(VerticalLayout(context).apply {
                     padding = context.dip(6)
@@ -127,7 +128,7 @@ open class TextInputView(context: Context) : ListTileView(context) {
                         textEditView = this
                         isSingleLine = true
                         text.clear()
-                        text.append(dialogInitialText)
+                        text.append(initialText)
                         setOnFocusChangeListener { _, _ ->
                             this.post {
                                 (context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager)
@@ -140,6 +141,8 @@ open class TextInputView(context: Context) : ListTileView(context) {
             }.create().show()
         }
     }
+
+    init { setOnClickListener { inputDialog(context, title, text, isNumeric) { handleInput(it) } } }
 
     open fun handleInput(input: String) {
         text = input
@@ -156,6 +159,19 @@ open class SelectInputView(context: Context) : ListTileView(context) {
     var options: MutableList<Option> = mutableListOf()
     var index: Int? = null
     var selectDisabled = false
+
+    companion object {
+        fun showListDialog(context: Context, title: String?, options: MutableList<Option>,
+                           handleInput: (Int, Option) -> Unit ) {
+            AlertDialog.Builder(context).apply {
+                title?.also { setTitle(title) }
+                setItems(Array(options.size) { options[it].title }) { d, index ->
+                    handleInput(index, options[index])
+                    d.dismiss()
+                }
+            }.create().show()
+        }
+    }
 
     init {
         setOnClickListener { showSelectionDialog() }
