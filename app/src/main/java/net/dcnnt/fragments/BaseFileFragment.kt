@@ -33,9 +33,16 @@ class RunningFileView(context: Context,
 
     init {
         title = entry.name
-        text = "${entry.size} ${context.getString(R.string.unit_bytes)}"
+        text = when (entry.entryType) {
+            EntryType.FILE -> "${entry.size} ${context.getString(R.string.unit_bytes)}"
+            EntryType.LINK -> "${entry.localUri}"
+        }
         progressView.progress = 0
-        iconView.setImageResource(fileIconByPath(entry.name))
+        val iconId: Int = when (entry.entryType) {
+            EntryType.FILE -> fileIconByPath(entry.name)
+            EntryType.LINK -> R.drawable.ic_http
+        }
+        iconView.setImageResource(iconId)
         actionView.setImageResource(R.drawable.ic_cancel)
         actionView.setOnClickListener { onActionViewClicked() }
         fragment.selectedEntriesView[entry.idStr] = this
@@ -97,6 +104,7 @@ class RunningFileView(context: Context,
      * @return bitmap or null
      */
     fun loadThumbnail(): Bitmap? {
+        if (entry.entryType != EntryType.FILE) return null
         if (entry.size > THUMBNAIL_SIZE_THRESHOLD) return null
         val uri = entry.localUri ?: return null
         try {
@@ -144,7 +152,7 @@ class RunningFileView(context: Context,
                     notificationDownloadCanceledStr: String, notificationDownloadCompleteStr: String,
                     notificationDownloadFailedStr: String, waitingCount: Int, currentNum: Int) {
         val icon = loadThumbnail()
-        text = "${entry.size} $unitBytesStr - ${res.message}"
+        if (entry.entryType == EntryType.FILE) text = "${entry.size} $unitBytesStr - ${res.message}"
         if (res.success) {
             updateSuccess(icon)
         } else {

@@ -15,6 +15,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 enum class FileStatus { WAIT, RUN, CANCEL, DONE, FAIL }
+enum class EntryType { FILE, LINK }
 data class FileEntry(
     val name: String,
     val size: Long,
@@ -22,7 +23,8 @@ data class FileEntry(
     var data: ByteArray? = null,
     var localUri: Uri? = null,
     val remoteIndex: Long? = null,
-    val remoteChildren: List<FileEntry>? = null
+    val remoteChildren: List<FileEntry>? = null,
+    val entryType: EntryType = EntryType.FILE
 ) {
     val isDir: Boolean = ((remoteIndex == null) and (remoteChildren != null))
     val isLocal: Boolean = ((remoteIndex == null) and (remoteChildren == null))
@@ -111,4 +113,9 @@ fun fileIcon(name: String?, mime: String?): Int {
 
 fun nowString(): String {
     return SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(Calendar.getInstance().time)
+}
+
+fun simplifyFilename(filename: String): String {
+    return filename.take(21).trim(' ', '-', '.').replace(' ', '_')
+        .filter { c -> c.isLetterOrDigit() or (c == '_') }
 }

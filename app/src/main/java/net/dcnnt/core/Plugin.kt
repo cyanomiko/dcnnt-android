@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import net.dcnnt.plugins.FileTransferPluginConf
 import net.dcnnt.plugins.NotificationsPluginConf
+import net.dcnnt.plugins.OpenerPluginConf
 import net.dcnnt.plugins.RemoteCommandPluginConf
 import org.json.JSONObject
 import java.io.File
@@ -206,6 +207,7 @@ class PluginManager(val app: App, val directory: String, private val pluginMarks
 
     private fun createConfig(mark: String, uin: Int): PluginConf = when(mark) {
         "file" -> FileTransferPluginConf(directory, uin)
+        "open" -> OpenerPluginConf(directory, uin)
         "rcmd" -> RemoteCommandPluginConf(directory, uin)
         "nots" -> NotificationsPluginConf(directory, uin)
         else -> throw IllegalArgumentException("Unknown plugin mark")

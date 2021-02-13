@@ -23,16 +23,16 @@ class FileTransferPluginConf(directory: String, uin: Int):
 }
 
 
-class FileTransferPlugin(app: App, device: Device): Plugin<FileTransferPluginConf>(app, device) {
+class FileTransferPlugin(app: App, device: Device): BaseFilePlugin<FileTransferPluginConf>(app, device) {
     override val TAG = "DC/File"
     override val MARK = "file"
     override val NAME = "File Transfer"
-    var breakTransfer = false
+//    var breakTransfer = false
     lateinit var downloadDir: DocumentFile
     lateinit var context: Context
 
     companion object {
-        const val PART = 65532
+//        const val PART = 65532
         const val THUMBNAIL_THRESHOLD = 10 * 1024 * 1024
     }
 
@@ -71,6 +71,12 @@ class FileTransferPlugin(app: App, device: Device): Plugin<FileTransferPluginCon
 
     fun uploadFile(file: FileEntry, contentResolver: ContentResolver,
                    progressCallback: (cur: Long, total: Long, part: Long) -> Unit): DCResult {
+        return sendFile(file, contentResolver, progressCallback)
+    }
+
+    /*
+    fun uploadFile(file: FileEntry, contentResolver: ContentResolver,
+                   progressCallback: (cur: Long, total: Long, part: Long) -> Unit): DCResult {
         val inp = if (file.data != null) {
             ByteArrayInputStream(file.data)
         } else {
@@ -106,6 +112,7 @@ class FileTransferPlugin(app: App, device: Device): Plugin<FileTransferPluginCon
         }
         return DCResult(false,"Rejected by server")
     }
+     */
 
     private fun safeFileName(initialName: String): String? {
         val existingNames: MutableSet<String> = mutableSetOf()

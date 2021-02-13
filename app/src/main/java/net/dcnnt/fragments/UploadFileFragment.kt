@@ -25,7 +25,7 @@ import net.dcnnt.MainActivity
 import net.dcnnt.ui.*
 
 
-class UploadFileFragment: BaseFileFragment() {
+open class UploadFileFragment: BaseFileFragment() {
     override val TAG = "DC/UploadUI"
     private val READ_REQUEST_CODE = 42
     private var intent: Intent? = null
@@ -71,7 +71,7 @@ class UploadFileFragment: BaseFileFragment() {
     }
 
 
-    private fun handleSelectEntries(context: Context, resultData: Intent?) {
+    fun handleSelectEntries(context: Context, resultData: Intent?) {
         selectedEntries.clear()
         resultData?.data?.also { selectedEntries.add(getFileInfoFromUri(context, it) ?: return) }
         resultData?.clipData?.also {
@@ -210,15 +210,13 @@ class UploadFileFragment: BaseFileFragment() {
         return true
     }
 
-    fun processIntent(context: Context, intent: Intent) {
+    open fun processIntent(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_SEND) {
             val uri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
             if (uri == null) {
                 val text = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
-                val title = (intent.getStringExtra(Intent.EXTRA_TITLE)
-                    ?: intent.getStringExtra(Intent.EXTRA_SUBJECT) ?: text)
-                    .take(21).trim(' ', '-', '.').replace(' ', '_')
-                    .filter { c -> c.isLetterOrDigit() or (c == '_') }
+                val title = simplifyFilename((intent.getStringExtra(Intent.EXTRA_TITLE)
+                    ?: intent.getStringExtra(Intent.EXTRA_SUBJECT) ?: text))
                 val data = text.toByteArray()
                 val uriFake = Uri.fromParts("data", "", "")
                 selectedEntries.add(FileEntry( "$title.txt", data.size.toLong(), localUri = uriFake, data = data))

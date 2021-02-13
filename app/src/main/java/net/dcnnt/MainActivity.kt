@@ -5,7 +5,9 @@ import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.os.Parcelable
 import android.provider.Settings
 import android.text.TextUtils
 import android.util.Log
@@ -24,10 +26,10 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.navigation.NavigationView
 import net.dcnnt.core.APP
 import net.dcnnt.core.ENABLED_NOTIFICATION_LISTENERS
+import net.dcnnt.core.simplifyFilename
 import net.dcnnt.fragments.*
-import net.dcnnt.ui.DCFragment
-import net.dcnnt.ui.LParam
-import net.dcnnt.ui.VerticalLayout
+import net.dcnnt.ui.*
+import java.util.*
 import kotlin.system.exitProcess
 
 
@@ -80,6 +82,9 @@ class Navigation(private val toolbarView: Toolbar,
             }
             "/download" -> DownloadFileFragment()
             "/upload" -> UploadFileFragment.newInstance(
+                args.filterIsInstance<Intent>().firstOrNull()
+            )
+            "/open" -> OpenerFragment.newInstance(
                 args.filterIsInstance<Intent>().firstOrNull()
             )
             "/commands" -> CommandsFragment()
@@ -146,10 +151,11 @@ class MainActivity : AppCompatActivity() {
             it.add(0, Menu.FIRST + 1, Menu.NONE, R.string.menu_settings)
             it.add(0, Menu.FIRST + 2, Menu.NONE, R.string.menu_logs)
             it.add(0, Menu.FIRST + 3, Menu.NONE, R.string.menu_upload)
-            it.add(0, Menu.FIRST + 4, Menu.NONE, R.string.menu_download)
-            it.add(0, Menu.FIRST + 5, Menu.NONE, R.string.menu_commands)
-            it.add(0, Menu.FIRST + 6, Menu.NONE, R.string.menu_notifications)
-            it.add(0, Menu.FIRST + 7, Menu.NONE, R.string.menu_exit)
+            it.add(0, Menu.FIRST + 4, Menu.NONE, R.string.menu_open)
+            it.add(0, Menu.FIRST + 5, Menu.NONE, R.string.menu_download)
+            it.add(0, Menu.FIRST + 6, Menu.NONE, R.string.menu_commands)
+            it.add(0, Menu.FIRST + 7, Menu.NONE, R.string.menu_notifications)
+            it.add(0, Menu.FIRST + 8, Menu.NONE, R.string.menu_exit)
         }
         navMenuEl.setNavigationItemSelectedListener {
             drawerEl.closeDrawer(navMenuEl)
@@ -157,10 +163,11 @@ class MainActivity : AppCompatActivity() {
             if (it.itemId == Menu.FIRST + 1) navigation.go("/settings", listOf())
             if (it.itemId == Menu.FIRST + 2) navigation.go("/log", listOf())
             if (it.itemId == Menu.FIRST + 3) navigation.go("/upload", listOf())
-            if (it.itemId == Menu.FIRST + 4) navigation.go("/download", listOf())
-            if (it.itemId == Menu.FIRST + 5) navigation.go("/commands", listOf())
-            if (it.itemId == Menu.FIRST + 6) navigation.go("/notifications", listOf())
-            if (it.itemId == Menu.FIRST + 7) exitDialog()
+            if (it.itemId == Menu.FIRST + 4) navigation.go("/open", listOf())
+            if (it.itemId == Menu.FIRST + 5) navigation.go("/download", listOf())
+            if (it.itemId == Menu.FIRST + 6) navigation.go("/commands", listOf())
+            if (it.itemId == Menu.FIRST + 7) navigation.go("/notifications", listOf())
+            if (it.itemId == Menu.FIRST + 8) exitDialog()
             return@setNavigationItemSelectedListener true
         }
         navigation.start()
@@ -243,45 +250,71 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    /* Debug
-    fun bundleToString(bundle: Bundle?): String? {
-        val out = StringBuilder("Bundle[")
-        if (bundle == null) {
-            out.append("null")
-        } else {
-            var first = true
-            for (key in bundle.keySet()) {
-                if (!first) {
-                    out.append(", ")
+//    fun bundleToString(bundle: Bundle?): String? {
+//        val out = StringBuilder("Bundle[")
+//        if (bundle == null) {
+//            out.append("null")
+//        } else {
+//            var first = true
+//            for (key in bundle.keySet()) {
+//                if (!first) {
+//                    out.append(", ")
+//                }
+//                out.append(key).append('=')
+//                val value = bundle[key]
+//                if (value is IntArray) {
+//                    out.append(Arrays.toString(value as IntArray?))
+//                } else if (value is ByteArray) {
+//                    out.append(Arrays.toString(value as ByteArray?))
+//                } else if (value is BooleanArray) {
+//                    out.append(Arrays.toString(value as BooleanArray?))
+//                } else if (value is ShortArray) {
+//                    out.append(Arrays.toString(value as ShortArray?))
+//                } else if (value is LongArray) {
+//                    out.append(Arrays.toString(value as LongArray?))
+//                } else if (value is FloatArray) {
+//                    out.append(Arrays.toString(value as FloatArray?))
+//                } else if (value is DoubleArray) {
+//                    out.append(Arrays.toString(value as DoubleArray?))
+//                } else if (value is Bundle) {
+//                    out.append(bundleToString(value as Bundle?))
+//                } else {
+//                    out.append(value)
+//                }
+//                first = false
+//            }
+//        }
+//        out.append("]")
+//        return out.toString()
+//    }
+
+    fun handleStartIntent() {
+//        Log.d(TAG, "===================================================")
+//        Log.d(TAG, bundleToString(intent?.extras).toString())
+//        Log.d(TAG, "===================================================")
+        if (intent?.action == Intent.ACTION_SEND_MULTIPLE) {
+            // Just save more than one file
+            return navigation.go("/upload", listOf(intent), createNew = true)
+        }
+        if (intent?.action == Intent.ACTION_SEND) {
+            val subject = intent.getStringExtra(Intent.EXTRA_SUBJECT)
+            val title = intent.getStringExtra(Intent.EXTRA_TITLE)
+            val text = intent.getStringExtra(Intent.EXTRA_TEXT)
+            // Check if intent contains web URL and go to opener
+            text?.also {
+                if (it.startsWith("http://") or it.startsWith("https://")) {
+                    return navigation.go("/open", listOf(intent, it, 0), createNew = true)
                 }
-                out.append(key).append('=')
-                val value = bundle[key]
-                if (value is IntArray) {
-                    out.append(Arrays.toString(value as IntArray?))
-                } else if (value is ByteArray) {
-                    out.append(Arrays.toString(value as ByteArray?))
-                } else if (value is BooleanArray) {
-                    out.append(Arrays.toString(value as BooleanArray?))
-                } else if (value is ShortArray) {
-                    out.append(Arrays.toString(value as ShortArray?))
-                } else if (value is LongArray) {
-                    out.append(Arrays.toString(value as LongArray?))
-                } else if (value is FloatArray) {
-                    out.append(Arrays.toString(value as FloatArray?))
-                } else if (value is DoubleArray) {
-                    out.append(Arrays.toString(value as DoubleArray?))
-                } else if (value is Bundle) {
-                    out.append(bundleToString(value as Bundle?))
-                } else {
-                    out.append(value)
-                }
-                first = false
+            }
+            // Show select dialog
+            val titleStr = simplifyFilename(title ?: subject ?: text ?: getString(R.string.file))
+            val options = mutableListOf(Option(getString(R.string.menu_open), "/open"),
+                Option(getString(R.string.menu_upload), "/upload"))
+            SelectInputView.showListDialog(this, titleStr, options) { _, s ->
+                navigation.go(s.value.toString(), listOf(intent, titleStr, 1), createNew = true)
             }
         }
-        out.append("]")
-        return out.toString()
     }
-    */
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -289,12 +322,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(createUI(this))
         navigation = Navigation(toolbarEl, supportFragmentManager, fragmentEl.id)
         initUI()
-        /* Debug
-        Log.d(TAG, "$intent ${bundleToString(intent.extras)}")
-         */
-        if ((intent?.action == Intent.ACTION_SEND) or (intent?.action == Intent.ACTION_SEND_MULTIPLE)) {
-            navigation.go("/upload", listOf(intent), createNew = true)
-        }
+        handleStartIntent()
     }
 
     override fun onResume() {
