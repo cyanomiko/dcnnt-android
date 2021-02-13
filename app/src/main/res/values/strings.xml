@@ -7,6 +7,7 @@
     <string name="menu_settings">Settings</string>
     <string name="menu_logs">Logs</string>
     <string name="menu_upload">Upload</string>
+    <string name="menu_open">Open</string>
     <string name="menu_download">Download</string>
     <string name="menu_commands">Commands</string>
     <string name="menu_notifications">Notifications</string>
@@ -44,4 +45,5 @@
     <string name="log_other">Other</string>
     <string name="delete_log_title">Delete log file?</string>
     <string name="delete_log_warning">This action can\'t be undone</string>
+    <string name="file">File</string>
 </resources>

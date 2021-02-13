@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="button_open">Abrir</string>
+    <string name="notification_open">Abrir</string>
+    <string name="no_entries_selected">Nenhuma entrada selecionada...</string>
+    <string name="open_link">Abrir URL</string>
+</resources>

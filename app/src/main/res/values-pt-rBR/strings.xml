@@ -7,6 +7,7 @@
     <string name="menu_settings">Configurações</string>
     <string name="menu_logs">Logs</string>
     <string name="menu_upload">Upload</string>
+    <string name="menu_open">Open</string>
     <string name="menu_download">Download</string>
     <string name="menu_commands">Comandos</string>
     <string name="menu_notifications">Notificações</string>
@@ -44,4 +45,5 @@
     <string name="log_other">Outros</string>
     <string name="delete_log_title">Excluir arquivo de registro?</string>
     <string name="delete_log_warning">Esta ação não pode ser desfeita</string>
+    <string name="file">Arquivo</string>
 </resources>
