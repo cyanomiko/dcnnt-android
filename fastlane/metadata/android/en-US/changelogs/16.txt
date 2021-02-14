@@ -1,0 +1,1 @@
+* Plugin for open files and links on desktop
