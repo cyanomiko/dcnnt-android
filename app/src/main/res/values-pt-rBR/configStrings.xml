@@ -18,4 +18,9 @@
     <string name="conf_app_autoSearch_title">Encontrar automaticamente os dispositivos</string>
     <string name="conf_app_autoSearch_info">Encontre os dispositivos automaticamente ao iniciar o aplicativo</string>
     <string name="conf_app_downloadDirectory_title">Diretório de downloads</string>
+    <string name="conf_app_actionForSharedFile_title">Ação para arquivos compartilhados</string>
+    <string name="conf_app_actionForSharedFile_info">Qual método usar para lidar com um único arquivo compartilhado </string>
+    <string name="conf_app_actionForSharedFile_ask">Sempre pergunte </string>
+    <string name="conf_app_actionForSharedFile_open">Abrir</string>
+    <string name="conf_app_actionForSharedFile_upload">Upload</string>
 </resources>

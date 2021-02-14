@@ -44,6 +44,11 @@ class AppConf(path: String): DCConf(path) {
     ), 1).init()
     val downloadDirectory = StringEntry(this, "downloadDirectory", 0, 200,
         "content://com.android.providers.downloads.documents/tree/downloads").init()
+    val actionForSharedFile = SelectEntry(this, "actionForSharedFile", listOf(
+        SelectOption("ask", R.string.conf_app_actionForSharedFile_ask),
+        SelectOption("upload", R.string.conf_app_actionForSharedFile_upload),
+        SelectOption("open", R.string.conf_app_actionForSharedFile_open)
+    ), 0).init()
 }
 
 
