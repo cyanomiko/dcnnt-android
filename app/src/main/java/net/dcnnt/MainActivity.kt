@@ -306,12 +306,19 @@ class MainActivity : AppCompatActivity() {
                     return navigation.go("/open", listOf(intent, it, 0), createNew = true)
                 }
             }
-            // Show select dialog
+            // Check user settings for single shared file
             val titleStr = simplifyFilename(title ?: subject ?: text ?: getString(R.string.file))
-            val options = mutableListOf(Option(getString(R.string.menu_open), "/open"),
-                Option(getString(R.string.menu_upload), "/upload"))
-            SelectInputView.showListDialog(this, titleStr, options) { _, s ->
-                navigation.go(s.value.toString(), listOf(intent, titleStr, 1), createNew = true)
+            when (APP.conf.actionForSharedFile.value) {
+                "open" -> return navigation.go("/open", listOf(intent, titleStr, 0), createNew = true)
+                "upload" -> return navigation.go("/upload", listOf(intent, titleStr, 0), createNew = true)
+                else -> {
+                    // Show select dialog on other options
+                    val options = mutableListOf(Option(getString(R.string.menu_open), "/open"),
+                        Option(getString(R.string.menu_upload), "/upload"))
+                    SelectInputView.showListDialog(this, titleStr, options) { _, s ->
+                        navigation.go(s.value.toString(), listOf(intent, titleStr, 1), createNew = true)
+                    }
+                }
             }
         }
     }
