@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="conf_app_uin_title">设备 UIN</string>
+    <string name="conf_app_name_title">设备名</string>
+    <string name="conf_app_description_title">设备信息</string>
+    <string name="conf_app_password_title">设备密码</string>
+    <string name="conf_app_cellularData_title">蜂窝数据</string>
+    <string name="conf_app_cellularData_info">允许通过蜂窝网络进行操作</string>
+    <string name="conf_app_notificationListenerService_title">通知服务</string>
+    <string name="conf_app_notificationListenerService_info">允许访问通知</string>
+    <string name="conf_app_uploadNotificationPolicy_title">上传通知</string>
+    <string name="conf_app_uploadNotificationPolicy_info">如何显示已上传文件的通知？</string>
+    <string name="conf_app_downloadNotificationPolicy_title">下载通知</string>
+    <string name="conf_app_downloadNotificationPolicy_info">如何显示已下载文件的通知</string>
+    <string name="conf_app_downloadNotificationPolicy_no">不显示</string>
+    <string name="conf_app_downloadNotificationPolicy_one">所有文件显示为一条通知</string>
+    <string name="conf_app_downloadNotificationPolicy_all">每个文件显示一条通知</string>
+    <string name="conf_app_autoSearch_title">自动搜索设备</string>
+    <string name="conf_app_autoSearch_info">打开应用时自动搜索设备</string>
+    <string name="conf_app_downloadDirectory_title">下载目录</string>
+    <string name="conf_app_actionForSharedFile_title">共享文件操作</string>
+    <string name="conf_app_actionForSharedFile_info">使用哪种方法来处理分享的单一文件</string>
+    <string name="conf_app_actionForSharedFile_ask">始终询问</string>
+    <string name="conf_app_actionForSharedFile_open">打开</string>
+    <string name="conf_app_actionForSharedFile_upload">上传</string>
+</resources>

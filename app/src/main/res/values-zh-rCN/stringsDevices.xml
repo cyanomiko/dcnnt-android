@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_device_name">一般</string>
+    <string name="selected_device">所选设备</string>
+    <string name="device_uin">UIN</string>
+    <string name="device_name">名称</string>
+    <string name="device_description">描述</string>
+    <string name="device_password">密码</string>
+    <string name="device_search">搜索</string>
+    <string name="device_search_in_progress">搜索中…</string>
+    <string name="device_no_at_all">无已知设备</string>
+    <string name="device_offline">离线</string>
+</resources>

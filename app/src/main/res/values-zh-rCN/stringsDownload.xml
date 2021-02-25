@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="button_download">下载</string>
+    <string name="sort_by_name">按名称排序</string>
+    <string name="sort_by_type">按类型排序</string>
+    <string name="sort_by_size">按尺寸排序</string>
+    <string name="no_files_info">无文件信息</string>
+    <string name="no_shared_files">无共享的文件</string>
+    <string name="unit_bytes">字节</string>
+    <string name="unit_entries">条目</string>
+    <string name="status_cancel">已取消</string>
+    <string name="action_open">打开</string>
+    <string name="action_share">分享</string>
+    <string name="notification_download">下载</string>
+    <string name="notification_download_complete">已完成下载</string>
+    <string name="notification_download_canceled">已取消下载</string>
+    <string name="notification_download_failed">下载失败</string>
+    <string name="directory_not_set">未设置下载目录</string>
+</resources>
