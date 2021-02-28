@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="disable_all">禁用全部</string>
+    <string name="as_common">从“一般”复制</string>
+</resources>

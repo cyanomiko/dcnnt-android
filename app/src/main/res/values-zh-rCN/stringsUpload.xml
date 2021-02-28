@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="button_upload">上传</string>
+    <string name="notification_upload">上传</string>
+    <string name="notification_upload_complete">已完成上传</string>
+    <string name="notification_upload_canceled">已取消上传</string>
+    <string name="notification_upload_failed">上传失败</string>
+    <string name="no_files_selected">未选中文件...</string>
+</resources>
