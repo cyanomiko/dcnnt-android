@@ -106,6 +106,7 @@ class RunningFileView(context: Context,
     fun loadThumbnail(): Bitmap? {
         if (entry.entryType != EntryType.FILE) return null
         if (entry.size > THUMBNAIL_SIZE_THRESHOLD) return null
+        if ((entry.data != null) and (entry.localUri.toString().startsWith("data"))) return null
         val uri = entry.localUri ?: return null
         try {
             val data = context?.contentResolver?.openInputStream(uri)?.readBytes() ?: return null
