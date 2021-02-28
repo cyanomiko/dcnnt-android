@@ -116,10 +116,6 @@ open class UploadFileFragment: BaseFileFragment() {
                     var totalSize = (LongArray(waitingEntries.size) { waitingEntries[it].size }).sum()
                     var totalDoneSize = 0L
                     var totalDoneSizePre = 0L
-//                    notification.create(R.drawable.ic_upload,
-//                        notificationRunningStr,
-//                        "0/${waitingEntries.size}",
-//                        1000L * waitingEntries.size)
                     waitingEntries.forEachIndexed { index, it ->
                         var currentDoneSize = 0L
                         synchronized(it) {
@@ -179,16 +175,6 @@ open class UploadFileFragment: BaseFileFragment() {
                             totalDoneSize = totalDoneSizePre
                         }
                         notifyDownloadEnd(waitingEntries, index + 1, it, totalSize, totalDoneSize, res)
-//                        Log.d(TAG, "Upload done (${it.name}) - ${res.message}")
-//                        activity?.runOnUiThread {
-//                            selectedEntriesView[it.idStr]?.apply {
-//                                text = "${it.size} $unitBytesStr - ${res.message}"
-//                                actionView.setImageResource(when(res.success) {
-//                                    true -> R.drawable.ic_done
-//                                    false -> R.drawable.ic_block
-//                                })
-//                            }
-//                        }
                     }
                 }
             } catch (e: Exception) {
