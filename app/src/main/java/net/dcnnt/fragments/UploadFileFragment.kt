@@ -118,6 +118,7 @@ open class UploadFileFragment: BaseFileFragment() {
                     var totalDoneSizePre = 0L
                     waitingEntries.forEachIndexed { index, it ->
                         var currentDoneSize = 0L
+                        totalDoneSizePre = totalDoneSize
                         synchronized(it) {
                             if (it.status != FileStatus.WAIT) {
                                 Log.d(TAG, "Skip ${it.localUri} (${it.name})")
