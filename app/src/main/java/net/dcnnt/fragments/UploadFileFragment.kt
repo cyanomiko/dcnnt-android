@@ -246,6 +246,8 @@ open class UploadFileFragment: BaseFileFragment() {
         notificationCompleteStr = getString(R.string.notification_upload_complete)
         notificationCanceledStr = getString(R.string.notification_upload_canceled)
         notificationFailedStr = getString(R.string.notification_upload_failed)
+        notificationIconId = R.drawable.ic_upload
+        notificationDoneIconId = R.drawable.ic_upload_done
     }
 
     override fun onStart() {

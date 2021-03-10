@@ -151,7 +151,8 @@ class RunningFileView(context: Context,
      */
     fun updateOnEnd(res: DCResult, unitBytesStr: String, doNotificationStuff: Boolean,
                     notificationDownloadCanceledStr: String, notificationDownloadCompleteStr: String,
-                    notificationDownloadFailedStr: String, waitingCount: Int, currentNum: Int) {
+                    notificationDownloadFailedStr: String, waitingCount: Int, currentNum: Int,
+                    notificationDoneIconId: Int?) {
         val icon = loadThumbnail()
         if (entry.entryType == EntryType.FILE) text = "${entry.size} $unitBytesStr - ${res.message}"
         if (res.success) {
@@ -165,6 +166,7 @@ class RunningFileView(context: Context,
         } else {
             if (res.success) {
                 val intent = createFileIntent(true)
+                notification.smallIconId = notificationDoneIconId
                 notification.complete(notificationDownloadCompleteStr, "$currentNum/$waitingCount - ${entry.name}", icon, intent)
             } else {
                 notification.complete(notificationDownloadFailedStr, "$currentNum/$waitingCount - ${entry.name} : ${res.message}", icon)
@@ -199,6 +201,8 @@ open class BaseFileFragment: BasePluginFargment() {
     lateinit var notificationCompleteStr: String
     lateinit var notificationCanceledStr: String
     lateinit var notificationFailedStr: String
+    var notificationIconId: Int? = null
+    var notificationDoneIconId: Int? = null
 
     private fun askWritePermission() {
         Log.d(TAG, "activity = $activity")
@@ -313,11 +317,12 @@ open class BaseFileFragment: BasePluginFargment() {
             "all" -> selectedEntriesView[current.idStr]?.notification ?: return
             else -> return
         }
+        val iconId = notificationIconId ?: R.drawable.ic_wait
         if ((n.isNew and (policy == "one")) or (policy == "all")) {
-            n.create(R.drawable.ic_download, notificationRunningStr,
-                "0/${current.size} - $currentName", 1000)
+            n.create(iconId, notificationRunningStr, "0/${current.size} - $currentName", 1000)
         } else if (policy == "one") {
             val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
+            n.smallIconId = iconId
             n.update("$currentNum/${waiting.size} - $currentName", progress, true)
         }
     }
@@ -354,7 +359,8 @@ open class BaseFileFragment: BasePluginFargment() {
                     notificationCompleteStr,
                     notificationFailedStr,
                     waiting.size,
-                    currentNum
+                    currentNum,
+                    notificationDoneIconId
                 )
             }
         }
@@ -363,6 +369,7 @@ open class BaseFileFragment: BasePluginFargment() {
                 if (selectedEntries.all { it.status == FileStatus.CANCEL }) {
                     notification.complete(notificationCanceledStr,"${waiting.size}/${waiting.size}")
                 } else {
+                    notification.smallIconId = notificationDoneIconId
                     notification.complete(notificationCompleteStr, "${waiting.size}/${waiting.size}")
                 }
             } else {

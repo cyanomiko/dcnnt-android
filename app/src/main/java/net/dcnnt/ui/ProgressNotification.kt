@@ -19,7 +19,7 @@ class ProgressNotification(val context: Context) {
     private var notificationId: Int = 0
     private var progressMax: Long = 1000L
     private var builder = NotificationCompat.Builder(context, "net.dcnnt.progress")
-    private var smallIconId: Int? = null
+    var smallIconId: Int? = null
     var isNew = true
     var lastUpdateTime = 0L
 

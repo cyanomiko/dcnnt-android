@@ -413,5 +413,7 @@ class DownloadFileFragment: BaseFileFragment() {
         notificationCanceledStr = getString(R.string.notification_download_canceled)
         notificationFailedStr = getString(R.string.notification_download_failed)
         noSharedFilesStr = getString(R.string.no_shared_files)
+        notificationIconId = R.drawable.ic_download
+        notificationDoneIconId = R.drawable.ic_download_done
     }
 }
