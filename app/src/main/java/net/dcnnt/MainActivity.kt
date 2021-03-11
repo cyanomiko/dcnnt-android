@@ -146,16 +146,19 @@ class MainActivity : AppCompatActivity() {
         val toggle = ActionBarDrawerToggle(this, drawerEl, toolbarEl, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
         drawerEl.addDrawerListener(toggle)
         toggle.syncState()
+        navMenuEl.itemIconPadding = dip(8)
+        navMenuEl.setPadding(navMenuEl.paddingLeft / 3, navMenuEl.paddingTop,
+            navMenuEl.paddingRight, navMenuEl.paddingBottom)
         navMenuEl.menu.also {
-            it.add(0, Menu.FIRST + 0, Menu.NONE, R.string.menu_devices)
-            it.add(0, Menu.FIRST + 1, Menu.NONE, R.string.menu_settings)
-            it.add(0, Menu.FIRST + 2, Menu.NONE, R.string.menu_logs)
-            it.add(0, Menu.FIRST + 3, Menu.NONE, R.string.menu_upload)
-            it.add(0, Menu.FIRST + 4, Menu.NONE, R.string.menu_open)
-            it.add(0, Menu.FIRST + 5, Menu.NONE, R.string.menu_download)
-            it.add(0, Menu.FIRST + 6, Menu.NONE, R.string.menu_commands)
-            it.add(0, Menu.FIRST + 7, Menu.NONE, R.string.menu_notifications)
-            it.add(0, Menu.FIRST + 8, Menu.NONE, R.string.menu_exit)
+            it.add(0, Menu.FIRST + 0, Menu.NONE, R.string.menu_devices).setIcon(R.drawable.ic_phonelink)
+            it.add(0, Menu.FIRST + 1, Menu.NONE, R.string.menu_settings).setIcon(R.drawable.ic_settings)
+            it.add(0, Menu.FIRST + 2, Menu.NONE, R.string.menu_logs).setIcon(R.drawable.ic_lines)
+            it.add(0, Menu.FIRST + 3, Menu.NONE, R.string.menu_upload).setIcon(R.drawable.ic_upload)
+            it.add(0, Menu.FIRST + 4, Menu.NONE, R.string.menu_open).setIcon(R.drawable.ic_open)
+            it.add(0, Menu.FIRST + 5, Menu.NONE, R.string.menu_download).setIcon(R.drawable.ic_download)
+            it.add(0, Menu.FIRST + 6, Menu.NONE, R.string.menu_commands).setIcon(R.drawable.ic_cr)
+            it.add(0, Menu.FIRST + 7, Menu.NONE, R.string.menu_notifications).setIcon(R.drawable.ic_notification)
+            it.add(0, Menu.FIRST + 8, Menu.NONE, R.string.menu_exit).setIcon(R.drawable.ic_exit)
         }
         navMenuEl.setNavigationItemSelectedListener {
             drawerEl.closeDrawer(navMenuEl)
