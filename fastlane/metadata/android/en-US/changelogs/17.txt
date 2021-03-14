@@ -1,0 +1,6 @@
+* Text data sharing (e.g. share action for selected text)
+* Chinese translation by sr093906
+* Fix upload notification icon
+* Fix progress bar in upload and download notifications
+* Additional icons for successful upload and download operations
+* Icons in app menu
