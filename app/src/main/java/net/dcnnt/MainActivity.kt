@@ -184,6 +184,16 @@ class MainActivity : AppCompatActivity() {
         val mPendingIntent = PendingIntent.getActivity(this, CODE_RESTART, intent, PendingIntent.FLAG_CANCEL_CURRENT)
         val mgr = this.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 100, mPendingIntent)
+        stopApp()
+        return true
+    }
+
+    /**
+     * Stop application
+     */
+    fun stopApp(): Boolean {
+        APP.log("Exit process by user command")
+        APP.dumpLogs()
         exitProcess(0)
     }
 
@@ -196,7 +206,7 @@ class MainActivity : AppCompatActivity() {
             setMessage(R.string.restart_dialog_text)
             setNeutralButton(R.string.cancel) { _, _ ->  }
             setNegativeButton(R.string.restart) { _, _ -> restartApp() }
-            setPositiveButton(R.string.stop) { _, _ -> exitProcess(0) }
+            setPositiveButton(R.string.stop) { _, _ -> stopApp() }
         }.create().show()
     }
 

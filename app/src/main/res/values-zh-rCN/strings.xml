@@ -42,6 +42,7 @@
     <string name="drop_settings">丢弃设置</string>
     <string name="log_crash">崩溃记录</string>
     <string name="log_common">工作记录</string>
+    <string name="log_errors">错误记录</string>
     <string name="log_other">其他</string>
     <string name="delete_log_title">删除记录文件吗？</string>
     <string name="delete_log_warning">此操作无法撤消</string>

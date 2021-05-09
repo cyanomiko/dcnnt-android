@@ -42,6 +42,7 @@
     <string name="drop_settings">Abandonar configurações</string>
     <string name="log_crash">Registros de falhas</string>
     <string name="log_common">Work log</string>
+    <string name="log_errors">Log de erros</string>
     <string name="log_other">Outros</string>
     <string name="delete_log_title">Excluir arquivo de registro?</string>
     <string name="delete_log_warning">Esta ação não pode ser desfeita</string>

@@ -1,6 +1,7 @@
 package net.dcnnt.core
 
 import java.io.File
+import java.lang.Exception
 
 
 class DCCrashHandler(val app: App, private val defaultHandler: Thread.UncaughtExceptionHandler?): Thread.UncaughtExceptionHandler {
@@ -22,6 +23,9 @@ class DCCrashHandler(val app: App, private val defaultHandler: Thread.UncaughtEx
         exception.printStackTrace(writer)
         writer.flush()
         writer.close()
+        try {
+            app.dumpLogs()
+        } catch (e: Exception) {}
         defaultHandler!!.uncaughtException(thread, exception)
     }
 }

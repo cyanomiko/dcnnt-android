@@ -35,7 +35,8 @@ class LogDirectoryFragment: DCFragment() {
         File(APP.crashHandler.path).listFiles()?.forEach {
             res.add(Pair(when {
                 it.path.endsWith(APP.crashHandler.SUFFIX) -> Pair(R.drawable.ic_warning, R.string.log_crash)
-                it.path.endsWith(".log") -> Pair(R.drawable.ic_text, R.string.log_common)
+                it.path.endsWith(".work.log") -> Pair(R.drawable.ic_text, R.string.log_common)
+                it.path.endsWith(".errors.log") -> Pair(R.drawable.ic_block, R.string.log_errors)
                 else -> Pair(R.drawable.ic_file, R.string.log_other)
             }, it))
         }
@@ -68,6 +69,7 @@ class LogDirectoryFragment: DCFragment() {
     }
 
     fun updateFileList(context: Context) {
+        APP.dumpLogs()
         listView.removeAllViews()
         getAllLogs().forEach { l ->
             listView.addView(EntryView(context).apply {

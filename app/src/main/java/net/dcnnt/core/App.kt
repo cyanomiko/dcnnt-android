@@ -13,6 +13,7 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.logging.Logger
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
@@ -63,6 +64,8 @@ class App : Application() {
     lateinit var downloadsDirectory: Uri
     lateinit var rootDirectory: Uri
     lateinit var crashHandler: DCCrashHandler
+    private lateinit var logger: DCLogger
+    private lateinit var errorLogger: DCLogger
     var activity: MainActivity? = null
     val isDCNotificationListenerServiceRunning = AtomicBoolean(false)
 
@@ -79,6 +82,11 @@ class App : Application() {
         directory = applicationInfo.dataDir
         Log.i(TAG, "Init crash logger...")
         initCrashHandler()
+        Log.i(TAG, "Init loggers...")
+        logger = DCLogger(this, "dcnnt", ".work.log", 3, 1024 * 6)
+        errorLogger = DCLogger(this, "dcnnt", ".errors.log", 3, 1024 * 6)
+        logger.log("***********************************")
+        logger.log("Application started, PID = ${android.os.Process.myPid()}")
         Log.i(TAG, "Create config $directory/conf.json")
         conf = AppConf("$directory/conf.json")
         Log.i(TAG, "Create DM...")
@@ -95,6 +103,14 @@ class App : Application() {
         pm.init()
         Log.i(TAG, "Load PM...")
         pm.load()
+    }
+
+    fun log(line: String, tag: String = "DC/Log") = logger.log(line, tag)
+    fun logError(line: String, tag: String = "DC/Log") = errorLogger.log(line, tag)
+    fun logException(e: Exception, tag: String = "DC/Log") = errorLogger.log(e, tag)
+    fun dumpLogs() {
+        logger.dump()
+        errorLogger.dump()
     }
 
     private fun initCrashHandler() {

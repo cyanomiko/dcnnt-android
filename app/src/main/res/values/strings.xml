@@ -42,6 +42,7 @@
     <string name="drop_settings">Drop settings</string>
     <string name="log_crash">Crash log</string>
     <string name="log_common">Work log</string>
+    <string name="log_errors">Error log</string>
     <string name="log_other">Other</string>
     <string name="delete_log_title">Delete log file?</string>
     <string name="delete_log_warning">This action can\'t be undone</string>
