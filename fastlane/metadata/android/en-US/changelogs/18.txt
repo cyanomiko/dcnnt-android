@@ -1,0 +1,2 @@
+* Some human-readable logs
+* Fixed absence of extension in names of selected music files
