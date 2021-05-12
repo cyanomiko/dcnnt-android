@@ -138,6 +138,7 @@ class DeviceManager(val path: String) {
             socket.soTimeout = timeout
             socket.bind(InetSocketAddress("0.0.0.0", PORT))
             socket.send(DatagramPacket(request, request.size, InetSocketAddress("255.255.255.255", PORT)))
+            APP.log("Search devices on port $PORT", TAG)
             for (i in 0..triesRead) {
                 if (i % (triesRead / triesSend) == 0) { socket.send(
                         DatagramPacket(
@@ -153,6 +154,7 @@ class DeviceManager(val path: String) {
                         //Log.d(TAG, "No UDP response received")
                         continue
                     }
+                    val ip = response.address.hostAddress.toString()
                     val res = JSONObject(response.data.toString(Charset.forName("UTF-8")))
                     Log.i(TAG, "$res")
                     if ((res["plugin"] == "search") and (res["action"] == "response") and (res["uin"] is Int) and
@@ -163,15 +165,15 @@ class DeviceManager(val path: String) {
                         responseCounter++
                         val uin: Int = res["uin"] as Int
                         if (!devices.containsKey(uin)) {
-                            Log.i(TAG, "Add new device")
+                            APP.log("Add new '${res["role"]}' device $uin '${res["name"]}', IP: $ip", TAG)
                             devices[uin] = Device(this, uin, res["name"] as String, "", PORT,
                                 res["role"] as String, "")
                         }
                         devices[uin]?.also {
-                            Log.i(TAG, "Edit existing device")
-                            it.ip = response.address.hostAddress.toString()
-                            it.name = res["name"] as String
                             if (!found.contains(uin)) {
+                                APP.log( "Update '${it.role}' device '${it.name}' IP: $ip", TAG)
+                                it.ip = ip
+                                it.name = res["name"] as String
                                 found.add(uin)
                                 onAvailableDevice?.invoke(it)
                             }
@@ -184,10 +186,11 @@ class DeviceManager(val path: String) {
             socket.close()
             var availableDevicesCountCur = 0
             devices.forEach { if (!it.value.isNew() and (it.value.ip != null)) availableDevicesCountCur++ }
+            APP.log("${found.size} devices found")
             return (availableDevicesCountCur != availableDevicesCountPre)
         } catch (e: Exception) {
-            Log.e(TAG, "$e")
-            e.printStackTrace()
+            APP.logError("Exception occurred while searching devices", TAG)
+            APP.logException(e, TAG)
             return availableDevicesCountPre != 0
         }
     }

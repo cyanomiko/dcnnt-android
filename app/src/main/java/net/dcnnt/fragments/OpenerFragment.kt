@@ -206,6 +206,7 @@ class OpenerFragment: UploadFileFragment() {
         val uriFake = Uri.fromParts("data", "", "")
         selectedEntries.add(FileEntry( "$titleStr.txt", data.size.toLong(),
             localUri = uriFake, data = data))
+        APP.log("Ready to open ${selectedEntries.size} file from user selection")
     }
 
     override fun onActivityResult(mainActivity: MainActivity, requestCode: Int,

@@ -78,24 +78,29 @@ class DCNotificationListenerService : NotificationListenerService() {
      * @param icon - optional icon to show on device with notification encoded as PNG
      */
     fun sendNotificationToDevice(notification: JSONObject, device: Device, icon: ByteArray?) {
-        Log.d(TAG, "sendNotificationToDevice: ${device.uin} ${icon?.size}")
+        val msg = "from app ${notification.getString("package")} to device ${device.uin}";
+        APP.log("Check notification $msg", TAG)
         try {
             NotificationsPlugin(APP, device).also { plugin ->
                 plugin.init()
                 val filter = plugin.conf.getFilter(notification.getString("package"))
                 Log.d(TAG, "filter = $filter")
-                if (filter == NotificationFilter.NO) return
+                if (filter == NotificationFilter.NO) {
+                    APP.log("Notification $msg - filtered", TAG)
+                    return
+                }
+                APP.log("Notification $msg - sending...", TAG)
                 thread {
                     try {
                         plugin.connect()
                         plugin.checkAndSendNotification(notification, filter, icon)
                     } catch (e: Exception) {
-                        Log.e(TAG, "$e")
+                        APP.logException(e, TAG)
                     }
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "$e")
+            APP.logException(e, TAG)
         }
     }
 
@@ -104,9 +109,10 @@ class DCNotificationListenerService : NotificationListenerService() {
      */
     fun sendNotificationToAll(event: String, sbn: StatusBarNotification) {
         if (!hasConnection()) {
-            Log.w(TAG, "No connection - ignore notification")
+            APP.log("Skip notification ($event) from ${sbn.packageName} - no connection")
             return
         }
+        APP.log("Process notification ($event) from ${sbn.packageName}")
         val icon = packageIcon(sbn.packageName)
         val notification: JSONObject = notificationJSON(event, sbn, icon != null)
         val now = System.currentTimeMillis() / 1000L
@@ -125,12 +131,10 @@ class DCNotificationListenerService : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        Log.d("DConnect", "Notification posted")
         sendNotificationToAll("posted", sbn)
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
-        Log.d("DConnect", "Notification removed")
         sendNotificationToAll("removed", sbn)
     }
 }

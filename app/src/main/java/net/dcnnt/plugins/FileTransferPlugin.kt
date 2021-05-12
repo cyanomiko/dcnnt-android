@@ -71,6 +71,7 @@ class FileTransferPlugin(app: App, device: Device): BaseFilePlugin<FileTransferP
 
     fun uploadFile(file: FileEntry, contentResolver: ContentResolver,
                    progressCallback: (cur: Long, total: Long, part: Long) -> Unit): DCResult {
+        APP.log("Upload file '${file.name}' (${file.localUri}) to device ${device.uin}")
         return sendFile(file, contentResolver, progressCallback)
     }
 
@@ -90,6 +91,7 @@ class FileTransferPlugin(app: App, device: Device): BaseFilePlugin<FileTransferP
 
     fun downloadFile(entry: FileEntry, contentResolver: ContentResolver,
                      progressCallback: (cur: Long, total: Long, part: Long) -> Unit): DCResult {
+        APP.log("Download file '${entry.name}' from device ${device.uin}")
         if (Environment.getExternalStorageState() != Environment.MEDIA_MOUNTED) {
             return DCResult(false,"Storage not mounted")
         }

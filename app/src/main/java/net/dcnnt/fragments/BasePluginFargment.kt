@@ -114,7 +114,11 @@ abstract class BasePluginFargment: DCFragment() {
         activity?.runOnUiThread { Toast.makeText(context, text, Toast.LENGTH_SHORT).show() }
     }
 
-    fun showError(context: Context, e: Exception) = toast(context, "Error: $e")
+    fun showError(context: Context, e: Exception) {
+        toast(context, "Error: $e")
+        APP.log("Error occurred: $e")
+        APP.logException(e)
+    }
 
     fun createDeviceSelectView(context: Context,
                                availableOnly: Boolean = true,

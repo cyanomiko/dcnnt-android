@@ -81,6 +81,7 @@ open class UploadFileFragment: BaseFileFragment() {
                 selectedEntries.add(getFileInfoFromUri(context, it.getItemAt(i).uri) ?: continue)
             }
         }
+        APP.log("Ready to upload/open ${selectedEntries.size} files from selection")
         updateEntriesView(context)
     }
 
@@ -210,11 +211,13 @@ open class UploadFileFragment: BaseFileFragment() {
             } else {
                 selectedEntries.add(getFileInfoFromUri(context, uri) ?: return)
             }
+            APP.log("Ready to upload ${selectedEntries.size} file from send action")
         }
         if (intent.action == Intent.ACTION_SEND_MULTIPLE) {
             intent.getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)?.let {
                 it.forEach { selectedEntries.add(getFileInfoFromUri(context, (it as? Uri) ?: return) ?: return) }
             }
+            APP.log("Ready to upload ${selectedEntries.size} files from send (multiple) action")
         }
     }
 

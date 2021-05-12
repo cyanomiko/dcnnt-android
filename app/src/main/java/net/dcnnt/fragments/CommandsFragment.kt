@@ -36,7 +36,7 @@ class CommandsFragment: BasePluginFargment() {
                                 RemoteCommandPlugin(APP, device).apply {
                                     init()
                                     connect()
-                                    exec("${command.index}").also { toast(context, it.message) }
+                                    exec(command).also { toast(context, it.message) }
                                 }
                             } catch (e: Exception) {
                                 showError(context, e)

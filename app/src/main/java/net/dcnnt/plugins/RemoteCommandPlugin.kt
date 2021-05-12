@@ -36,8 +36,9 @@ class RemoteCommandPlugin(app: App, device: Device): Plugin<RemoteCommandPluginC
         return commandsList
     }
 
-    fun exec(index: String): DCResult {
-        (rpc("exec", mapOf("index" to index)) as? JSONObject)?.also { res ->
+    fun exec(command: RemoteCommand): DCResult {
+        APP.log("Execute command '${command.name}' at device ${device.uin}...")
+        (rpc("exec", mapOf("index" to "${command.index}")) as? JSONObject)?.also { res ->
             if (res.has("result") and res.has("message"))
                 return DCResult(res.getBoolean("result"), res.getString("message"))
             return DCResult(false, "Incorrect response fields")

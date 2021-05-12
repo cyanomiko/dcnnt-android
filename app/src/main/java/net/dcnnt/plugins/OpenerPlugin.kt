@@ -31,10 +31,12 @@ class OpenerPlugin(app: App, device: Device): BaseFilePlugin<OpenerPluginConf>(a
 
     fun openFile(file: FileEntry, contentResolver: ContentResolver,
                    progressCallback: (cur: Long, total: Long, part: Long) -> Unit): DCResult {
+        APP.log("Open file '${file.name}' (${file.localUri}) on device ${device.uin}")
         return sendFile(file, contentResolver, progressCallback, "open_file")
     }
 
     fun openLink(url: String): DCResult {
+        APP.log("Open link '$url' on device ${device.uin}")
         rpc("open_link", mapOf("link" to url))
         return DCResult(true, "OK")
     }
