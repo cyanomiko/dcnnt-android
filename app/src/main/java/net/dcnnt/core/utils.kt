@@ -35,14 +35,19 @@ data class FileEntry(
 fun getFileInfoFromUri(context: Context, uri: Uri): FileEntry? {
     when {
         "${uri.scheme}".toLowerCase(Locale.ROOT) == "content" -> {
-            context.contentResolver.query(uri, null, null, null, null)?.apply {
-                val nameIndex = getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                val sizeIndex = getColumnIndex(OpenableColumns.SIZE)
-                moveToFirst()
-                val name = getString(nameIndex)
-                val size = getLong(sizeIndex)
-                close()
-                return FileEntry(name, size, localUri = uri)
+            context.contentResolver.also { cr ->
+                val mimeType = cr.getType(uri).toString()
+                val fallbackExtension = if (mimeType.contains('/')) mimeType.split('/')[1] else "bin"
+                cr.query(uri, null, null, null, null)?.apply {
+                    val nameIndex = getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    val sizeIndex = getColumnIndex(OpenableColumns.SIZE)
+                    moveToFirst()
+                    var name = getString(nameIndex)
+                    val size = getLong(sizeIndex)
+                    if (!name.contains('.')) name = "$name.$fallbackExtension"
+                    close()
+                    return FileEntry(name, size, localUri = uri)
+                }
             }
         }
         "${uri.scheme}".toLowerCase(Locale.ROOT) == "file" -> {
