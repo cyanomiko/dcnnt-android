@@ -1,5 +1,6 @@
 package net.dcnnt.core
 
+import android.util.Base64
 import android.util.Log
 import org.json.JSONObject
 import java.io.File
@@ -20,12 +21,21 @@ class Device(val dm: DeviceManager, val uin: Int, var name: String, var descript
     var keyRecv: ByteArray = deriveKey(listOf(uinApp, uin, passApp, password).joinToString(""))
     var keySend: ByteArray = deriveKey(listOf(uin, uinApp, password, passApp).joinToString(""))
     var ip: String? = null
+    var pairingData: ByteArray? = null
 
     fun updateKeys() {
         uinApp = APP.conf.uin.value
         passApp = APP.conf.password.value
         keyRecv = deriveKey(listOf(uinApp, uin, passApp, password).joinToString(""))
         keySend = deriveKey(listOf(uin, uinApp, password, passApp).joinToString(""))
+    }
+
+    fun processPairData(code: String) {
+        pairingData?.also {
+            pairingData = null
+            password = String(decrypt(it, deriveKey("$code$uinApp")) ?: return)
+            updateKeys()
+        }
     }
 
     fun isNew(): Boolean {
@@ -109,20 +119,27 @@ class DeviceManager(val path: String) {
         }
     }
 
+    fun onlineDevices() = devices.filterValues { it.ip != null }.values.toMutableList().toList()
     fun availableDevices() = devices.filterValues { !it.isNew() and (it.ip != null) }.values.toMutableList().toList()
 
     fun search(appConf: AppConf, timeout: Int = 10, triesRead: Int = 100, triesSend: Int = 4,
+               pairInfo: Pair<Int, String>? = null,
                onAvailableDevice: ((Device) -> Unit)? = null): Boolean {
         searchDone = true
         lastSearchTimestamp = System.currentTimeMillis() / 1000L
         var responseCounter: Int = 0
-        val request = JSONObject(mapOf(
+        val requestData = mutableMapOf(
             "plugin" to "search",
             "action" to "request",
             "role" to "client",
             "uin" to appConf.uin.value,
             "name" to appConf.name.value
-        )).toString().toByteArray()
+        )
+        pairInfo?.also {
+            requestData["pair"] = String(Base64.encode(encrypt(appConf.password.value.toByteArray(),
+                deriveKey("${it.second}${it.first}")), Base64.DEFAULT))
+        }
+        val request = JSONObject(requestData.toMap()).toString().toByteArray()
         var availableDevicesCountPre = 0
         devices.forEach {
             if (!it.value.isNew() and (it.value.ip != null)) availableDevicesCountPre++
@@ -175,6 +192,13 @@ class DeviceManager(val path: String) {
                                 it.ip = ip
                                 it.name = res["name"] as String
                                 found.add(uin)
+                                val pairString = res.optString("pair", "")
+                                if (pairString.isNotEmpty()) {
+                                    it.pairingData = null
+                                    it.pairingData = Base64.decode(pairString, Base64.DEFAULT)
+                                } else {
+                                    it.pairingData = null
+                                }
                                 onAvailableDevice?.invoke(it)
                             }
                         }
@@ -201,9 +225,10 @@ class DeviceManager(val path: String) {
     }
 
     fun syncSearch(appConf: AppConf, timeout: Int = 10, triesRead: Int = 100, triesSend: Int = 4,
+                   pairInfo: Pair<Int, String>? = null,
                    onAvailableDevice: ((Device) -> Unit)? = null): Boolean {
         synchronized(this) {
-            return search(appConf, timeout, triesRead, triesSend, onAvailableDevice)
+            return search(appConf, timeout, triesRead, triesSend, pairInfo, onAvailableDevice)
         }
     }
 }

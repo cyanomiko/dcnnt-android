@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -61,7 +62,17 @@ class DeviceManagerFragment: DCFragment() {
         }
     }
 
-    fun startDeviceSearch(context: Context) {
+    private fun inputPairCode(context: Context, device: Device) {
+        activity?.runOnUiThread {
+            TextInputView.inputDialog(context, "Pair code for ${device.uin}", "", true) {
+                device.processPairData(it)
+                APP.dm.dumpItem(device)
+                startDeviceSearch(context, pairInfo = Pair(device.uin, it))
+            }
+        }
+    }
+
+    private fun startDeviceSearch(context: Context, pairInfo: Pair<Int, String>? = null) {
         thread {
             if (APP.dm.searching.compareAndSet(false, true)) {
                 activity?.runOnUiThread {
@@ -69,13 +80,18 @@ class DeviceManagerFragment: DCFragment() {
                     searchButton.text = context.getString(R.string.device_search_in_progress)
                     searchButton.refreshDrawableState()
                 }
-                APP.dm.search(APP.conf)
+                APP.dm.search(APP.conf, pairInfo = pairInfo)
                 activity?.runOnUiThread { updateDeviceListView() }
                 APP.dm.searching.set(false)
                 activity?.runOnUiThread {
                     searchButton.text = context.getString(R.string.device_search)
                     searchButton.isClickable = true
                     searchButton.refreshDrawableState()
+                }
+                if (pairInfo == null) {
+                    APP.dm.onlineDevices().filter { it.pairingData != null }.forEach {
+                        inputPairCode(context, it)
+                    }
                 }
             }
         }
