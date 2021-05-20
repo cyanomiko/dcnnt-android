@@ -66,7 +66,7 @@ class NotificationsFragment: BasePluginFargment() {
     }
 
     fun updateInstalledApps(context: Context, systemApps: Boolean?) {
-        appFilterView?.isEnabled = false
+        activity?.runOnUiThread { appFilterView?.isEnabled = false }
         synchronized(apps) {
             apps.clear()
             context.packageManager.getInstalledPackages(0).forEach { p ->
@@ -83,7 +83,7 @@ class NotificationsFragment: BasePluginFargment() {
                 }
             }
         }
-        appFilterView?.isEnabled = true
+        activity?.runOnUiThread { appFilterView?.isEnabled = true }
     }
 
     fun updateAppsFilters() {
