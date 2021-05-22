@@ -30,12 +30,15 @@ class Device(val dm: DeviceManager, val uin: Int, var name: String, var descript
         keySend = deriveKey(listOf(uin, uinApp, password, passApp).joinToString(""))
     }
 
-    fun processPairData(code: String) {
+    fun processPairData(code: String): DCResult {
         pairingData?.also {
             pairingData = null
-            password = String(decrypt(it, deriveKey("$code$uinApp")) ?: return)
+            password = String(decrypt(it, deriveKey("$code$uinApp"))
+                ?: return DCResult(false, "Incorrect pair code"))
             updateKeys()
+            return DCResult(true, "OK")
         }
+        return DCResult(false, "No pairing data")
     }
 
     fun isNew(): Boolean {

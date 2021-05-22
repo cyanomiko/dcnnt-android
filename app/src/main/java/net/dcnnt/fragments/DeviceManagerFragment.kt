@@ -65,7 +65,8 @@ class DeviceManagerFragment: DCFragment() {
     private fun inputPairCode(context: Context, device: Device) {
         activity?.runOnUiThread {
             TextInputView.inputDialog(context, "Pair code for ${device.uin}", "", true) {
-                device.processPairData(it)
+                val res = device.processPairData(it)
+                Toast.makeText(context, res.message, Toast.LENGTH_SHORT).show()
                 APP.dm.dumpItem(device)
                 startDeviceSearch(context, pairInfo = Pair(device.uin, it))
             }
