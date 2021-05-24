@@ -24,6 +24,14 @@ Android client for https://github.com/cyanomiko/dcnnt-py
 1. Server part of **dcnnt** must be installed on PC. Check: `dcnnt --help`, install: https://github.com/cyanomiko/dcnnt-py#install  
 2. Client app must be installed on phone.
 
+### How to pair devices (easy way)
+
+1. Start server on your PC in pairing mode with `dcnnt pair` command. Pairing code of 6 digits will be printed in terminal (example: `123-456`).
+2. Launch app on your phone.
+3. Select `Devices` entry in navigation menu.
+4. Tap `Search` button.
+5. Input pair code in dialog on phone.
+
 ### How to pair devices 
 
 1. Start server on your PC with `dcnnt` command.
