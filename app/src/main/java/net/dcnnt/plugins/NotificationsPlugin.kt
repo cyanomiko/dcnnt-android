@@ -63,6 +63,17 @@ class NotificationsPlugin(app: App, device: Device): Plugin<NotificationsPluginC
     override val MARK = "nots"
     override val NAME = "Notifications"
 
+    companion object {
+        fun checkIfNotificationAllowedForAnyDevice(app: App, packageName: String): Boolean {
+            app.dm.devices.values.forEach {
+                val conf = app.pm.getConfig("nots", it.uin)
+                if (conf !is NotificationsPluginConf) return@forEach
+                if (conf.getFilter(packageName) != NotificationFilter.NO) return true
+            }
+            return false
+        }
+    }
+
     fun checkAndSendNotification(notification: JSONObject, filter: NotificationFilter, icon: ByteArray?) {
         notification.put("packageIcon", icon != null)
         when (filter) {
