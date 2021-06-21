@@ -17,16 +17,14 @@ class DCLogger(val app: App, val name: String, val suffix: String,
     val file = File("$path/$name.0$suffix")
     private var writer: PrintWriter = getWriter()
 
-    init {
-        val directory = File(path)
-        if (!directory.exists()) directory.mkdirs()
-    }
-
     /**
      * Create PrintWriter with buffering, open file in append mode
      */
-    private fun getWriter() = PrintWriter(BufferedWriter(
-        FileOutputStream(file, true).writer(), bufSize))
+    private fun getWriter(): PrintWriter {
+        val directory = File(path)
+        if (!directory.exists()) directory.mkdirs()
+        return PrintWriter(BufferedWriter(FileOutputStream(file, true).writer(), bufSize))
+    }
 
     /**
      * Shift all log files
