@@ -1,0 +1,1 @@
+* Fixed crush on first start
