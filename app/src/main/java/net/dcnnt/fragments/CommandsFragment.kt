@@ -84,11 +84,13 @@ class CommandsFragment: BasePluginFargment() {
         }
     }
 
+    override fun onSelectedDeviceChanged() {
+        updateCommandsList(context ?: return)
+    }
+
     fun fragmentMainView(context: Context): View = VerticalLayout(context).apply {
         padding = context.dip(6)
-        addView(createDeviceSelectView(context).apply {
-            onUpdateOptons = {_, changed, _ -> if (changed) updateCommandsList(context) }
-        })
+        addView(createDeviceSelectView(context))
         addView(ScrollView(context).apply {
             commandsListView = VerticalLayout(context).apply {
                 addView(TextBlockView(context, context.getString(R.string.no_commands_available)))
