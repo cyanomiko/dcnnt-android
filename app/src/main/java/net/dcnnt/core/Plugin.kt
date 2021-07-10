@@ -2,10 +2,7 @@ package net.dcnnt.core
 
 import android.content.Context
 import android.util.Log
-import net.dcnnt.plugins.FileTransferPluginConf
-import net.dcnnt.plugins.NotificationsPluginConf
-import net.dcnnt.plugins.OpenerPluginConf
-import net.dcnnt.plugins.RemoteCommandPluginConf
+import net.dcnnt.plugins.*
 import org.json.JSONObject
 import java.io.File
 import java.net.Socket
@@ -210,6 +207,7 @@ class PluginManager(val app: App, val directory: String, private val pluginMarks
         "open" -> OpenerPluginConf(directory, uin)
         "rcmd" -> RemoteCommandPluginConf(directory, uin)
         "nots" -> NotificationsPluginConf(directory, uin)
+        "sync" -> SyncPluginConf(directory, uin)
         else -> throw IllegalArgumentException("Unknown plugin mark")
     }.apply {
         load()

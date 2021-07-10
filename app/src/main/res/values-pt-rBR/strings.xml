@@ -11,6 +11,7 @@
     <string name="menu_download">Download</string>
     <string name="menu_commands">Comandos</string>
     <string name="menu_notifications">Notificações</string>
+    <string name="menu_sync">Sync</string>
     <string name="menu_exit">Sair</string>
     <string name="button_select_file">Selecione</string>
     <string name="button_cancel">Cancelar</string>

@@ -119,6 +119,13 @@ abstract class DCConf(val path: String) {
     open fun onLoad() {}
 
     /**
+     * Save JSON object to file (may be replaced with other destination)
+     */
+    protected open fun dumpJSON(json: JSONObject) {
+        File(path).writeText(json.toString(2))
+    }
+
+    /**
      * Save config to JSON file
      * @return true on success, false otherwise
      */
@@ -135,7 +142,7 @@ abstract class DCConf(val path: String) {
         val entriesNames = List(entries.size) { entries[it].name }
         extra.keys().forEach { if (!entriesNames.contains(it)) json.put(it, extra.opt(it)) }
         try {
-            File(path).writeText(json.toString(2))
+            dumpJSON(json)
             return true
         } catch (e: Exception) {
             Log.e(TAG, "Config '$confName': failed to write JSON to '$path' - $e")
@@ -172,6 +179,11 @@ abstract class DCConf(val path: String) {
     }
 
     /**
+     * Load JSON object from file (may be replaced with other source)
+     */
+    protected open fun loadJSON() = JSONObject(File(path).readText())
+
+    /**
      * Load extra entries that was not defined in config class
      */
     protected open fun loadExtra(json: JSONObject) {
@@ -186,7 +198,7 @@ abstract class DCConf(val path: String) {
     fun load() {
         lateinit var json: JSONObject
         try {
-            json = JSONObject(File(path).readText())
+            json = loadJSON()
             Log.i(TAG, "Config '$confName': JSON loaded from '$path'")
         } catch (e: Exception) {
             json = JSONObject()

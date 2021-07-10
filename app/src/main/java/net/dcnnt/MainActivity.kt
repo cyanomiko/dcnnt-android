@@ -89,6 +89,7 @@ class Navigation(private val toolbarView: Toolbar,
             )
             "/commands" -> CommandsFragment()
             "/notifications" -> NotificationsFragment()
+            "/sync" -> SyncFragment()
             "/log" -> LogDirectoryFragment()
             else -> null
         })?.also { fragment ->
@@ -158,7 +159,8 @@ class MainActivity : AppCompatActivity() {
             it.add(0, Menu.FIRST + 5, Menu.NONE, R.string.menu_download).setIcon(R.drawable.ic_download)
             it.add(0, Menu.FIRST + 6, Menu.NONE, R.string.menu_commands).setIcon(R.drawable.ic_cr)
             it.add(0, Menu.FIRST + 7, Menu.NONE, R.string.menu_notifications).setIcon(R.drawable.ic_notification)
-            it.add(0, Menu.FIRST + 8, Menu.NONE, R.string.menu_exit).setIcon(R.drawable.ic_exit)
+            it.add(0, Menu.FIRST + 8, Menu.NONE, R.string.menu_sync).setIcon(R.drawable.ic_sync)
+            it.add(0, Menu.FIRST + 9, Menu.NONE, R.string.menu_exit).setIcon(R.drawable.ic_exit)
         }
         navMenuEl.setNavigationItemSelectedListener {
             drawerEl.closeDrawer(navMenuEl)
@@ -170,7 +172,8 @@ class MainActivity : AppCompatActivity() {
             if (it.itemId == Menu.FIRST + 5) navigation.go("/download", listOf())
             if (it.itemId == Menu.FIRST + 6) navigation.go("/commands", listOf())
             if (it.itemId == Menu.FIRST + 7) navigation.go("/notifications", listOf())
-            if (it.itemId == Menu.FIRST + 8) exitDialog()
+            if (it.itemId == Menu.FIRST + 8) navigation.go("/sync", listOf())
+            if (it.itemId == Menu.FIRST + 9) exitDialog()
             return@setNavigationItemSelectedListener true
         }
         navigation.start()

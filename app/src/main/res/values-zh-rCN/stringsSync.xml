@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sync_no_tasks">No sync tasks</string>
+    <string name="conf_sync_name_title">Name</string>
+    <string name="conf_sync_enabled_title">Enabled</string>
+    <string name="conf_sync_interval_title">Interval</string>
+    <string name="conf_sync_interval_info">How often launch task</string>
+    <string name="conf_sync_interval_5m">Every 5 minutes</string>
+    <string name="conf_sync_interval_1h">Hourly</string>
+    <string name="conf_sync_interval_8h">Every 8 hours</string>
+    <string name="conf_sync_interval_1d">Daily</string>
+    <string name="conf_sync_dir_directory_title">Directory</string>
+    <string name="conf_sync_dir_mode_title">Sync mode</string>
+    <string name="conf_sync_dir_mode_info">Direction of transmission</string>
+    <string name="conf_sync_dir_mode_upload">Upload</string>
+    <string name="conf_sync_dir_mode_download">Download</string>
+    <string name="conf_sync_dir_mode_sync">Sync</string>
+    <string name="conf_sync_dir_onConflict_title">On conflict</string>
+    <string name="conf_sync_dir_onConflict_info">Action on filename conflict</string>
+    <string name="conf_sync_dir_onConflict_replace">Replace</string>
+    <string name="conf_sync_dir_onConflict_ignore">Ignore</string>
+    <string name="conf_sync_dir_onConflict_both">Keep both files</string>
+    <string name="conf_sync_dir_onConflict_new">Keep newer</string>
+    <string name="conf_sync_dir_onDelete_title">On delete</string>
+    <string name="conf_sync_dir_onDelete_info">Action on file delete command</string>
+    <string name="conf_sync_dir_onDelete_delete">Delete</string>
+    <string name="conf_sync_dir_onDelete_ignore">Ignore</string>
+</resources>
