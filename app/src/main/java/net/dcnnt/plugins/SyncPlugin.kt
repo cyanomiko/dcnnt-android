@@ -17,7 +17,7 @@ import java.io.OutputStream
 import java.nio.ByteBuffer
 
 
-abstract class SyncTask(private val parent: SyncPluginConf, key: String): DCConf(key) {
+abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
     lateinit var name: StringEntry
     lateinit var enabled: BoolEntry
     lateinit var interval: SelectEntry
@@ -25,9 +25,10 @@ abstract class SyncTask(private val parent: SyncPluginConf, key: String): DCConf
         get() = "$confName/$path"
     val errorOnLoad: Boolean
         get() = needDump
+    open val defaultName = "Unknown task"
 
     open fun init() {
-        name = StringEntry(this, "name", 0, 40, "").init() as StringEntry
+        name = StringEntry(this, "name", 0, 40, defaultName).init() as StringEntry
         enabled = BoolEntry(this, "enabled", false).init() as BoolEntry
         interval = SelectEntry(this, "interval", listOf(
             SelectOption("5m", R.string.conf_sync_interval_5m),
@@ -53,6 +54,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
     lateinit var mode: SelectEntry
     lateinit var onConflict: SelectEntry
     lateinit var onDelete: SelectEntry
+    override val defaultName = "Sync directory"
 
     override fun init() {
         super.init()
@@ -74,7 +76,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
         ), 1).init() as SelectEntry
     }
 
-    override fun getTextInfo() = "$directory"
+    override fun getTextInfo() = directory.value
 }
 
 

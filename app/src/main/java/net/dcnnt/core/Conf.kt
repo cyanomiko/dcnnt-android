@@ -110,7 +110,7 @@ abstract class DCConf(val path: String) {
     abstract val confName: String
     val entries = mutableListOf<DCConfEntry<Any>>()
     val entriesByName = mutableMapOf<String, DCConfEntry<Any>>()
-    lateinit var extra: JSONObject
+    var extra = JSONObject()
     protected var needDump = false
 
     /**
