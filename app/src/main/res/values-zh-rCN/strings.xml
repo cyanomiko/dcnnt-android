@@ -11,7 +11,7 @@
     <string name="menu_download">下载</string>
     <string name="menu_commands">命令</string>
     <string name="menu_notifications">通知</string>
-    <string name="menu_sync">Sync</string>
+	<string name="menu_sync">同步</string>
     <string name="menu_exit">退出</string>
     <string name="button_select_file">选择</string>
     <string name="button_cancel">取消</string>
