@@ -81,7 +81,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
 
 
 class SyncPluginConf(directory: String, uin: Int): PluginConf(directory, "sync", uin) {
-    private val tasks: MutableMap<String, SyncTask> = mutableMapOf()
+    val tasks: MutableMap<String, SyncTask> = mutableMapOf()
 
     private fun loadTask(confName: String, key: String) {
         if (confName == "sync_dir") {

@@ -2,8 +2,12 @@ package net.dcnnt.fragments
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.res.ColorStateList
+import android.os.Build
 import android.os.Bundle
+import android.provider.DocumentsContract
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -11,13 +15,13 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.core.view.marginStart
 import androidx.core.view.setMargins
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import net.dcnnt.MainActivity
 import net.dcnnt.R
-import net.dcnnt.core.APP
-import net.dcnnt.core.Task
-import net.dcnnt.core.nowString
+import net.dcnnt.core.*
 import net.dcnnt.plugins.DirectorySyncTask
 import net.dcnnt.plugins.SyncPluginConf
 import net.dcnnt.plugins.SyncTask
@@ -31,7 +35,7 @@ class SyncTaskView(context: Context, parent: SyncFragment, task: SyncTask): Entr
         iconView.setImageResource(getIcon())
         val iconColor = if (task.enabled.value) R.color.colorPrimary else R.color.colorPrimaryDark
         iconView.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, iconColor))
-        setOnClickListener { parent.toast(context, "Not implemented") }
+        setOnClickListener { parent.editSyncTask(context, task) }
         actionView.setOnClickListener { parent.removeSyncTask(context, task) }
     }
 
@@ -44,8 +48,13 @@ class SyncFragment: BasePluginFargment() {
     override val TAG = "DC/SyncFragment"
     lateinit var tasksNotAtAllStr: String
     lateinit var syncTasksView: VerticalLayout
+    var selectedConf: SyncPluginConf? = null
 
     override fun onSelectedDeviceChanged() {
+        selectedConf = null
+        selectedDevice?.also {
+            selectedConf = APP.pm.getConfig("sync", it.uin) as SyncPluginConf
+        }
         updateSyncTasksView(context ?: return)
     }
 
@@ -53,7 +62,8 @@ class SyncFragment: BasePluginFargment() {
         syncTasksView.removeAllViews()
         val device = selectedDevice ?: return syncTasksView.addView(
             TextBlockView(context, tasksNotAtAllStr))
-        val conf = APP.pm.getConfig("sync", device.uin) as SyncPluginConf
+        val conf = selectedConf ?: return syncTasksView.addView(
+            TextBlockView(context, tasksNotAtAllStr))
         val tasks = conf.getTasks()
         if (tasks.isEmpty()) {
             return syncTasksView.addView(TextBlockView(context, tasksNotAtAllStr))
@@ -62,7 +72,7 @@ class SyncFragment: BasePluginFargment() {
     }
 
     fun addSyncTask(context: Context) {
-        val conf = APP.pm.getConfig("sync", (selectedDevice ?: return).uin) as SyncPluginConf
+        val conf = selectedConf ?: return
         conf.addTask(DirectorySyncTask(conf, nowString()).apply { init() })
         updateSyncTasksView(context)
     }
@@ -77,6 +87,11 @@ class SyncFragment: BasePluginFargment() {
                 updateSyncTasksView(context)
             }
         }.create().show()
+    }
+
+    fun editSyncTask(context: Context, task: SyncTask) {
+        (activity as? MainActivity)?.navigation?.go(
+            "/sync/task", listOf(task.parent.uin.value, task.confKey))
     }
 
     fun fragmentMainView(context: Context): View = VerticalLayout(context).apply {
@@ -121,4 +136,43 @@ class SyncFragment: BasePluginFargment() {
             updateSyncTasksView(context ?: return)
         }
     }
+}
+
+class SyncTaskEditFragment: DCFragment() {
+    val TAG = "DC/SyncEditFragment"
+    lateinit var device: Device
+    lateinit var task: SyncTask
+    lateinit var conf: SyncPluginConf
+    private lateinit var confListView: ConfListView
+
+    companion object {
+        private const val CODE_SELECT_DOWNLOAD_DIRECTORY = 143
+        private const val ARG_UIN = "uin"
+        private const val ARG_KEY = "key"
+        fun newInstance(uin: Int, taskKey: String) = SyncTaskEditFragment().apply {
+            arguments = bundleOf(ARG_UIN to uin, ARG_KEY to taskKey)
+        }
+    }
+
+    fun fragmentMainView(context: Context) = ScrollView(context).apply {
+        addView(ConfListView(context).apply {
+            confListView = this
+            init(task)
+        })
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        arguments?.also { args ->
+            conf = APP.pm.getConfig("sync", args.getInt(ARG_UIN)) as SyncPluginConf
+            task = conf.tasks[args.getString(ARG_KEY)] ?: return
+        }
+    }
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        Log.d(TAG, "onCreateView")
+        container?.context?.also { return fragmentMainView(it) }
+        return null
+    }
+
 }

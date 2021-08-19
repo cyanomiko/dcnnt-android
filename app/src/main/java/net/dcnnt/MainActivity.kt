@@ -91,6 +91,14 @@ class Navigation(private val toolbarView: Toolbar,
             "/notifications" -> NotificationsFragment()
             "/sync" -> SyncFragment()
             "/log" -> LogDirectoryFragment()
+            "/sync/task" -> {
+                val uin = args.getOrNull(0);
+                val taskKey = args.getOrNull(1);
+                when((uin is Int) and (taskKey is String)) {
+                    true -> SyncTaskEditFragment.newInstance(uin as Int, taskKey as String)
+                    false -> null
+                }
+            }
             else -> null
         })?.also { fragment ->
             supportFragmentManager.beginTransaction().also { transaction ->
