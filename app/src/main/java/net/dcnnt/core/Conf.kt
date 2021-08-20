@@ -9,7 +9,7 @@ import java.lang.Exception
 /**
  * Types of config entry
  */
-enum class ConfTypes { INT, STRING, BOOL, SELECT }
+enum class ConfTypes { INT, STRING, BOOL, SELECT, DIR }
 
 
 /**
@@ -60,9 +60,9 @@ class IntEntry(conf: DCConf, name: String,
     }
 }
 
-class StringEntry(conf: DCConf, name: String,
-                  private val minLength: Int, private val maxLength: Int,
-                  default: String): DCConfEntry<String>(conf, name, default) {
+open class StringEntry(conf: DCConf, name: String,
+                       private val minLength: Int, private val maxLength: Int,
+                       default: String): DCConfEntry<String>(conf, name, default) {
     override val type = ConfTypes.STRING
     override fun check(value: Any?): Boolean {
         if (value is String) return (value.length >= minLength) and (value.length <= maxLength)
@@ -97,6 +97,12 @@ class SelectEntry(conf: DCConf, name: String,
         return null
     }
 }
+
+class DirEntry(conf: DCConf, name: String,
+               default: String): StringEntry(conf, name, 0, 0xFFFF, default) {
+    override val type = ConfTypes.DIR
+}
+
 
 /**
  * Common part of application and plugin configs

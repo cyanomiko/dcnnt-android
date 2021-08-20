@@ -29,6 +29,7 @@ open class ConfListView(context: Context) : VerticalLayout(context) {
             ConfTypes.BOOL -> createBoolInput((entry as? BoolEntry) ?: return null, t, s)
             ConfTypes.INT -> createIntInput((entry as? IntEntry) ?: return null, t, s)
             ConfTypes.STRING -> createStringInput((entry as? StringEntry) ?: return null, t, s)
+            ConfTypes.DIR -> createStringInput((entry as? DirEntry) ?: return null, t, s)
             ConfTypes.SELECT -> createSelectInput((entry as? SelectEntry) ?: return null, t, s)
         }
     }

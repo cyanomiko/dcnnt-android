@@ -43,7 +43,7 @@ class AppConf(path: String): DCConf(path) {
         SelectOption("one", R.string.conf_app_downloadNotificationPolicy_one),
         SelectOption("all", R.string.conf_app_downloadNotificationPolicy_all)
     ), 1).init()
-    val downloadDirectory = StringEntry(this, "downloadDirectory", 0, 200,
+    val downloadDirectory = DirEntry(this, "downloadDirectory",
         "content://com.android.providers.downloads.documents/tree/downloads").init()
     val actionForSharedFile = SelectEntry(this, "actionForSharedFile", listOf(
         SelectOption("ask", R.string.conf_app_actionForSharedFile_ask),
