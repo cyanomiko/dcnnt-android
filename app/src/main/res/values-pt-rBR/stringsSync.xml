@@ -3,6 +3,7 @@
     <string name="sync_no_tasks">No sync tasks</string>
     <string name="conf_sync_name_title">Name</string>
     <string name="conf_sync_enabled_title">Enabled</string>
+    <string name="conf_sync_enabled_info">Enable/disable task</string>
     <string name="conf_sync_interval_title">Interval</string>
     <string name="conf_sync_interval_info">How often launch task</string>
     <string name="conf_sync_interval_5m">Every 5 minutes</string>

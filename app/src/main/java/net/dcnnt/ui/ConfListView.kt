@@ -19,6 +19,7 @@ open class ConfListView(context: Context, private val fragment: DCFragment) : Ve
     private val packageName = context.packageName
     private lateinit var conf: DCConf
     val confViews = mutableMapOf<String, ListTileView>()
+    var alternativeConfNames = listOf<String>()
 
     fun init(c: DCConf) {
         conf = c
@@ -30,12 +31,27 @@ open class ConfListView(context: Context, private val fragment: DCFragment) : Ve
         }
     }
 
+    private fun extractResourceString(entryName: String, stringType: String): String {
+        val confNames = mutableListOf(conf.confName)
+        confNames.addAll(alternativeConfNames)
+        for (confName in confNames) {
+            val prefix = "conf_${confName}_${entryName}"
+            val id = r.getIdentifier("${prefix}_${stringType}", "string", packageName)
+            if (id > 0) {
+                return r.getString(id)
+            }
+        }
+        return if (stringType == "title") entryName else ""
+    }
+
     private fun createViewForEntry(entry: DCConfEntry<Any>): ListTileView? {
         val prefix = "conf_${conf.confName}_${entry.name}"
-        val titleId = r.getIdentifier("${prefix}_title", "string", packageName)
-        val t = if (titleId > 0) r.getString(titleId) else entry.name
-        val infoId = r.getIdentifier("${prefix}_info", "string", packageName)
-        val s = if (infoId > 0) r.getString(infoId) else ""
+//        val titleId = r.getIdentifier("${prefix}_title", "string", packageName)
+//        val t = if (titleId > 0) r.getString(titleId) else entry.name
+//        val infoId = r.getIdentifier("${prefix}_info", "string", packageName)
+//        val s = if (infoId > 0) r.getString(infoId) else ""
+        val t = extractResourceString(entry.name, "title")
+        val s = extractResourceString(entry.name, "info")
         return when (entry.type) {
             ConfTypes.BOOL -> createBoolInput((entry as? BoolEntry) ?: return null, t, s)
             ConfTypes.INT -> createIntInput((entry as? IntEntry) ?: return null, t, s)

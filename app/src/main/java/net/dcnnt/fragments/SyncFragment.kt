@@ -50,18 +50,20 @@ class SyncFragment: BasePluginFargment() {
     lateinit var syncTasksView: VerticalLayout
     var selectedConf: SyncPluginConf? = null
 
-    override fun onSelectedDeviceChanged() {
+    private fun updateSelectedConf() {
         selectedConf = null
         selectedDevice?.also {
             selectedConf = APP.pm.getConfig("sync", it.uin) as SyncPluginConf
         }
+    }
+
+    override fun onSelectedDeviceChanged() {
+        updateSelectedConf()
         updateSyncTasksView(context ?: return)
     }
 
     fun updateSyncTasksView(context: Context) {
         syncTasksView.removeAllViews()
-        val device = selectedDevice ?: return syncTasksView.addView(
-            TextBlockView(context, tasksNotAtAllStr))
         val conf = selectedConf ?: return syncTasksView.addView(
             TextBlockView(context, tasksNotAtAllStr))
         val tasks = conf.getTasks()
@@ -74,6 +76,7 @@ class SyncFragment: BasePluginFargment() {
     fun addSyncTask(context: Context) {
         val conf = selectedConf ?: return
         conf.addTask(DirectorySyncTask(conf, nowString()).apply { init() })
+        conf.dump()
         updateSyncTasksView(context)
     }
 
@@ -84,6 +87,7 @@ class SyncFragment: BasePluginFargment() {
             it.setNegativeButton(context.getString(R.string.cancel)) { _, _ -> }
             it.setPositiveButton(context.getString(R.string.ok)) { _, _ ->
                 task.parent.removeTask(task)
+                selectedConf?.dump()
                 updateSyncTasksView(context)
             }
         }.create().show()
@@ -132,9 +136,8 @@ class SyncFragment: BasePluginFargment() {
 
     override fun onStart() {
         super.onStart()
-        if (APP.conf.autoSearch.value and !APP.dm.searchDone) {
-            updateSyncTasksView(context ?: return)
-        }
+        updateSelectedConf()
+        updateSyncTasksView(context ?: return)
     }
 }
 
@@ -146,7 +149,6 @@ class SyncTaskEditFragment: DCFragment() {
     private lateinit var confListView: ConfListView
 
     companion object {
-        private const val CODE_SELECT_DOWNLOAD_DIRECTORY = 143
         private const val ARG_UIN = "uin"
         private const val ARG_KEY = "key"
         fun newInstance(uin: Int, taskKey: String) = SyncTaskEditFragment().apply {
@@ -156,6 +158,7 @@ class SyncTaskEditFragment: DCFragment() {
 
     fun fragmentMainView(context: Context) = ScrollView(context).apply {
         addView(ConfListView(context, this@SyncTaskEditFragment).apply {
+            alternativeConfNames = listOf("sync")
             confListView = this
             init(task)
         })
