@@ -127,7 +127,7 @@ class SettingsFragment: DCFragment() {
     }
 
     fun fragmentMainView(context: Context) = ScrollView(context).apply {
-        addView(ConfListView(context).apply {
+        addView(ConfListView(context, this@SettingsFragment).apply {
             confListView = this
             init(APP.conf)
             (confViews[APP.conf.notificationListenerService.name] as? BoolInputView)?.also {

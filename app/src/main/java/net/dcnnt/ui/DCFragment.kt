@@ -10,7 +10,7 @@ import net.dcnnt.MainActivity
  * Base class for all fragments in application
  */
 open class DCFragment: Fragment() {
-    protected val activityResultHandlers: MutableMap<Int, (Int, Int, Intent?) -> Boolean> = mutableMapOf()
+    val activityResultHandlers: MutableMap<Int, (Int, Int, Intent?) -> Boolean> = mutableMapOf()
     /**
      * Reload this function to draw toolbar buttons and menu
      */

@@ -155,7 +155,7 @@ class SyncTaskEditFragment: DCFragment() {
     }
 
     fun fragmentMainView(context: Context) = ScrollView(context).apply {
-        addView(ConfListView(context).apply {
+        addView(ConfListView(context, this@SyncTaskEditFragment).apply {
             confListView = this
             init(task)
         })

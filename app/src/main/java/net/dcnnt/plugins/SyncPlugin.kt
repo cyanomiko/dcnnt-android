@@ -58,7 +58,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
 
     override fun init() {
         super.init()
-        directory = StringEntry(this, "directory", 0, 1024, "").init() as StringEntry
+        directory = DirEntry(this, "directory", "").init() as DirEntry
         mode = SelectEntry(this, "mode", listOf(
             SelectOption("upload", R.string.conf_sync_dir_mode_upload),
             SelectOption("download", R.string.conf_sync_dir_mode_download),
