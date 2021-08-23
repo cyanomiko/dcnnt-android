@@ -76,7 +76,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
         ), 1).init() as SelectEntry
     }
 
-    override fun getTextInfo() = directory.value
+    override fun getTextInfo(): String = Uri.decode(directory.value.split('/').last())
 }
 
 
@@ -86,6 +86,8 @@ class SyncPluginConf(directory: String, uin: Int): PluginConf(directory, "sync",
     private fun loadTask(confName: String, key: String) {
         if (confName == "sync_dir") {
             val task = DirectorySyncTask(this, key)
+            task.init()
+            task.load()
             if (task.errorOnLoad) {
                 removeTask(task)
             } else {
@@ -113,6 +115,10 @@ class SyncPluginConf(directory: String, uin: Int): PluginConf(directory, "sync",
     }
 
     fun getTasks() = tasks.values.toList()
+
+    override fun onLoad() {
+        loadTasks()
+    }
 }
 
 
