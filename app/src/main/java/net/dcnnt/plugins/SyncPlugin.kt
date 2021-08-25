@@ -31,7 +31,7 @@ abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
         name = StringEntry(this, "name", 0, 40, defaultName).init() as StringEntry
         enabled = BoolEntry(this, "enabled", false).init() as BoolEntry
         interval = SelectEntry(this, "interval", listOf(
-            SelectOption("5m", R.string.conf_sync_interval_5m),
+            SelectOption("15m", R.string.conf_sync_interval_15m),
             SelectOption("1h", R.string.conf_sync_interval_1h),
             SelectOption("8h", R.string.conf_sync_interval_8h),
             SelectOption("1d", R.string.conf_sync_interval_1d)
