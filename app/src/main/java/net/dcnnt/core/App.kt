@@ -6,8 +6,12 @@ import android.app.NotificationManager
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import net.dcnnt.DCWorker
 import net.dcnnt.MainActivity
 import net.dcnnt.R
+import net.dcnnt.plugins.SyncPlugin
+import net.dcnnt.plugins.SyncPluginConf
+import net.dcnnt.plugins.SyncTask
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -51,7 +55,6 @@ class AppConf(path: String): DCConf(path) {
         SelectOption("open", R.string.conf_app_actionForSharedFile_open)
     ), 0).init()
 }
-
 
 class App : Application() {
     val TAG = "DConnect/App"
@@ -103,6 +106,8 @@ class App : Application() {
         pm.init()
         Log.i(TAG, "Load PM...")
         pm.load()
+        Log.i(TAG, "Init background tasks")
+        initWorker()
     }
 
     fun log(line: String, tag: String = "DC/Log") = logger.log(line, tag)
@@ -119,6 +124,22 @@ class App : Application() {
             Thread.setDefaultUncaughtExceptionHandler(DCCrashHandler(this, oldHandler).apply {
                 crashHandler = this
             })
+        }
+    }
+
+    private fun initWorker() {
+        var minInterval = Long.MAX_VALUE
+        dm.devices.values.forEach { device ->
+            val config = pm.getConfig("sync", device.uin) as? SyncPluginConf ?: return@forEach
+            config.tasks.values.forEach { task ->
+                val curInterval = SyncTask.intervalMinutes[task.interval.value] ?: minInterval
+                if (minInterval > curInterval) {
+                    minInterval = curInterval
+                }
+            }
+        }
+        if (minInterval < Long.MAX_VALUE) {
+            DCWorker.initWorker(applicationContext, minInterval)
         }
     }
 

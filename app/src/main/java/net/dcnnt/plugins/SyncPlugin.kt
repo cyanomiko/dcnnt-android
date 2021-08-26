@@ -27,6 +27,10 @@ abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
         get() = needDump
     open val defaultName = "Unknown task"
 
+    companion object {
+        val intervalMinutes = hashMapOf( "15m" to 15L, "1h" to 60L, "8h" to 480L, "1d" to 1440L)
+    }
+
     open fun init() {
         name = StringEntry(this, "name", 0, 40, defaultName).init() as StringEntry
         enabled = BoolEntry(this, "enabled", false).init() as BoolEntry
@@ -123,9 +127,9 @@ class SyncPluginConf(directory: String, uin: Int): PluginConf(directory, "sync",
 
 
 class SyncPlugin(app: App, device: Device): BaseFilePlugin<SyncPluginConf>(app, device) {
-    override val TAG = "DC/Open"
-    override val MARK = "open"
-    override val NAME = "Opener"
+    override val TAG = "DC/Sync"
+    override val MARK = "sync"
+    override val NAME = "Sync"
     lateinit var context: Context
 
     override fun init(context: Context?): Boolean {
