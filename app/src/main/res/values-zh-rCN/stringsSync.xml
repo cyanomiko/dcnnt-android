@@ -6,7 +6,7 @@
     <string name="conf_sync_enabled_info">启用/禁用任务</string>
     <string name="conf_sync_interval_title">间隔</string>
     <string name="conf_sync_interval_info">任务发起频率</string>
-    <string name="conf_sync_interval_5m">每 5 分钟</string>
+    <string name="conf_sync_interval_5m">每 15 分钟</string>
     <string name="conf_sync_interval_1h">每小时</string>
     <string name="conf_sync_interval_8h">每 8 小时</string>
     <string name="conf_sync_interval_1d">每天</string>
