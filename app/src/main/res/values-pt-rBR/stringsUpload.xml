@@ -2,7 +2,7 @@
 <resources>
     <string name="button_upload">Upload</string>
     <string name="notification_upload">Upload</string>
-    <string name="notification_upload_complete">Upload completo</string>
+    <string name="notification_upload_complete">Upload concluído</string>
     <string name="notification_upload_canceled">Upload cancelado</string>
     <string name="notification_upload_failed">Upload falhou</string>
     <string name="no_files_selected">Nenhum arquivo selecionado...</string>
