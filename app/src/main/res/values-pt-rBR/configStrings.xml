@@ -9,7 +9,7 @@
     <string name="conf_app_notificationListenerService_title">Serviço de Notificação</string>
     <string name="conf_app_notificationListenerService_info">Permitir o acesso a notificações</string>
     <string name="conf_app_uploadNotificationPolicy_title">Notificações de upload</string>
-    <string name="conf_app_uploadNotificationPolicy_info">Como mostrar notificações para arquivos carregados</string>
+    <string name="conf_app_uploadNotificationPolicy_info">Como mostrar notificações para arquivos de upload</string>
     <string name="conf_app_downloadNotificationPolicy_title">Notificações sobre download</string>
     <string name="conf_app_downloadNotificationPolicy_info">Como mostrar notificações para arquivos baixados</string>
     <string name="conf_app_downloadNotificationPolicy_no">Não mostrar</string>
@@ -17,10 +17,10 @@
     <string name="conf_app_downloadNotificationPolicy_all">Para cada arquivo</string>
     <string name="conf_app_autoSearch_title">Encontrar automaticamente os dispositivos</string>
     <string name="conf_app_autoSearch_info">Encontre os dispositivos automaticamente ao iniciar o aplicativo</string>
-    <string name="conf_app_downloadDirectory_title">Diretório de downloads</string>
+    <string name="conf_app_downloadDirectory_title">Pasta de download</string>
     <string name="conf_app_actionForSharedFile_title">Ação para arquivos compartilhados</string>
-    <string name="conf_app_actionForSharedFile_info">Qual método usar para lidar com um único arquivo compartilhado </string>
-    <string name="conf_app_actionForSharedFile_ask">Sempre pergunte </string>
+    <string name="conf_app_actionForSharedFile_info">Qual método usar para lidar com um único arquivo compartilhado</string>
+    <string name="conf_app_actionForSharedFile_ask">Sempre perguntar</string>
     <string name="conf_app_actionForSharedFile_open">Abrir</string>
     <string name="conf_app_actionForSharedFile_upload">Upload</string>
 </resources>
