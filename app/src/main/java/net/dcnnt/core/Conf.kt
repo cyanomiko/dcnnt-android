@@ -98,8 +98,8 @@ class SelectEntry(conf: DCConf, name: String,
     }
 }
 
-class DirEntry(conf: DCConf, name: String,
-               default: String): StringEntry(conf, name, 0, 0xFFFF, default) {
+class DirEntry(conf: DCConf, name: String, default: String,
+               val persistent: Boolean = false): StringEntry(conf, name, 0, 0xFFFF, default) {
     override val type = ConfTypes.DIR
 }
 

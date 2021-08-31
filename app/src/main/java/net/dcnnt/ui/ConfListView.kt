@@ -102,8 +102,15 @@ open class ConfListView(context: Context, private val fragment: DCFragment) : Ve
         fragment.activityResultHandlers[requestCode] = { _, resultCode, intent ->
             var ret = true
             if (resultCode == Activity.RESULT_OK) {
-                entry.updateValue(intent?.data.toString())
+                val uri = intent?.data
+                entry.updateValue("$uri")
                 text = Uri.decode(entry.value.split("/").last())
+                if (entry.persistent) {
+                    if (uri != null) {
+                        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        APP.contentResolver.takePersistableUriPermission(uri, flags)
+                    }
+                }
                 ret = false
             }
             ret
