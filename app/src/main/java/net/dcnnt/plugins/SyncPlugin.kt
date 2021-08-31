@@ -1,11 +1,15 @@
 package net.dcnnt.plugins
 
+import android.Manifest
 import android.content.ContentResolver
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.util.Log
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import net.dcnnt.R
 import net.dcnnt.core.*
@@ -50,6 +54,7 @@ abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
     }
 
     abstract fun getTextInfo(): String
+    abstract fun execute(plugin: SyncPlugin)
 }
 
 class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
@@ -62,7 +67,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
 
     override fun init() {
         super.init()
-        directory = DirEntry(this, "directory", "").init() as DirEntry
+        directory = DirEntry(this, "directory", "", true).init() as DirEntry
         mode = SelectEntry(this, "mode", listOf(
             SelectOption("upload", R.string.conf_sync_dir_mode_upload),
             SelectOption("download", R.string.conf_sync_dir_mode_download),
@@ -81,6 +86,18 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
     }
 
     override fun getTextInfo(): String = Uri.decode(directory.value.split('/').last())
+
+    override fun execute(plugin: SyncPlugin) {
+        val dir = DocumentFile.fromTreeUri(plugin.context, Uri.parse(directory.value)) ?: return
+        val l = dir.length()
+        val p = (ContextCompat.checkSelfPermission(plugin.context, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+        val p2 = (ContextCompat.checkSelfPermission(plugin.context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+        APP.log("URI: ${directory.value} (${dir.isDirectory}, $p, $p2)")
+        APP.log("Length: $l")
+        dir.listFiles().asIterable().forEach {
+            APP.log("${it.uri}")
+        }
+    }
 }
 
 
