@@ -3,7 +3,7 @@
     <string name="sync_no_tasks">无同步任务</string>
     <string name="conf_sync_name_title">名称</string>
     <string name="conf_sync_enabled_title">已启用</string>
-    <string name="conf_sync_enabled_info">Enable/disable task</string>
+    <string name="conf_sync_enabled_info">启用/禁用任务</string>
     <string name="conf_sync_interval_title">间隔</string>
     <string name="conf_sync_interval_info">任务发起频率</string>
     <string name="conf_sync_interval_15m">每 15 分钟</string>
