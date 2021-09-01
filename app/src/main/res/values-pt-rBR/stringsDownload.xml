@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="button_download">Baixar</string>
+    <string name="button_download">Download</string>
     <string name="sort_by_name">Ordenar pelo nome</string>
     <string name="sort_by_type">Ordenar pelo tipo</string>
     <string name="sort_by_size">Ordenar pelo tamanho</string>
     <string name="no_files_info">Sem informações de arquivos</string>
-    <string name="no_shared_files">Não há arquivos compartilhados</string>
+    <string name="no_shared_files">Nenhum arquivo compartilhado</string>
     <string name="unit_bytes">bytes</string>
     <string name="unit_entries">entradas</string>
     <string name="status_cancel">Cancelado</string>
     <string name="action_open">Abrir</string>
     <string name="action_share">Compartilhar</string>
     <string name="notification_download">Download</string>
-    <string name="notification_download_complete">Download completo</string>
+    <string name="notification_download_complete">Download concluído</string>
     <string name="notification_download_canceled">Download cancelado</string>
-    <string name="notification_download_failed">Falha no download</string>
-    <string name="directory_not_set">O diretório de download não está definido</string>
+    <string name="notification_download_failed">Download falhou</string>
+    <string name="directory_not_set">A pasta de download não está definida</string>
 </resources>

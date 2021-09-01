@@ -1,0 +1,12 @@
+<b>Device Connect</b>
+
+App para conectar qualquer telefone de Android com computador, semelhante ao KDE Connect. 
+
+Características:  
+* Leve e rápido
+* Criptografia AES-256 com senha
+* Permite fazer upload de arquivos de telefone para computador
+* Permite abrir arquivos e URLs de telefone no computador
+* Permite baixar arquivos de pastas pré-definidas em computador para telefone
+* Permite mostrar notificações de telefone em computador
+* Permite executar comandos pré-definidos em computador
