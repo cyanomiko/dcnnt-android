@@ -30,6 +30,7 @@ abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
     val errorOnLoad: Boolean
         get() = needDump
     open val defaultName = "Unknown task"
+    open val SUB = "null"
 
     companion object {
         val intervalMinutes = hashMapOf( "15m" to 15L, "1h" to 60L, "8h" to 480L, "1d" to 1440L)
@@ -59,15 +60,18 @@ abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
 
 class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
     override val confName = "sync_dir"
-    lateinit var directory: StringEntry
+    lateinit var directory: DirEntry
+    lateinit var target: StringEntry
     lateinit var mode: SelectEntry
     lateinit var onConflict: SelectEntry
     lateinit var onDelete: SelectEntry
     override val defaultName = "Sync directory"
+    override val SUB = "dir"
 
     override fun init() {
         super.init()
         directory = DirEntry(this, "directory", "", true).init() as DirEntry
+        target = StringEntry(this, "target", 0, 0xFFFF, "").init() as StringEntry
         mode = SelectEntry(this, "mode", listOf(
             SelectOption("upload", R.string.conf_sync_dir_mode_upload),
             SelectOption("download", R.string.conf_sync_dir_mode_download),
@@ -88,15 +92,20 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
     override fun getTextInfo(): String = Uri.decode(directory.value.split('/').last())
 
     override fun execute(plugin: SyncPlugin) {
+        val flatFilesData = JSONArray()
         val dir = DocumentFile.fromTreeUri(plugin.context, Uri.parse(directory.value)) ?: return
-        val l = dir.length()
-        val p = (ContextCompat.checkSelfPermission(plugin.context, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-        val p2 = (ContextCompat.checkSelfPermission(plugin.context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-        APP.log("URI: ${directory.value} (${dir.isDirectory}, $p, $p2)")
-        APP.log("Length: $l")
         dir.listFiles().asIterable().forEach {
+            if (it.isDirectory) return@forEach  // ToDo: Support for subdirectories
+            flatFilesData.put(JSONObject().apply {
+                put("name", it.name)
+                put("ts", it.lastModified())
+            })
             APP.log("${it.uri}")
         }
+        // ToDo: Prepare session - send info about files and get such info back
+        // ToDo: Send files one by one
+        // ToDo: Receive files one by one
+        // ToDo: Finalize session or just close connection?
     }
 }
 

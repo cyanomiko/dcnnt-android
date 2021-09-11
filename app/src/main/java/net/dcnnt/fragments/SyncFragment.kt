@@ -14,6 +14,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.marginStart
@@ -23,9 +24,12 @@ import net.dcnnt.MainActivity
 import net.dcnnt.R
 import net.dcnnt.core.*
 import net.dcnnt.plugins.DirectorySyncTask
+import net.dcnnt.plugins.SyncPlugin
 import net.dcnnt.plugins.SyncPluginConf
 import net.dcnnt.plugins.SyncTask
 import net.dcnnt.ui.*
+import org.json.JSONArray
+import kotlin.concurrent.thread
 
 @SuppressLint("ViewConstructor")
 class SyncTaskView(context: Context, parent: SyncFragment, task: SyncTask): EntryView(context) {
@@ -147,6 +151,7 @@ class SyncTaskEditFragment: DCFragment() {
     lateinit var task: SyncTask
     lateinit var conf: SyncPluginConf
     private lateinit var confListView: ConfListView
+    private var targetView: TextInputView? = null
 
     companion object {
         private const val ARG_UIN = "uin"
@@ -156,18 +161,70 @@ class SyncTaskEditFragment: DCFragment() {
         }
     }
 
+    override fun prepareToolbar(toolbarView: Toolbar) {
+        toolbarView.menu.also { menu ->
+            menu.clear()
+            menu.add("Do it now").setOnMenuItemClickListener {
+                val plugin = SyncPlugin(APP, device)
+                plugin.init(APP.applicationContext)
+                task.execute(plugin)
+                true
+            }
+        }
+    }
+
+    fun selectTarget(context: Context, view: TextInputView, title: String) {
+        view.text = "..."
+        val options = mutableListOf<Option>()
+        thread {
+            try {
+                val plugin = SyncPlugin(APP, device)
+                plugin.init(context)
+                plugin.connect()
+                val res = (plugin.rpc("get_targets", mapOf("sub" to task.SUB)) as? JSONArray)
+                    ?: throw PluginException("Incorrect response")
+                for (i in 0 .. res.length()) {
+                    res.optString(i).also {
+                        if (it.isNotEmpty()) options.add(Option(it, it))
+                    }
+                }
+            } catch (e: Exception) {
+                showError(context, e)
+            }
+            if (options.isEmpty()) {
+                toast(context, getString(R.string.sync_no_targets))
+                return@thread
+            }
+            activity?.runOnUiThread {
+                SelectInputView.showListDialog(context, title, options) { _, option ->
+                    val v = option.value.toString()
+                    view.text = v
+                    (task as? DirectorySyncTask ?: return@showListDialog).target.updateValue(v)
+                }
+            }
+        }
+    }
+
     fun fragmentMainView(context: Context) = ScrollView(context).apply {
         addView(ConfListView(context, this@SyncTaskEditFragment).apply {
             alternativeConfNames = listOf("sync")
             confListView = this
             init(task)
+            (confViews["target"] as? TextInputView)?.also {
+                targetView = it
+                it.setOnClickListener { _ ->
+                    selectTarget(context, it, it.title)
+                }
+            }
         })
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.also { args ->
-            conf = APP.pm.getConfig("sync", args.getInt(ARG_UIN)) as SyncPluginConf
+            val uin = args.getInt(ARG_UIN)
+            device = APP.dm.devices.getValue(uin)
+            conf = APP.pm.getConfig("sync", uin) as SyncPluginConf
             task = conf.tasks[args.getString(ARG_KEY)] ?: return
         }
     }
