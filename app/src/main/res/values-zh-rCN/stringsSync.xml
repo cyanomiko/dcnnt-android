@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="sync_no_tasks">无同步任务</string>
-    <string name="sync_no_targets">No sync targets</string>
+    <string name="sync_no_targets">无同步目标</string>
     <string name="conf_sync_name_title">名称</string>
     <string name="conf_sync_enabled_title">已启用</string>
     <string name="conf_sync_enabled_info">启用/禁用任务</string>
@@ -12,7 +12,7 @@
     <string name="conf_sync_interval_8h">每 8 小时</string>
     <string name="conf_sync_interval_1d">每天</string>
     <string name="conf_sync_dir_directory_title">目录</string>
-    <string name="conf_sync_dir_target_title">Directory on server</string>
+    <string name="conf_sync_dir_target_title">服务器上目录</string>
     <string name="conf_sync_dir_mode_title">同步模式</string>
     <string name="conf_sync_dir_mode_info">传输方向</string>
     <string name="conf_sync_dir_mode_upload">上传</string>
