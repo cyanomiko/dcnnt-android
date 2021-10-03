@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.provider.DocumentsContract
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -91,20 +92,121 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
 
     override fun getTextInfo(): String = Uri.decode(directory.value.split('/').last())
 
-    override fun execute(plugin: SyncPlugin) {
-        val flatFilesData = JSONArray()
-        val dir = DocumentFile.fromTreeUri(plugin.context, Uri.parse(directory.value)) ?: return
+    private fun directoryToArr(fileByName: MutableMap<String, DocumentFile>, arr: JSONArray,
+                               path: String, dir: DocumentFile) {
         dir.listFiles().asIterable().forEach {
-            if (it.isDirectory) return@forEach  // ToDo: Support for subdirectories
-            flatFilesData.put(JSONObject().apply {
-                put("name", it.name)
-                put("ts", it.lastModified())
-            })
-            APP.log("${it.uri}")
+            val name = "${it.name}"
+            if (it.isDirectory) {
+                fileByName[name] = it
+                arr.put(JSONObject(mapOf(
+                    "name" to name,
+                    "ts" to it.lastModified(),
+                    "is_dir" to true
+                )))
+                directoryToArr(fileByName, arr, "$path/$name", it)
+            }
+            if (it.isFile) {
+                fileByName[name] = it
+                arr.put(JSONObject(mapOf(
+                    "name" to name,
+                    "ts" to it.lastModified(),
+                    "is_dir" to false
+                )))
+            }
         }
-        // ToDo: Prepare session - send info about files and get such info back
-        // ToDo: Send files one by one
-        // ToDo: Receive files one by one
+    }
+
+    override fun execute(plugin: SyncPlugin) {
+        val fsFlatData = JSONArray()
+        val fileByName = mutableMapOf<String, DocumentFile>()
+        val dir = DocumentFile.fromTreeUri(plugin.context, Uri.parse(directory.value)) ?: return
+        directoryToArr(fileByName, fsFlatData, "/", dir)
+        val data = if (mode.value == "download") null else fsFlatData
+        val res = plugin.rpc("${SUB}_list", mapOf("mode" to mode.value, "data" to data))
+        val resArrData = (res as? JSONArray) ?: throw PluginException("Incorrect response")
+        val resMapData = mutableMapOf<String, Triple<String, Long, Boolean>>()
+        val toUpload = mutableListOf<String>()
+        val toBackup = mutableListOf<String>()
+        val toCreateDirs = mutableListOf<String>()
+        val toDownload = mutableListOf<String>()
+        val doPrepareDownload = ((mode.value == "upload") or (mode.value == "sync"))
+        for (i in 0 .. resArrData.length()) {
+            val obj = (resArrData[i] as? JSONObject) ?: continue
+            if (obj.length() != 3) continue
+            val name = obj.getString("name")
+            val ts = obj.getLong("ts")
+            val isDir = obj.getBoolean("is_dir")
+            resMapData[name] = Triple<String, Long, Boolean>(name, ts, isDir)
+            if (doPrepareDownload) {
+                if (isDir) {
+                    if (!fileByName.containsKey(name)) toCreateDirs.add(name)
+                } else {
+                    val f = fileByName[name]
+                    if (f == null) {
+                        toDownload.add(name)
+                    } else {
+                        when (onConflict.value) {
+                            "replace" -> {
+                                toDownload.add(name)
+                            }
+                            "new" -> {
+                                if (ts > f.lastModified()) toDownload.add(name)
+                            }
+                            "both" -> {
+                                toBackup.add(name)
+                                toDownload.add(name)
+                            }
+                            else -> {}
+                        }
+                    }
+                }
+            }
+        }
+        if ((mode.value == "upload") or (mode.value == "sync")) {
+            val r = plugin.rpc("${SUB}_uploads", mapOf())
+            val uploadsArrData = (r as? JSONArray) ?: throw PluginException("Incorrect response")
+            for (i in 0 .. uploadsArrData.length()) {
+                val name = (uploadsArrData[i] as? String) ?: continue
+                if (fileByName.containsKey(name)) toUpload.add(name)
+            }
+        }
+        val cr = plugin.context.contentResolver
+        // Upload files
+        toUpload.forEach {
+            val f = fileByName[it] ?: return@forEach
+            val r = plugin.sendFile(FileEntry(it, f.length(), localUri = f.uri),
+                cr, { _, _, _ -> }, rpcMethod = "${SUB}_upload")
+            // ToDo: Log r
+        }
+        // Delete files and directories that was deleted on server
+        if (onDelete.value == "delete") {
+            val dirsToDelete = mutableListOf<DocumentFile>()
+            (fileByName.keys - resMapData.keys).forEach { n -> fileByName[n]?.also {
+                if (it.isFile) {
+                    it.delete()
+                } else {
+                    dirsToDelete.add(it)
+                }
+            } }
+            dirsToDelete.forEach { it.delete() }
+        }
+        // Backup files
+        toBackup.forEach {
+            val f = fileByName[it] ?: return@forEach
+            val n = File(it)
+            DocumentsContract.renameDocument(cr, f.uri, "${n.name}.${nowString()}.${n.extension}")
+        }
+        // Create dirs
+        toCreateDirs.forEach {
+            var d = dir
+            for (name in it.split('/')) d = d.createDirectory(name) ?: break
+        }
+        // Download files
+        toDownload.forEach {
+            // ToDo: ...
+            val e = FileEntry(it, 0, remoteIndex = 0)
+            plugin.recvFile(dir, e, cr, { _, _, _ -> }, "${SUB}_download")
+        }
         // ToDo: Finalize session or just close connection?
     }
 }
