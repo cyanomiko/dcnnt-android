@@ -43,9 +43,13 @@ class DCWorker(appContext: Context, workerParams: WorkerParameters):
             try {
                 val plugin = SyncPlugin(APP, device)
                 plugin.init(applicationContext)
-                plugin.conf.getTasks().forEach {
-                    APP.log("task '${it.name.value}'")
-                    it.execute(plugin)
+                plugin.conf.getTasks().also { tasks ->
+                    if (tasks.isEmpty()) return@also
+                    plugin.connect()
+                    tasks.forEach {
+                        APP.log("task '${it.name.value}'")
+                        it.execute(plugin)
+                    }
                 }
             } catch (e: Exception) {
                 APP.logException(e)

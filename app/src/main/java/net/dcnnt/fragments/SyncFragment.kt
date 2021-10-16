@@ -167,7 +167,10 @@ class SyncTaskEditFragment: DCFragment() {
             menu.add("Do it now").setOnMenuItemClickListener {
                 val plugin = SyncPlugin(APP, device)
                 plugin.init(APP.applicationContext)
-                task.execute(plugin)
+                thread {
+                    plugin.connect()
+                    task.execute(plugin)
+                }
                 true
             }
         }
