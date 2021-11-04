@@ -21,7 +21,7 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
 
     fun sendFile(file: FileEntry, contentResolver: ContentResolver,
                  progressCallback: (cur: Long, total: Long, part: Long) -> Unit,
-                 rpcMethod: String = "upload"): DCResult {
+                 rpcMethod: String = "upload", extraArgs: Map<String, Any> = mapOf()): DCResult {
         val inp = if (file.data != null) {
             ByteArrayInputStream(file.data)
         } else {
@@ -29,7 +29,7 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
             contentResolver.openInputStream(uri) ?: return DCResult(false, "URI open fail")
         }
         val size = file.size
-        val resp = (rpc(rpcMethod, mapOf("name" to file.name, "size" to size))
+        val resp = (rpc(rpcMethod, mapOf("name" to file.name, "size" to size) + extraArgs)
                 as? JSONObject) ?: return DCResult(false,"Incorrect response")
         Log.d(TAG, "$resp")
         var sentBytes: Long = 0
@@ -72,7 +72,7 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
 
     fun recvFile(downloadDir: DocumentFile, entry: FileEntry, contentResolver: ContentResolver,
                  progressCallback: (cur: Long, total: Long, part: Long) -> Unit,
-                 rpcMethod: String = "download"): DCResult {
+                 rpcMethod: String = "download", extraArgs: Map<String, Any> = mapOf()): DCResult {
         if (Environment.getExternalStorageState() != Environment.MEDIA_MOUNTED) {
             return DCResult(false,"Storage not mounted")
         }
@@ -86,13 +86,16 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
         val fd = contentResolver.openOutputStream(uri)
             ?: return DCResult(false, "Could not open file")
         Log.d(TAG, "send request")
-        // ToDo: optionally replace index with something else
-        val resp = (rpc(rpcMethod, mapOf("index" to entry.remoteIndex, "size" to entry.size)) as? JSONObject)
+        val params = mapOf("index" to entry.remoteIndex, "size" to entry.size) + extraArgs
+        val resp = (rpc(rpcMethod, params) as? JSONObject)
             ?: return DCResult(false,"Incorrect response")
         var recBytes: Long = 0
         var buf: ByteArray
         Log.d(TAG, "resp = $resp")
         if (resp.getInt("code") == 0) {
+            if (entry.size < 0L) {
+                entry.size = resp.getLong("size")
+            }
             Log.d(TAG, "Start downloading: recBytes = $recBytes, entry.size = ${entry.size}")
             var dataBuf: ByteBuffer? = null
             if (entry.size < FileTransferPlugin.THUMBNAIL_THRESHOLD) {

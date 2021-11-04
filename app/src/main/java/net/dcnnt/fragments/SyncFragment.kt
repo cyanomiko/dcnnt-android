@@ -168,8 +168,13 @@ class SyncTaskEditFragment: DCFragment() {
                 val plugin = SyncPlugin(APP, device)
                 plugin.init(APP.applicationContext)
                 thread {
-                    plugin.connect()
-                    task.execute(plugin)
+                    try {
+                        plugin.connect()
+                        task.execute(plugin)
+                        context?.also { toast(it, "Task '${task.name.value}' - OK") }
+                    } catch (e: Exception) {
+                        context?.also { showError(it, e) }
+                    }
                 }
                 true
             }

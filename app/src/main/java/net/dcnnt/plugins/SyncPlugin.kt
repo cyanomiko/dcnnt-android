@@ -59,6 +59,8 @@ abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
     abstract fun execute(plugin: SyncPlugin)
 }
 
+data class DirSyncEntry(val name: String, var ts: Long, val isDir: Boolean, val d: DocumentFile)
+
 class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
     override val confName = "sync_dir"
     lateinit var directory: DirEntry
@@ -92,122 +94,113 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
 
     override fun getTextInfo(): String = Uri.decode(directory.value.split('/').last())
 
-    private fun directoryToArr(fileByName: MutableMap<String, DocumentFile>, arr: JSONArray,
-                               path: String, dir: DocumentFile) {
-        dir.listFiles().asIterable().forEach {
-            val name = "${it.name}"
+    private fun getFlatFS(result: MutableMap<String, DirSyncEntry>,
+                          root: String, base: DocumentFile) {
+        base.listFiles().asIterable().forEach {
+            val fn = "${it.name}"
+            val name = if (root.isEmpty()) fn else "$root/$fn"
             if (it.isDirectory) {
-                fileByName[name] = it
-                arr.put(JSONObject(mapOf(
-                    "name" to name,
-                    "ts" to it.lastModified(),
-                    "is_dir" to true
-                )))
-                directoryToArr(fileByName, arr, "$path/$name", it)
-            }
-            if (it.isFile) {
-                fileByName[name] = it
-                arr.put(JSONObject(mapOf(
-                    "name" to name,
-                    "ts" to it.lastModified(),
-                    "is_dir" to false
-                )))
+                result[name] = DirSyncEntry(name, it.lastModified(), true, it)
+                getFlatFS(result, fn, it)
+            } else if (it.isFile) {
+                val ts = it.lastModified()
+                result[name] = DirSyncEntry(name, ts, false, it)
+                var dirName = File(name).parentFile
+                while ((dirName != null) and ("$dirName" != "/")) {
+                    val dirNameStr = "$dirName"
+                    result[dirNameStr]?.also { d -> if (d.ts < ts) d.ts = ts }
+                    dirName = File(dirNameStr).parentFile
+                }
             }
         }
     }
 
+    private fun renameWithMark(f: DocumentFile, mark: String) {
+        if (!f.exists()) return
+        val name = File("${f.name}")
+        val namePart = name.nameWithoutExtension
+        val extension = name.extension
+        val suffixes = listOf("", "-1", "-2", "-3", "-4", "-5")
+        suffixes.forEach {
+            if (f.renameTo("$namePart-$mark$it.$extension")) return
+        }
+        throw PluginException("Could not rename '$name'")
+    }
+
+    private fun ensureRemoved(f: DocumentFile) {
+        f.delete()
+    }
+
     override fun execute(plugin: SyncPlugin) {
-        val fsFlatData = JSONArray()
-        val fileByName = mutableMapOf<String, DocumentFile>()
-        val dir = DocumentFile.fromTreeUri(plugin.context, Uri.parse(directory.value)) ?: return
-        directoryToArr(fileByName, fsFlatData, "/", dir)
-        val data = if (mode.value == "download") null else fsFlatData
-        val res = plugin.rpc("${SUB}_list", mapOf("mode" to mode.value, "data" to data))
-        val resArrData = (res as? JSONArray) ?: throw PluginException("Incorrect response")
-        val resMapData = mutableMapOf<String, Triple<String, Long, Boolean>>()
-        val toUpload = mutableListOf<String>()
-        val toBackup = mutableListOf<String>()
-        val toCreateDirs = mutableListOf<String>()
-        val toDownload = mutableListOf<String>()
-        val doPrepareDownload = ((mode.value == "upload") or (mode.value == "sync"))
-        for (i in 0 .. resArrData.length()) {
-            val obj = (resArrData[i] as? JSONObject) ?: continue
-            if (obj.length() != 3) continue
-            val name = obj.getString("name")
-            val ts = obj.getLong("ts")
-            val isDir = obj.getBoolean("is_dir")
-            resMapData[name] = Triple<String, Long, Boolean>(name, ts, isDir)
-            if (doPrepareDownload) {
-                if (isDir) {
-                    if (!fileByName.containsKey(name)) toCreateDirs.add(name)
-                } else {
-                    val f = fileByName[name]
-                    if (f == null) {
-                        toDownload.add(name)
-                    } else {
-                        when (onConflict.value) {
-                            "replace" -> {
-                                toDownload.add(name)
-                            }
-                            "new" -> {
-                                if (ts > f.lastModified()) toDownload.add(name)
-                            }
-                            "both" -> {
-                                toBackup.add(name)
-                                toDownload.add(name)
-                            }
-                            else -> {}
-                        }
-                    }
-                }
-            }
+        val base = DocumentFile.fromTreeUri(plugin.context, Uri.parse(directory.value)) ?: return
+        // Get local FS data
+        val flatClient = mutableMapOf<String, DirSyncEntry>()
+        getFlatFS(flatClient, "", base)
+        val flatArrClient = JSONArray()
+        flatClient.values.forEach {
+            val entry = JSONArray()
+            entry.put(it.name)
+            entry.put(it.ts)
+            entry.put(it.isDir)
+            flatArrClient.put(entry)
         }
-        if ((mode.value == "upload") or (mode.value == "sync")) {
-            val r = plugin.rpc("${SUB}_uploads", mapOf())
-            val uploadsArrData = (r as? JSONArray) ?: throw PluginException("Incorrect response")
-            for (i in 0 .. uploadsArrData.length()) {
-                val name = (uploadsArrData[i] as? String) ?: continue
-                if (fileByName.containsKey(name)) toUpload.add(name)
+        // Send FS data to server to compare with server data
+        val params = mapOf(
+            "path" to target.value,
+            "mode" to mode.value,
+            "on_conflict" to onConflict.value,
+            "on_delete" to onDelete.value,
+            "data" to flatArrClient
+        )
+        val res = (plugin.rpc("${SUB}_list", params) as? JSONObject)
+            ?: throw PluginException("Incorrect dir sync list data")
+        // Extract data from response
+        val toRenameArr = res.getJSONArray("rename")
+        val toDeleteArr = res.getJSONArray("delete")
+        val toCreateArr = res.getJSONArray("create")
+        val toUploadArr = res.getJSONArray("upload")
+        val toDownloadArr = res.getJSONArray("download")
+        var toRename = List<String>(toRenameArr.length()) { toRenameArr.optString(it) }
+        toRename = toRename.filter { it.isNotEmpty() }.sorted()
+        var toDelete = List<String>(toDeleteArr.length()) { toDeleteArr.optString(it) }
+        toDelete = toDelete.filter { it.isNotEmpty() }
+        var toCreate = List<String>(toCreateArr.length()) { toCreateArr.optString(it) }
+        toCreate = toCreate.filter { it.isNotEmpty() }.sorted()
+        var toUpload = List<String>(toUploadArr.length()) { toUploadArr.optString(it) }
+        toUpload = toUpload.filter { it.isNotEmpty() }
+        var toDownload = List<String>(toDownloadArr.length()) { toDownloadArr.optString(it) }
+        toDownload = toDownload.filter { it.isNotEmpty() }
+        // Do local FS actions
+        toRename.forEach { flatClient[it]?.also { e -> renameWithMark(e.d, "${e.ts}") } }
+        toDelete.forEach { flatClient[it]?.also { e -> ensureRemoved(e.d) } }
+        flatClient[""] = DirSyncEntry("", 0L, true, base)
+        toCreate.forEach {
+            var parent = base
+            if (it.contains('/')) {
+                parent = (flatClient[(File(it).parent ?: return@forEach)] ?: return@forEach).d
             }
+            val newDir = parent.createDirectory(it)
+                ?: throw PluginException("Failed to create directory '$it'")
+            flatClient[it] = DirSyncEntry(it, 0L, true, newDir)
         }
-        val cr = plugin.context.contentResolver
-        // Upload files
+        val contentResolver = plugin.context.contentResolver
+        // Do uploads
         toUpload.forEach {
-            val f = fileByName[it] ?: return@forEach
-            val r = plugin.sendFile(FileEntry(it, f.length(), localUri = f.uri),
-                cr, { _, _, _ -> }, rpcMethod = "${SUB}_upload")
-            // ToDo: Log r
+            val d = flatClient[it]?.d ?: return@forEach
+            val f = FileEntry(name = it, localUri = d.uri, size = d.length())
+            plugin.sendFile(f, contentResolver, { _, _, _ -> },
+                "dir_upload", mapOf("path" to target.value))
         }
-        // Delete files and directories that was deleted on server
-        if (onDelete.value == "delete") {
-            val dirsToDelete = mutableListOf<DocumentFile>()
-            (fileByName.keys - resMapData.keys).forEach { n -> fileByName[n]?.also {
-                if (it.isFile) {
-                    it.delete()
-                } else {
-                    dirsToDelete.add(it)
-                }
-            } }
-            dirsToDelete.forEach { it.delete() }
-        }
-        // Backup files
-        toBackup.forEach {
-            val f = fileByName[it] ?: return@forEach
-            val n = File(it)
-            DocumentsContract.renameDocument(cr, f.uri, "${n.name}.${nowString()}.${n.extension}")
-        }
-        // Create dirs
-        toCreateDirs.forEach {
-            var d = dir
-            for (name in it.split('/')) d = d.createDirectory(name) ?: break
-        }
-        // Download files
+        // Do downloads
         toDownload.forEach {
-            // ToDo: ...
-            val e = FileEntry(it, 0, remoteIndex = 0)
-            plugin.recvFile(dir, e, cr, { _, _, _ -> }, "${SUB}_download")
+            var parent = base
+            if (it.contains('/')) {
+                parent = (flatClient[(File(it).parent ?: return@forEach)] ?: return@forEach).d
+            }
+            val f = FileEntry(name = File(it).name, size = -1L, )
+            plugin.recvFile(parent, f, contentResolver, { _, _, _ -> },
+                "dir_download", mapOf("path" to target.value, "name" to it))
         }
-        // ToDo: Finalize session or just close connection?
     }
 }
 
