@@ -115,14 +115,15 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
         }
     }
 
-    private fun renameWithMark(f: DocumentFile, mark: String) {
-        if (!f.exists()) return
+    private fun renameWithMark(f: DocumentFile, mark: String): String? {
+        if (!f.exists()) return null
         val name = File("${f.name}")
         val namePart = name.nameWithoutExtension
         val extension = name.extension
         val suffixes = listOf("", "-1", "-2", "-3", "-4", "-5")
         suffixes.forEach {
-            if (f.renameTo("$namePart-$mark$it.$extension")) return
+            val newName = "$namePart-$mark$it.$extension"
+            if (f.renameTo(newName)) return newName
         }
         throw PluginException("Could not rename '$name'")
     }
@@ -132,6 +133,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
     }
 
     override fun execute(plugin: SyncPlugin) {
+        APP.log("Start '$SUB' sync task '${name.value}'")
         val base = DocumentFile.fromTreeUri(plugin.context, Uri.parse(directory.value)) ?: return
         // Get local FS data
         val flatClient = mutableMapOf<String, DirSyncEntry>()
@@ -144,6 +146,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
             entry.put(it.isDir)
             flatArrClient.put(entry)
         }
+        APP.log("Have ${flatClient.size} entries to sync")
         // Init connection
         plugin.connect()
         // Send FS data to server to compare with server data
@@ -172,9 +175,22 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
         toUpload = toUpload.filter { it.isNotEmpty() }
         var toDownload = List<String>(toDownloadArr.length()) { toDownloadArr.optString(it) }
         toDownload = toDownload.filter { it.isNotEmpty() }
+        APP.log("Scheduled operations: rename - ${toRename.size}, delete - ${toDelete.size}" +
+                "crete dirs - ${toCreate.size}, upload to server - ${toUpload.size}, " +
+                "download from server - ${toDownload.size}")
         // Do local FS actions
-        toRename.forEach { flatClient[it]?.also { e -> renameWithMark(e.d, "${e.ts}") } }
-        toDelete.forEach { flatClient[it]?.also { e -> ensureRemoved(e.d) } }
+        toRename.forEach { flatClient[it]?.also { e ->
+            val newName = renameWithMark(e.d, "${e.ts}")
+            if (newName == null) {
+                APP.log("Need not rename: '$it'")
+            } else {
+                APP.log("Renamed: '$it' -> '$newName'")
+            }
+        } }
+        toDelete.forEach { flatClient[it]?.also { e ->
+            ensureRemoved(e.d)
+            APP.log("Deleted: '$it'")
+        } }
         flatClient[""] = DirSyncEntry("", 0L, true, base)
         toCreate.forEach {
             var parent = base
@@ -183,6 +199,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
             }
             val newDir = parent.createDirectory(it)
                 ?: throw PluginException("Failed to create directory '$it'")
+            APP.log("Create directory: '$it'")
             flatClient[it] = DirSyncEntry(it, 0L, true, newDir)
         }
         val contentResolver = plugin.context.contentResolver
@@ -190,6 +207,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
         toUpload.forEach {
             val d = flatClient[it]?.d ?: return@forEach
             val f = FileEntry(name = it, localUri = d.uri, size = d.length())
+            APP.log("Uploading: '$it' (${f.size} bytes)")
             plugin.sendFile(f, contentResolver, { _, _, _ -> },
                 "dir_upload", mapOf("path" to target.value))
         }
@@ -199,7 +217,8 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
             if (it.contains('/')) {
                 parent = (flatClient[(File(it).parent ?: return@forEach)] ?: return@forEach).d
             }
-            val f = FileEntry(name = File(it).name, size = -1L, )
+            val f = FileEntry(name = File(it).name, size = -1L)
+            APP.log("Downloading: '$it'")
             plugin.recvFile(parent, f, contentResolver, { _, _, _ -> },
                 "dir_download", mapOf("path" to target.value, "name" to it))
         }
