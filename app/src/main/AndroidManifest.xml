@@ -16,7 +16,7 @@
             android:allowBackup="false"
             android:icon="@drawable/icon_app"
             android:label="@string/app_name"
-            android:roundIcon="@drawable/icon_app"
+            android:roundIcon="@drawable/icon_app_round"
             android:supportsRtl="true"
             android:theme="@style/Theme.AppCompat">
         <provider
