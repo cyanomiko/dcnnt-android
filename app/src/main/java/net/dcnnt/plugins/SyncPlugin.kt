@@ -144,6 +144,8 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
             entry.put(it.isDir)
             flatArrClient.put(entry)
         }
+        // Init connection
+        plugin.connect()
         // Send FS data to server to compare with server data
         val params = mapOf(
             "path" to target.value,

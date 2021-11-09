@@ -169,7 +169,6 @@ class SyncTaskEditFragment: DCFragment() {
                 plugin.init(APP.applicationContext)
                 thread {
                     try {
-                        plugin.connect()
                         task.execute(plugin)
                         context?.also { toast(it, "Task '${task.name.value}' - OK") }
                     } catch (e: Exception) {

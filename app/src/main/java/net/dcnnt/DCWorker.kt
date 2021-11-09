@@ -31,7 +31,6 @@ class DCWorker(appContext: Context, workerParams: WorkerParameters):
                 if (!it.tags.contains(intervalTag)) worksToCancel.add(it.id)
             }
             worksToCancel.forEach { wm.cancelWorkById(it) }
-            wm.cancelAllWork()  // ToDo: debug only!
             wm.enqueueUniquePeriodicWork(TAG, ExistingPeriodicWorkPolicy.KEEP, bgWorkRequest)
         }
     }
@@ -45,7 +44,6 @@ class DCWorker(appContext: Context, workerParams: WorkerParameters):
                 plugin.init(applicationContext)
                 plugin.conf.getTasks().also { tasks ->
                     if (tasks.isEmpty()) return@also
-                    plugin.connect()
                     tasks.forEach {
                         APP.log("task '${it.name.value}'")
                         it.execute(plugin)
