@@ -175,8 +175,8 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
         toUpload = toUpload.filter { it.isNotEmpty() }
         var toDownload = List<String>(toDownloadArr.length()) { toDownloadArr.optString(it) }
         toDownload = toDownload.filter { it.isNotEmpty() }
-        APP.log("Scheduled operations: rename - ${toRename.size}, delete - ${toDelete.size}" +
-                "crete dirs - ${toCreate.size}, upload to server - ${toUpload.size}, " +
+        APP.log("Scheduled operations: rename - ${toRename.size}, delete - ${toDelete.size} " +
+                "create dirs - ${toCreate.size}, upload to server - ${toUpload.size}, " +
                 "download from server - ${toDownload.size}")
         // Do local FS actions
         toRename.forEach { flatClient[it]?.also { e ->
