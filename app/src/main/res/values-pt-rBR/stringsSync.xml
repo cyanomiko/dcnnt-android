@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="sync_add_task">Add sync task</string>
+    <string name="sync_remove_task">Remove sync task?</string>
     <string name="sync_no_tasks">Nenhuma tarefa de sincronização</string>
     <string name="sync_no_targets">No sync targets</string>
     <string name="conf_sync_name_title">Nome</string>

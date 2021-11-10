@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.provider.DocumentsContract
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -58,6 +59,8 @@ abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
     abstract fun execute(plugin: SyncPlugin)
 }
 
+data class DirSyncEntry(val name: String, var ts: Long, val isDir: Boolean, val d: DocumentFile)
+
 class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
     override val confName = "sync_dir"
     lateinit var directory: DirEntry
@@ -91,21 +94,134 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
 
     override fun getTextInfo(): String = Uri.decode(directory.value.split('/').last())
 
-    override fun execute(plugin: SyncPlugin) {
-        val flatFilesData = JSONArray()
-        val dir = DocumentFile.fromTreeUri(plugin.context, Uri.parse(directory.value)) ?: return
-        dir.listFiles().asIterable().forEach {
-            if (it.isDirectory) return@forEach  // ToDo: Support for subdirectories
-            flatFilesData.put(JSONObject().apply {
-                put("name", it.name)
-                put("ts", it.lastModified())
-            })
-            APP.log("${it.uri}")
+    private fun getFlatFS(result: MutableMap<String, DirSyncEntry>,
+                          root: String, base: DocumentFile) {
+        base.listFiles().asIterable().forEach {
+            val fn = "${it.name}"
+            val name = if (root.isEmpty()) fn else "$root/$fn"
+            if (it.isDirectory) {
+                result[name] = DirSyncEntry(name, it.lastModified(), true, it)
+                getFlatFS(result, fn, it)
+            } else if (it.isFile) {
+                val ts = it.lastModified()
+                result[name] = DirSyncEntry(name, ts, false, it)
+                var dirName = File(name).parentFile
+                while ((dirName != null) and ("$dirName" != "/")) {
+                    val dirNameStr = "$dirName"
+                    result[dirNameStr]?.also { d -> if (d.ts < ts) d.ts = ts }
+                    dirName = File(dirNameStr).parentFile
+                }
+            }
         }
-        // ToDo: Prepare session - send info about files and get such info back
-        // ToDo: Send files one by one
-        // ToDo: Receive files one by one
-        // ToDo: Finalize session or just close connection?
+    }
+
+    private fun renameWithMark(f: DocumentFile, mark: String): String? {
+        if (!f.exists()) return null
+        val name = File("${f.name}")
+        val namePart = name.nameWithoutExtension
+        val extension = name.extension
+        val suffixes = listOf("", "-1", "-2", "-3", "-4", "-5")
+        suffixes.forEach {
+            val newName = "$namePart-$mark$it.$extension"
+            if (f.renameTo(newName)) return newName
+        }
+        throw PluginException("Could not rename '$name'")
+    }
+
+    private fun ensureRemoved(f: DocumentFile) {
+        f.delete()
+    }
+
+    override fun execute(plugin: SyncPlugin) {
+        APP.log("Start '$SUB' sync task '${name.value}'")
+        val base = DocumentFile.fromTreeUri(plugin.context, Uri.parse(directory.value)) ?: return
+        // Get local FS data
+        val flatClient = mutableMapOf<String, DirSyncEntry>()
+        getFlatFS(flatClient, "", base)
+        val flatArrClient = JSONArray()
+        flatClient.values.forEach {
+            val entry = JSONArray()
+            entry.put(it.name)
+            entry.put(it.ts)
+            entry.put(it.isDir)
+            flatArrClient.put(entry)
+        }
+        APP.log("Have ${flatClient.size} entries to sync")
+        // Init connection
+        plugin.connect()
+        // Send FS data to server to compare with server data
+        val params = mapOf(
+            "path" to target.value,
+            "mode" to mode.value,
+            "on_conflict" to onConflict.value,
+            "on_delete" to onDelete.value,
+            "data" to flatArrClient
+        )
+        val res = (plugin.rpc("${SUB}_list", params) as? JSONObject)
+            ?: throw PluginException("Incorrect dir sync list data")
+        // Extract data from response
+        val toRenameArr = res.getJSONArray("rename")
+        val toDeleteArr = res.getJSONArray("delete")
+        val toCreateArr = res.getJSONArray("create")
+        val toUploadArr = res.getJSONArray("upload")
+        val toDownloadArr = res.getJSONArray("download")
+        var toRename = List<String>(toRenameArr.length()) { toRenameArr.optString(it) }
+        toRename = toRename.filter { it.isNotEmpty() }.sorted()
+        var toDelete = List<String>(toDeleteArr.length()) { toDeleteArr.optString(it) }
+        toDelete = toDelete.filter { it.isNotEmpty() }
+        var toCreate = List<String>(toCreateArr.length()) { toCreateArr.optString(it) }
+        toCreate = toCreate.filter { it.isNotEmpty() }.sorted()
+        var toUpload = List<String>(toUploadArr.length()) { toUploadArr.optString(it) }
+        toUpload = toUpload.filter { it.isNotEmpty() }
+        var toDownload = List<String>(toDownloadArr.length()) { toDownloadArr.optString(it) }
+        toDownload = toDownload.filter { it.isNotEmpty() }
+        APP.log("Scheduled operations: rename - ${toRename.size}, delete - ${toDelete.size}" +
+                "crete dirs - ${toCreate.size}, upload to server - ${toUpload.size}, " +
+                "download from server - ${toDownload.size}")
+        // Do local FS actions
+        toRename.forEach { flatClient[it]?.also { e ->
+            val newName = renameWithMark(e.d, "${e.ts}")
+            if (newName == null) {
+                APP.log("Need not rename: '$it'")
+            } else {
+                APP.log("Renamed: '$it' -> '$newName'")
+            }
+        } }
+        toDelete.forEach { flatClient[it]?.also { e ->
+            ensureRemoved(e.d)
+            APP.log("Deleted: '$it'")
+        } }
+        flatClient[""] = DirSyncEntry("", 0L, true, base)
+        toCreate.forEach {
+            var parent = base
+            if (it.contains('/')) {
+                parent = (flatClient[(File(it).parent ?: return@forEach)] ?: return@forEach).d
+            }
+            val newDir = parent.createDirectory(it)
+                ?: throw PluginException("Failed to create directory '$it'")
+            APP.log("Create directory: '$it'")
+            flatClient[it] = DirSyncEntry(it, 0L, true, newDir)
+        }
+        val contentResolver = plugin.context.contentResolver
+        // Do uploads
+        toUpload.forEach {
+            val d = flatClient[it]?.d ?: return@forEach
+            val f = FileEntry(name = it, localUri = d.uri, size = d.length())
+            APP.log("Uploading: '$it' (${f.size} bytes)")
+            plugin.sendFile(f, contentResolver, { _, _, _ -> },
+                "dir_upload", mapOf("path" to target.value))
+        }
+        // Do downloads
+        toDownload.forEach {
+            var parent = base
+            if (it.contains('/')) {
+                parent = (flatClient[(File(it).parent ?: return@forEach)] ?: return@forEach).d
+            }
+            val f = FileEntry(name = File(it).name, size = -1L)
+            APP.log("Downloading: '$it'")
+            plugin.recvFile(parent, f, contentResolver, { _, _, _ -> },
+                "dir_download", mapOf("path" to target.value, "name" to it))
+        }
     }
 }
 

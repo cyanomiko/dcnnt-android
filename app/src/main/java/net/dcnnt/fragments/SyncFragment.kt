@@ -41,6 +41,7 @@ class SyncTaskView(context: Context, parent: SyncFragment, task: SyncTask): Entr
         iconView.imageTintList = ColorStateList.valueOf(ContextCompat.getColor(context, iconColor))
         setOnClickListener { parent.editSyncTask(context, task) }
         actionView.setOnClickListener { parent.removeSyncTask(context, task) }
+        progressView.visibility = View.GONE
     }
 
     private fun getIcon(): Int {
@@ -86,7 +87,7 @@ class SyncFragment: BasePluginFargment() {
 
     fun removeSyncTask(context: Context, task: SyncTask) {
         AlertDialog.Builder(context).also {
-            it.setTitle("Remove sync task?")
+            it.setTitle(context.getString(R.string.sync_remove_task))
             it.setMessage(context.getString(R.string.delete_device_warning))
             it.setNegativeButton(context.getString(R.string.cancel)) { _, _ -> }
             it.setPositiveButton(context.getString(R.string.ok)) { _, _ ->
@@ -106,8 +107,7 @@ class SyncFragment: BasePluginFargment() {
         padding = context.dip(6)
         addView(createDeviceSelectView(context, availableOnly = false, addCommon = false))
         addView(Button(context).apply {
-            text = "Add sync task"
-            //visibility = View.GONE
+            text = context.getString(R.string.sync_add_task)
             LParam.set(this, LParam.mw())
             setOnClickListener { addSyncTask(context) }
         })
@@ -167,7 +167,14 @@ class SyncTaskEditFragment: DCFragment() {
             menu.add("Do it now").setOnMenuItemClickListener {
                 val plugin = SyncPlugin(APP, device)
                 plugin.init(APP.applicationContext)
-                task.execute(plugin)
+                thread {
+                    try {
+                        task.execute(plugin)
+                        context?.also { toast(it, "Task '${task.name.value}' - OK") }
+                    } catch (e: Exception) {
+                        context?.also { showError(it, e) }
+                    }
+                }
                 true
             }
         }

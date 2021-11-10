@@ -18,7 +18,7 @@ enum class FileStatus { WAIT, RUN, CANCEL, DONE, FAIL }
 enum class EntryType { FILE, LINK }
 data class FileEntry(
     val name: String,
-    val size: Long,
+    var size: Long,
     var status: FileStatus = FileStatus.WAIT,
     var data: ByteArray? = null,
     var localUri: Uri? = null,

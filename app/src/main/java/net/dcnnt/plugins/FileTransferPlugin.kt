@@ -75,65 +75,9 @@ class FileTransferPlugin(app: App, device: Device): BaseFilePlugin<FileTransferP
         return sendFile(file, contentResolver, progressCallback)
     }
 
-    private fun safeFileName(initialName: String): String? {
-        val existingNames: MutableSet<String> = mutableSetOf()
-        downloadDir.listFiles().forEach { f -> f.name?.also { existingNames.add(it) } }
-        if (!existingNames.contains(initialName)) return initialName
-        val file = File(initialName)
-        val name = file.nameWithoutExtension
-        val extension = file.extension
-        for (i in 1 .. 0xFFFF) {
-            val newName = "$name-$i.$extension"
-            if (!existingNames.contains(newName)) return newName
-        }
-        return null
-    }
-
     fun downloadFile(entry: FileEntry, contentResolver: ContentResolver,
                      progressCallback: (cur: Long, total: Long, part: Long) -> Unit): DCResult {
         APP.log("Download file '${entry.name}' from device ${device.uin}")
-        if (Environment.getExternalStorageState() != Environment.MEDIA_MOUNTED) {
-            return DCResult(false,"Storage not mounted")
-        }
-        val fileName = safeFileName(entry.name)
-            ?: return DCResult(false, "No safe name for file")
-        val file = downloadDir.createFile("*/*", fileName)
-            ?: return DCResult(false, "Failed to create file")
-        val uri = file.uri
-        entry.localUri = uri
-        Log.d(TAG, "Open new file URI: $uri")
-        val fd = contentResolver.openOutputStream(uri)
-            ?: return DCResult(false, "Could not open file")
-        Log.d(TAG, "send request")
-        val resp = (rpc("download", mapOf("index" to entry.remoteIndex, "size" to entry.size)) as? JSONObject)
-            ?: return DCResult(false,"Incorrect response")
-        var recBytes: Long = 0
-        var buf: ByteArray
-        Log.d(TAG, "resp = $resp")
-        if (resp.getInt("code") == 0) {
-            Log.d(TAG, "Start downloading: recBytes = $recBytes, entry.size = ${entry.size}")
-            var dataBuf: ByteBuffer? = null
-            if (entry.size < THUMBNAIL_THRESHOLD) {
-                entry.data = ByteArray(entry.size.toInt())
-                entry.data?.also { dataBuf = ByteBuffer.wrap(it) }
-            }
-            while (recBytes < entry.size) {
-                if (breakTransfer) {
-                    Log.i(TAG, "Downloading canceled")
-                    sock.close()
-                    return DCResult(false, "Canceled")
-                }
-//                Log.d(TAG, "recBytes = $recBytes, entry.size = ${entry.size}")
-                buf = read()
-                fd.write(buf)
-                dataBuf?.put(buf)
-                recBytes += buf.size
-                progressCallback(recBytes, entry.size, PART.toLong())
-            }
-            rpcSend("confirm", mapOf("code" to 0))
-            entry.status = FileStatus.DONE
-            return DCResult(true,"OK", data = entry.name)
-        }
-        return DCResult(false,"Request rejected")
+        return recvFile(downloadDir, entry, contentResolver, progressCallback)
     }
 }
