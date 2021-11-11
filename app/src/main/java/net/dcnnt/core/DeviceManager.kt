@@ -125,7 +125,31 @@ class DeviceManager(val path: String) {
     fun onlineDevices() = devices.filterValues { it.ip != null }.values.toMutableList().toList()
     fun availableDevices() = devices.filterValues { !it.isNew() and (it.ip != null) }.values.toMutableList().toList()
 
-    fun search(appConf: AppConf, timeout: Int = 10, triesRead: Int = 100, triesSend: Int = 4,
+    fun getBroadcastAddreses(): List<String> {
+        val res = mutableListOf("255.255.255.255")
+        NetworkInterface.getNetworkInterfaces().toList().forEach {
+            if (it.isUp and (!it.isVirtual) and (!it.isLoopback)) {
+                Log.d(TAG, "${it.name}, ${it.hardwareAddress}")
+                it.interfaceAddresses.forEach { a ->
+                    a.broadcast?.also { b ->
+                        val ip = "${b.hostName}"
+                        if (ip.count { c -> c == '.' } == 3) {
+                            res.add(ip)
+                        }
+                    }
+                }
+            }
+        }
+        return res
+    }
+
+    private fun sendToAll(socket: DatagramSocket, buf: ByteArray, dst: List<String>) {
+        dst.forEach {
+            socket.send(DatagramPacket(buf, buf.size, InetSocketAddress(it, PORT)))
+        }
+    }
+
+    fun search(appConf: AppConf, timeout: Int = 10, triesRead: Int = 100, triesSend: Int = 2,
                pairInfo: Pair<Int, String>? = null,
                onAvailableDevice: ((Device) -> Unit)? = null): Boolean {
         searchDone = true
@@ -149,6 +173,7 @@ class DeviceManager(val path: String) {
             it.value.ip = null
         }
         try {
+            val broadcastAddreses = getBroadcastAddreses()
             val socket = DatagramSocket(null)
             val responseData = ByteArray(4096)
             val response = DatagramPacket(responseData, responseData.size)
@@ -157,16 +182,10 @@ class DeviceManager(val path: String) {
             socket.reuseAddress = true
             socket.soTimeout = timeout
             socket.bind(InetSocketAddress("0.0.0.0", PORT))
-            socket.send(DatagramPacket(request, request.size, InetSocketAddress("255.255.255.255", PORT)))
+            sendToAll(socket, request, broadcastAddreses)
             APP.log("Search devices on port $PORT", TAG)
             for (i in 0..triesRead) {
-                if (i % (triesRead / triesSend) == 0) { socket.send(
-                        DatagramPacket(
-                            request, request.size,
-                            InetSocketAddress("255.255.255.255", PORT)
-                        )
-                    )
-                }
+                if (i % (triesRead / triesSend) == 0) sendToAll(socket, request, broadcastAddreses)
                 try {
                     try {
                         socket.receive(response)
