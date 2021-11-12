@@ -164,7 +164,7 @@ class SyncTaskEditFragment: DCFragment() {
     override fun prepareToolbar(toolbarView: Toolbar) {
         toolbarView.menu.also { menu ->
             menu.clear()
-            menu.add("Do it now").setOnMenuItemClickListener {
+            menu.add(R.string.do_it_now).setOnMenuItemClickListener {
                 val plugin = SyncPlugin(APP, device)
                 plugin.init(APP.applicationContext)
                 thread {
@@ -223,6 +223,7 @@ class SyncTaskEditFragment: DCFragment() {
                     selectTarget(context, it, it.title)
                 }
             }
+            confViews["useCRC"]?.also { it.visibility = View.GONE }
         })
     }
 

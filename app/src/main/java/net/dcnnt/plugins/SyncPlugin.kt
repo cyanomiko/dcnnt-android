@@ -59,13 +59,15 @@ abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
     abstract fun execute(plugin: SyncPlugin)
 }
 
-data class DirSyncEntry(val name: String, var ts: Long, val isDir: Boolean, val d: DocumentFile)
+data class DirSyncEntry(val name: String, var ts: Long, var crc: Long,
+                        val isDir: Boolean, val d: DocumentFile)
 
 class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
     override val confName = "sync_dir"
     lateinit var directory: DirEntry
     lateinit var target: StringEntry
     lateinit var mode: SelectEntry
+    lateinit var useCRC: BoolEntry
     lateinit var onConflict: SelectEntry
     lateinit var onDelete: SelectEntry
     override val defaultName = "Sync directory"
@@ -80,6 +82,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
             SelectOption("download", R.string.conf_sync_dir_mode_download),
             SelectOption("sync", R.string.conf_sync_dir_mode_sync)
         ), 1).init() as SelectEntry
+        useCRC = BoolEntry(this, "useCRC", false).init() as BoolEntry
         onConflict = SelectEntry(this, "onConflict", listOf(
             SelectOption("replace", R.string.conf_sync_dir_onConflict_replace),
             SelectOption("new", R.string.conf_sync_dir_onConflict_new),
@@ -100,11 +103,11 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
             val fn = "${it.name}"
             val name = if (root.isEmpty()) fn else "$root/$fn"
             if (it.isDirectory) {
-                result[name] = DirSyncEntry(name, it.lastModified(), true, it)
+                result[name] = DirSyncEntry(name, it.lastModified(), -2L,true, it)
                 getFlatFS(result, fn, it)
             } else if (it.isFile) {
                 val ts = it.lastModified()
-                result[name] = DirSyncEntry(name, ts, false, it)
+                result[name] = DirSyncEntry(name, ts, -2L, false, it)
                 var dirName = File(name).parentFile
                 while ((dirName != null) and ("$dirName" != "/")) {
                     val dirNameStr = "$dirName"
@@ -143,7 +146,11 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
             val entry = JSONArray()
             entry.put(it.name)
             entry.put(it.ts)
-            entry.put(it.isDir)
+            if (it.isDir) {
+                entry.put(-1L)
+            } else {
+                entry.put(it.crc)
+            }
             flatArrClient.put(entry)
         }
         APP.log("Have ${flatClient.size} entries to sync")
@@ -155,6 +162,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
             "mode" to mode.value,
             "on_conflict" to onConflict.value,
             "on_delete" to onDelete.value,
+            "use_crc" to useCRC.value,
             "data" to flatArrClient
         )
         val res = (plugin.rpc("${SUB}_list", params) as? JSONObject)
@@ -191,7 +199,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
             ensureRemoved(e.d)
             APP.log("Deleted: '$it'")
         } }
-        flatClient[""] = DirSyncEntry("", 0L, true, base)
+        flatClient[""] = DirSyncEntry("", 0L, -2L, true, base)
         toCreate.forEach {
             var parent = base
             if (it.contains('/')) {
@@ -200,7 +208,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
             val newDir = parent.createDirectory(it)
                 ?: throw PluginException("Failed to create directory '$it'")
             APP.log("Create directory: '$it'")
-            flatClient[it] = DirSyncEntry(it, 0L, true, newDir)
+            flatClient[it] = DirSyncEntry(it, 0L, -2L, true, newDir)
         }
         val contentResolver = plugin.context.contentResolver
         // Do uploads
