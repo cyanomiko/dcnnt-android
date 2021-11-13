@@ -2,6 +2,7 @@
 <resources>
     <string name="sync_add_task">添加同步任务</string>
     <string name="sync_remove_task">删除同步任务？</string>
+    <string name="do_it_now">立即执行</string>
     <string name="sync_no_tasks">无同步任务</string>
     <string name="sync_no_targets">无同步目标</string>
     <string name="conf_sync_name_title">名称</string>
@@ -20,6 +21,8 @@
     <string name="conf_sync_dir_mode_upload">上传</string>
     <string name="conf_sync_dir_mode_download">下载</string>
     <string name="conf_sync_dir_mode_sync">同步</string>
+    <string name="conf_sync_dir_useCRC_title">比较文件</string>
+    <string name="conf_sync_dir_useCRC_info">用 CRC32 比较文件</string>
     <string name="conf_sync_dir_onConflict_title">冲突</string>
     <string name="conf_sync_dir_onConflict_info">遇到文件名冲突时的操作</string>
     <string name="conf_sync_dir_onConflict_replace">替换</string>
