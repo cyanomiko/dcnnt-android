@@ -1,0 +1,3 @@
+* Periodic directory sync plugin
+* Working when phone in in hotspot mode
+* Round icon

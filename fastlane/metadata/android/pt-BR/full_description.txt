@@ -10,3 +10,4 @@ Características:
 * Permite baixar arquivos de pastas pré-definidas em computador para telefone
 * Permite mostrar notificações de telefone em computador
 * Permite executar comandos pré-definidos em computador
+* Executar tarefas de sincronização periodicamente
