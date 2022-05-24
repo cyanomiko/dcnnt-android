@@ -1,5 +1,7 @@
 # Device Connect
 
+**NO WAR**
+
 Yet another tool to connect Android phone with desktop similar to KDE Connect.
 Android client for https://github.com/cyanomiko/dcnnt-py
 
