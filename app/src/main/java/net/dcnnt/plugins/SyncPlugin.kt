@@ -1,24 +1,18 @@
 package net.dcnnt.plugins
 
-import android.Manifest
-import android.content.ContentResolver
 import android.content.Context
-import android.content.pm.PackageManager
+import android.content.res.AssetFileDescriptor
+import android.database.Cursor
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
-import android.provider.DocumentsContract
+import android.provider.ContactsContract
 import android.util.Log
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import net.dcnnt.R
 import net.dcnnt.core.*
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.ByteArrayInputStream
-import java.io.File
-import java.io.OutputStream
+import java.io.*
 import java.nio.ByteBuffer
 
 
@@ -234,20 +228,112 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
 }
 
 
+class MessagesSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
+    override val confName = "sync_messages"
+    override val defaultName = "Sync messages"
+    override val SUB = "messages"
+
+    override fun getTextInfo(): String {
+        TODO("Not yet implemented")
+    }
+
+    override fun execute(plugin: SyncPlugin) {
+        TODO("Not yet implemented")
+    }
+}
+
+
+class ContactsSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
+    override val confName = "sync_contacts"
+    override val defaultName = "Sync contacts"
+    override val SUB = "contacts"
+    lateinit var mode: SelectEntry
+    lateinit var noPhoto: BoolEntry
+//    lateinit var oneFile: BoolEntry
+
+    override fun init() {
+        super.init()
+        mode = SelectEntry(this, "mode", listOf(
+            SelectOption("upload", R.string.conf_sync_dir_mode_upload),
+        ), 0).init() as SelectEntry
+        noPhoto = BoolEntry(this, "noPhoto", false).init() as BoolEntry
+//        oneFile = BoolEntry(this, "oneFile", true).init() as BoolEntry
+    }
+
+    override fun getTextInfo(): String = ""
+
+    override fun execute(plugin: SyncPlugin) {
+        val context = plugin.context
+        val cursor: Cursor = context.contentResolver.query(
+            ContactsContract.Contacts.CONTENT_URI, null, null, null, null
+        ) ?: throw PluginException("No contacts cursor")
+        val buf = ByteArrayOutputStream()
+        if (cursor.moveToFirst()) {
+            cursor.use {
+                do {
+                    var uri = Uri.withAppendedPath(
+                        ContactsContract.Contacts.CONTENT_VCARD_URI,
+                        it.getString(it.getColumnIndex(ContactsContract.Contacts.LOOKUP_KEY))
+                    )
+                    if (noPhoto.value) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            uri = uri.buildUpon().appendQueryParameter(
+                                ContactsContract.Contacts.QUERY_PARAMETER_VCARD_NO_PHOTO, "true")
+                                .build()
+                        }
+                    }
+//                    Log.d(TAG, "uri = $uri")
+                    try {
+                        val inp = (context.contentResolver.openAssetFileDescriptor(uri, "r")
+                            ?: throw PluginException("No contact info")).createInputStream()
+                        val vCardRaw = inp.readBytes()
+                        Log.d(TAG,"Put ${vCardRaw.size} bytes to buffer")
+                        buf.write(vCardRaw)
+                    } catch (e: Exception) {
+                        APP.logException(e)
+                    }
+                } while (it.moveToNext())
+            }
+        }
+        plugin.connect()
+        val res = plugin.sendStream(buf.toByteArray().inputStream(), "contacts.vcf",
+            buf.size().toLong(), { _, _, _ -> }, "contacts_upload")
+        if (!res.success) {
+            throw PluginException(res.message)
+        }
+    }
+}
+
+
 class SyncPluginConf(directory: String, uin: Int): PluginConf(directory, "sync", uin) {
     val tasks: MutableMap<String, SyncTask> = mutableMapOf()
 
-    private fun loadTask(confName: String, key: String) {
-        if (confName == "sync_dir") {
-            val task = DirectorySyncTask(this, key)
-            task.init()
-            task.load()
-            if (task.errorOnLoad) {
-                removeTask(task)
-            } else {
-                tasks[task.confKey] = task
-            }
+    fun getSyncTask(confName: String, key: String? = null): SyncTask {
+        val taskKey = key ?: nowString()
+        val task = when (confName) {
+            "sync_dir" -> DirectorySyncTask(this, taskKey)
+            "sync_contacts" -> ContactsSyncTask(this, taskKey)
+            else -> { throw PluginException("Unknown sync task type '$confName'") }
+        }
+        task.init()
+        return task
+    }
 
+    private fun loadTask(confName: String, key: String) {
+        val task: SyncTask
+        Log.d(TAG, "confName = $confName, key = $key")
+        try {
+            task = getSyncTask(confName, key)
+        } catch (e: PluginException) {
+            return
+        }
+        Log.d(TAG, "task = $task")
+        task.load()
+        Log.d(TAG, "task loaded")
+        if (task.errorOnLoad) {
+            removeTask(task)
+        } else {
+            tasks[task.confKey] = task
         }
     }
 

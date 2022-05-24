@@ -48,4 +48,12 @@
     <string name="delete_log_title">删除记录文件吗？</string>
     <string name="delete_log_warning">此操作无法撤消</string>
     <string name="file">文件</string>
+    <string name="conf_sync_contacts_noPhoto_title">Skip photos</string>
+    <string name="conf_sync_contacts_noPhoto_info">Do not append photos to synced data</string>
+    <string name="conf_sync_contacts_mode_title">Sync mode</string>
+    <string name="conf_sync_contacts_mode_info">Direction of transmission</string>
+    <string name="conf_sync_contacts_mode_upload">Upload</string>
+    <string name="sync_contacts_short">Contacts</string>
+    <string name="sync_dir_short">Directory</string>
+    <string name="sync_task_type">Task type</string>
 </resources>

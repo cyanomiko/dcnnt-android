@@ -8,6 +8,7 @@ import net.dcnnt.core.*
 import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.InputStream
 import java.nio.ByteBuffer
 
 
@@ -19,17 +20,10 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
         const val PART = 65532
     }
 
-    fun sendFile(file: FileEntry, contentResolver: ContentResolver,
-                 progressCallback: (cur: Long, total: Long, part: Long) -> Unit,
-                 rpcMethod: String = "upload", extraArgs: Map<String, Any> = mapOf()): DCResult {
-        val inp = if (file.data != null) {
-            ByteArrayInputStream(file.data)
-        } else {
-            val uri = file.localUri ?: return DCResult(false, "No URI presented")
-            contentResolver.openInputStream(uri) ?: return DCResult(false, "URI open fail")
-        }
-        val size = file.size
-        val resp = (rpc(rpcMethod, mapOf("name" to file.name, "size" to size) + extraArgs)
+    fun sendStream(inp: InputStream, name: String, size: Long,
+                   progressCallback: (cur: Long, total: Long, part: Long) -> Unit,
+                   rpcMethod: String = "upload", extraArgs: Map<String, Any> = mapOf()): DCResult {
+        val resp = (rpc(rpcMethod, mapOf("name" to name, "size" to size) + extraArgs)
                 as? JSONObject) ?: return DCResult(false,"Incorrect response")
         Log.d(TAG, "$resp")
         var sentBytes: Long = 0
@@ -54,6 +48,18 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
         if (n.getInt("code") == 0) return DCResult(true, "OK")
         if (n.getInt("code") == 1) return DCResult(false, "Canceled")
         return DCResult(false,"Not confirmed")
+    }
+
+    fun sendFile(file: FileEntry, contentResolver: ContentResolver,
+                 progressCallback: (cur: Long, total: Long, part: Long) -> Unit,
+                 rpcMethod: String = "upload", extraArgs: Map<String, Any> = mapOf()): DCResult {
+        val inp = if (file.data != null) {
+            ByteArrayInputStream(file.data)
+        } else {
+            val uri = file.localUri ?: return DCResult(false, "No URI presented")
+            contentResolver.openInputStream(uri) ?: return DCResult(false, "URI open fail")
+        }
+        return sendStream(inp, file.name, file.size, progressCallback, rpcMethod, extraArgs)
     }
 
     protected fun safeFileName(downloadDir: DocumentFile, initialName: String): String? {

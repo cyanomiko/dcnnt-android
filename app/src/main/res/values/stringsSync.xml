@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="sync_task_type">Directory</string>
+    <string name="sync_dir_short">Directory</string>
+    <string name="sync_contacts_short">Contacts</string>
     <string name="do_it_now">Do it now</string>
     <string name="sync_add_task">Add sync task</string>
     <string name="sync_remove_task">Remove sync task?</string>
@@ -33,5 +36,9 @@
     <string name="conf_sync_dir_onDelete_info">Action on file delete command</string>
     <string name="conf_sync_dir_onDelete_delete">Delete</string>
     <string name="conf_sync_dir_onDelete_ignore">Ignore</string>
-
+    <string name="conf_sync_contacts_noPhoto_title">Skip photos</string>
+    <string name="conf_sync_contacts_noPhoto_info">Do not append photos to synced data</string>
+    <string name="conf_sync_contacts_mode_title">Sync mode</string>
+    <string name="conf_sync_contacts_mode_info">Direction of transmission</string>
+    <string name="conf_sync_contacts_mode_upload">Upload</string>
 </resources>

@@ -1,8 +1,10 @@
 package net.dcnnt.fragments
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.os.Build
 import android.os.Bundle
@@ -15,6 +17,7 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.marginStart
@@ -23,10 +26,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import net.dcnnt.MainActivity
 import net.dcnnt.R
 import net.dcnnt.core.*
-import net.dcnnt.plugins.DirectorySyncTask
-import net.dcnnt.plugins.SyncPlugin
-import net.dcnnt.plugins.SyncPluginConf
-import net.dcnnt.plugins.SyncTask
+import net.dcnnt.plugins.*
 import net.dcnnt.ui.*
 import org.json.JSONArray
 import kotlin.concurrent.thread
@@ -51,9 +51,11 @@ class SyncTaskView(context: Context, parent: SyncFragment, task: SyncTask): Entr
 
 class SyncFragment: BasePluginFargment() {
     override val TAG = "DC/SyncFragment"
+    val READ_CONTACTS_CODE = 11
     lateinit var tasksNotAtAllStr: String
     lateinit var syncTasksView: VerticalLayout
     var selectedConf: SyncPluginConf? = null
+    var hasReadContactsPermission = false
 
     private fun updateSelectedConf() {
         selectedConf = null
@@ -65,6 +67,29 @@ class SyncFragment: BasePluginFargment() {
     override fun onSelectedDeviceChanged() {
         updateSelectedConf()
         updateSyncTasksView(context ?: return)
+    }
+
+    private fun askReadContactsPermission() {
+        Log.d(TAG, "activity = $activity")
+        val activity = activity ?: return
+        if (ContextCompat.checkSelfPermission(activity as Context,
+                Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "ask permission")
+            ActivityCompat.requestPermissions(activity,
+                arrayOf(Manifest.permission.READ_CONTACTS), READ_CONTACTS_CODE)
+        } else {
+            Log.d(TAG, "already granted")
+            hasReadContactsPermission = true
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            READ_CONTACTS_CODE -> hasReadContactsPermission = (grantResults.isNotEmpty() &&
+                    (grantResults[0] == PackageManager.PERMISSION_GRANTED))
+            else -> {}
+        }
     }
 
     fun updateSyncTasksView(context: Context) {
@@ -80,9 +105,16 @@ class SyncFragment: BasePluginFargment() {
 
     fun addSyncTask(context: Context) {
         val conf = selectedConf ?: return
-        conf.addTask(DirectorySyncTask(conf, nowString()).apply { init() })
-        conf.dump()
-        updateSyncTasksView(context)
+        SelectInputView.showListDialog(context, context.getString(R.string.sync_task_type),
+            mutableListOf(
+                Option(context.getString(R.string.sync_dir_short), "conf_dir"),
+                Option(context.getString(R.string.sync_contacts_short), "conf_contacts"),
+            )) { _, option ->
+                if ("${option.value}".contains("contacts")) askReadContactsPermission()
+                conf.addTask(conf.getSyncTask("${option.value}"))
+                conf.dump()
+                updateSyncTasksView(context)
+            }
     }
 
     fun removeSyncTask(context: Context, task: SyncTask) {
@@ -172,6 +204,7 @@ class SyncTaskEditFragment: DCFragment() {
                         task.execute(plugin)
                         context?.also { toast(it, "Task '${task.name.value}' - OK") }
                     } catch (e: Exception) {
+                        e.printStackTrace()
                         context?.also { showError(it, e) }
                     }
                 }
