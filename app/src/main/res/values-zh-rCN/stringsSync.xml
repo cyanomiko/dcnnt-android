@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="sync_task_type">目录</string>
+    <string name="sync_dir_short">目录</string>
+    <string name="sync_contacts_short">联系人</string>
     <string name="sync_add_task">添加同步任务</string>
     <string name="sync_remove_task">删除同步任务？</string>
     <string name="do_it_now">立即执行</string>
@@ -33,5 +36,9 @@
     <string name="conf_sync_dir_onDelete_info">文件删除命令操作</string>
     <string name="conf_sync_dir_onDelete_delete">删除</string>
     <string name="conf_sync_dir_onDelete_ignore">忽略</string>
-
+    <string name="conf_sync_contacts_noPhoto_title">跳过照片</string>
+    <string name="conf_sync_contacts_noPhoto_info">不添加照片到同步的数据</string>
+    <string name="conf_sync_contacts_mode_title">同步模式</string>
+    <string name="conf_sync_contacts_mode_info">传输目录</string>
+    <string name="conf_sync_contacts_mode_upload">上传</string>
 </resources>
