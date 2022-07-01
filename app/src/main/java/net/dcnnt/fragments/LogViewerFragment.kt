@@ -66,6 +66,7 @@ class LogDirectoryFragment: DCFragment() {
             setTextIsSelectable(true)
             maxLines = 0xFFFFFF
         })
+        containerView.post { containerView.fullScroll(View.FOCUS_DOWN) }
     }
 
     fun updateFileList(context: Context) {
