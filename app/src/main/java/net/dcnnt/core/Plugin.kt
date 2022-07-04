@@ -114,7 +114,7 @@ abstract class Plugin<T: PluginConf>(val app: App, val device: Device) {
         return true
     }
 
-    fun connect(): Boolean {
+    fun tryConnect(): Boolean {
         if (device.ip == null) {
             Log.w(TAG, "Device ${device.uin} is offline")
             return false
@@ -144,6 +144,13 @@ abstract class Plugin<T: PluginConf>(val app: App, val device: Device) {
         }
         Log.i(TAG, "Connection established!")
         return true
+    }
+
+    fun connect() {
+        if (!tryConnect()) {
+            if (device.ip == null) throw PluginException("Device ${device.uin} is offline")
+            throw PluginException("Connection failed!")
+        }
     }
 
     fun rpcReadNotification(): Any? {

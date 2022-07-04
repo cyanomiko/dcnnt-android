@@ -37,17 +37,22 @@ class DCWorker(appContext: Context, workerParams: WorkerParameters):
 
     override fun doWork(): Result {
         APP.log("DCWorker $id - start")
-        var searchDone: Boolean = false
+        var searchDone = false
         APP.dm.devices.values.forEach { device ->
             try {
                 val plugin = SyncPlugin(APP, device)
                 plugin.init(applicationContext)
-                plugin.conf.getTasks().also { tasks ->
-                    if (tasks.isEmpty()) return@also
-                    if (!searchDone) APP.dm.syncSearch(APP.conf)
-                    tasks.forEach {
-                        APP.log("task '${it.name.value}'")
-                        it.execute(plugin)
+                val tasks = plugin.conf.getTasks()
+                if (tasks.isNotEmpty()) {
+                    if (!searchDone) {
+                        APP.dm.syncSearch(APP.conf)
+                        searchDone = true
+                    }
+                    if (device.ip != null) {
+                        tasks.forEach {
+                            APP.log("task '${it.name.value}'")
+                            it.execute(plugin)
+                        }
                     }
                 }
             } catch (e: Exception) {
