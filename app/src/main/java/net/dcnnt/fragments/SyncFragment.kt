@@ -107,8 +107,8 @@ class SyncFragment: BasePluginFargment() {
         val conf = selectedConf ?: return
         SelectInputView.showListDialog(context, context.getString(R.string.sync_task_type),
             mutableListOf(
-                Option(context.getString(R.string.sync_dir_short), "conf_dir"),
-                Option(context.getString(R.string.sync_contacts_short), "conf_contacts"),
+                Option(context.getString(R.string.sync_dir_short), "sync_dir"),
+                Option(context.getString(R.string.sync_contacts_short), "sync_contacts"),
             )) { _, option ->
                 if ("${option.value}".contains("contacts")) askReadContactsPermission()
                 conf.addTask(conf.getSyncTask("${option.value}"))
