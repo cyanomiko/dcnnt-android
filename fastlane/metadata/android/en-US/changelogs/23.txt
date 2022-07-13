@@ -1,0 +1,2 @@
+* Periodic contacts sync
+* Some minor fixes

@@ -14,9 +14,11 @@ Android client for https://github.com/cyanomiko/dcnnt-py
 * Lightweight and fast
 * AES-256 encryption with password
 * Upload files from phone to desktop
+* Open files and web URLs from phone on desktop
 * Download files from pre-defined directories at desktop to phone
 * Show phone notification on desktop
 * Execute pre-defined commands on desktop
+* Periodically running sync tasks (directories, contacts)
 
 ## Quickstart
 
