@@ -193,7 +193,7 @@ class DeviceManager(val path: String) {
                         //Log.d(TAG, "No UDP response received")
                         continue
                     }
-                    val ip = response.address.hostAddress.toString()
+                    val ip = response.address.hostAddress ?: "null"
                     val res = JSONObject(response.data.toString(Charset.forName("UTF-8")))
                     Log.i(TAG, "$res")
                     if ((res["plugin"] == "search") and (res["action"] == "response") and (res["uin"] is Int) and
