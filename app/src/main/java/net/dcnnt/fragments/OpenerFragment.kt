@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.Parcelable
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -196,7 +195,7 @@ class OpenerFragment: UploadFileFragment() {
                 return
             }
         }
-        val uri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
+        val uri = getParcelableExtra<Uri>(intent, Intent.EXTRA_STREAM)
         uri?.also {
             selectedEntries.add(getFileInfoFromUri(context, it) ?: return)
             return
@@ -220,7 +219,7 @@ class OpenerFragment: UploadFileFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        intent = arguments?.getParcelable(ARG_INTENT)
+        intent = getParcelable(arguments, ARG_INTENT)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

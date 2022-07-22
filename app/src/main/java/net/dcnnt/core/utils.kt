@@ -1,18 +1,25 @@
 package net.dcnnt.core
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.os.Parcelable
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import net.dcnnt.R
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.lang.reflect.TypeVariable
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.reflect.KClass
 
 enum class FileStatus { WAIT, RUN, CANCEL, DONE, FAIL }
 enum class EntryType { FILE, LINK }
@@ -34,7 +41,7 @@ data class FileEntry(
 
 fun getFileInfoFromUri(context: Context, uri: Uri): FileEntry? {
     when {
-        "${uri.scheme}".toLowerCase(Locale.ROOT) == "content" -> {
+        "${uri.scheme}".lowercase() == "content" -> {
             context.contentResolver.also { cr ->
                 val mimeType = cr.getType(uri).toString()
                 val fallbackExtension = if (mimeType.contains('/')) mimeType.split('/')[1] else "bin"
@@ -50,7 +57,7 @@ fun getFileInfoFromUri(context: Context, uri: Uri): FileEntry? {
                 }
             }
         }
-        "${uri.scheme}".toLowerCase(Locale.ROOT) == "file" -> {
+        "${uri.scheme}".lowercase() == "file" -> {
             File(uri.path ?: return null).let {
                 return FileEntry(it.name, it.length(), localUri = uri)
             }
@@ -123,4 +130,35 @@ fun nowString(): String {
 fun simplifyFilename(filename: String): String {
     return filename.take(21).trim(' ', '-', '.').replace(' ', '_')
         .filter { c -> c.isLetterOrDigit() or (c == '_') }
+}
+
+/* Type-safe Parcelable extraction with workaround for old SDK versions */
+
+inline fun <reified T: Parcelable> getParcelable(bundle: Bundle?, key: String): T? {
+    if (bundle == null) return null
+    return if (Build.VERSION.SDK_INT >= 33) {
+        bundle.getParcelable(key, T::class.java)
+    } else {
+        bundle.getParcelable<Parcelable>(key) as? T
+    }
+}
+
+inline fun <reified T: Parcelable> getParcelableExtra(intent: Intent, key: String): T? {
+    return if (Build.VERSION.SDK_INT >= 33) {
+        intent.getParcelableExtra(key, T::class.java)
+    } else {
+        intent.getParcelableExtra<Parcelable>(key) as? T
+    }
+}
+
+inline fun <reified T: Parcelable> getParcelableArrayListExtra(intent: Intent, key: String): ArrayList<T>? {
+    return if (Build.VERSION.SDK_INT >= 33) {
+        intent.getParcelableArrayListExtra(key, T::class.java)
+    } else {
+         ArrayList<T>().apply {
+            intent.getParcelableArrayListExtra<Parcelable>(key)?.forEach {
+                this.add((it as? T) ?: return null)
+            }
+        }
+    }
 }

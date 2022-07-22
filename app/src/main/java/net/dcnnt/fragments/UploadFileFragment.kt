@@ -3,23 +3,16 @@ package net.dcnnt.fragments
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
 import net.dcnnt.R
 import net.dcnnt.core.*
 import net.dcnnt.plugins.FileTransferPlugin
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
-import android.graphics.BitmapFactory
-import android.media.ThumbnailUtils
-import android.os.Parcelable
-import androidx.appcompat.widget.Toolbar
 import androidx.core.os.bundleOf
 import net.dcnnt.MainActivity
 import net.dcnnt.ui.*
@@ -200,7 +193,8 @@ open class UploadFileFragment: BaseFileFragment() {
 
     open fun processIntent(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_SEND) {
-            val uri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
+            val uri = getParcelableExtra<Uri>(intent, Intent.EXTRA_STREAM)
+//            val uri = intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
             if (uri == null) {
                 val text = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
                 val title = simplifyFilename((intent.getStringExtra(Intent.EXTRA_TITLE)
@@ -214,8 +208,8 @@ open class UploadFileFragment: BaseFileFragment() {
             APP.log("Ready to upload ${selectedEntries.size} file from send action")
         }
         if (intent.action == Intent.ACTION_SEND_MULTIPLE) {
-            intent.getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)?.let {
-                it.forEach { selectedEntries.add(getFileInfoFromUri(context, (it as? Uri) ?: return) ?: return) }
+            getParcelableArrayListExtra<Uri>(intent, Intent.EXTRA_STREAM)?.forEach {
+                selectedEntries.add(getFileInfoFromUri(context, it) ?: return)
             }
             APP.log("Ready to upload ${selectedEntries.size} files from send (multiple) action")
         }
@@ -238,7 +232,7 @@ open class UploadFileFragment: BaseFileFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        intent = arguments?.getParcelable(ARG_INTENT)
+        intent = getParcelable(arguments, ARG_INTENT)
     }
 
     override fun initStrings() {

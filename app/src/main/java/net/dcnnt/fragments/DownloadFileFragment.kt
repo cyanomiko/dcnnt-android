@@ -147,11 +147,10 @@ class DownloadFileFragment: BaseFileFragment() {
                 FileEntry("..", it.size, FileStatus.WAIT, remoteChildren = listOf()), true))
         }
         when (sortBy) {
-            FileSort.NAME -> entry.remoteChildren?.sortedBy { "${!it.isDir} ${it.name.toUpperCase(Locale.getDefault())}" }
+            FileSort.NAME -> entry.remoteChildren?.sortedBy { "${!it.isDir} ${it.name.uppercase()}" }
             FileSort.TYPE -> entry.remoteChildren?.sortedBy {
-                val locale = Locale.getDefault()
-                val extensionUpper = it.name.split('.').lastOrNull()?.toUpperCase(locale) ?: ""
-                val nameUpper = it.name.toUpperCase(locale)
+                val extensionUpper = it.name.split('.').lastOrNull()?.uppercase() ?: ""
+                val nameUpper = it.name.uppercase()
                 "${!it.isDir} $extensionUpper $nameUpper"
             }
             FileSort.SIZE -> entry.remoteChildren?.sortedBy { if (it.isDir) it.size else (0xFFFFFFFF + it.size) }
