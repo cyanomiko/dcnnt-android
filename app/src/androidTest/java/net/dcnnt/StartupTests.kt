@@ -17,20 +17,20 @@ import org.junit.runners.MethodSorters
 class StartupTests: BaseTest() {
 
     @Test
-    fun t10appBarText() {
-        restartApp()
-        val textEl = device.findObject(UiSelector().text("Device Connect"))
-        println(textEl.className)
-        assert(textEl.exists())
-    }
-
-    @Test
     fun t00pairingRoutine() {
         restartApp()
         assertInputTextInDialog("Pair code for", pairingCode)
         assertClickText("$serverUin")
         val passwordEdit = device.findObject(UiSelector().text(serverPassword))
         assert(passwordEdit.exists())
+    }
+
+    @Test
+    fun t10appBarText() {
+        restartApp()
+        val textEl = device.findObject(UiSelector().text("Device Connect"))
+        println(textEl.className)
+        assert(textEl.exists())
     }
 
     @Test
@@ -43,6 +43,6 @@ class StartupTests: BaseTest() {
         assertInputTextInDialog("New folder", "dcnnt")
         assertClickText("USE THIS FOLDER")
         assertClickDialog("Allow", "ALLOW")
-        assertWait { return@assertWait false }
+        assertClickText("..")
     }
 }
