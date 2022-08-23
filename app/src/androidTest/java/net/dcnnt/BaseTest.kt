@@ -133,8 +133,12 @@ open class BaseTest {
     /**
      * Click UI element with text, return true if clicked
      */
-    fun clickText(text: String): Boolean {
-        val uiEl = device.findObject(UiSelector().textContains(text))
+    fun clickText(text: String, clickableOnly: Boolean = false): Boolean {
+        var selector = UiSelector().textContains(text)
+        if (clickableOnly) {
+            selector = selector.clickable(true)
+        }
+        val uiEl = device.findObject(selector)
         if (waitExists(uiEl)) {
             uiEl.click()
             return true
@@ -142,8 +146,12 @@ open class BaseTest {
         return false
     }
 
-    fun assertClickText(text: String) = assert(clickText(text))
-    fun assertClickText(textId: Int) = assertClickText(str(textId))
+    fun assertClickText(text: String, clickableOnly: Boolean = false) {
+        assert(clickText(text, clickableOnly))
+    }
+    fun assertClickText(textId: Int, clickableOnly: Boolean = false) {
+        assertClickText(str(textId), clickableOnly)
+    }
 
     fun assertClickButton(text: String) {
         val button = device.findObject(UiSelector().text(text.uppercase()))

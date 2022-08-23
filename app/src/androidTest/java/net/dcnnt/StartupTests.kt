@@ -45,4 +45,15 @@ class StartupTests: BaseTest() {
         assertClickDialog("Allow", "ALLOW")
         assertClickText("..")
     }
+
+    @Test
+    fun t30grantNotificationAccess() {
+        restartApp()
+        navGo(R.string.menu_settings)
+        assertClickText(R.string.conf_app_notificationListenerService_info)
+        assertClickText("Device Connect")
+        assertClickText("Allow")
+        assertWaitDialog("Allow noti")
+        assertClickText("Allow", clickableOnly = true)
+    }
 }
