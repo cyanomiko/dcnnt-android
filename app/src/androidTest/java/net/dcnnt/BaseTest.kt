@@ -7,10 +7,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.SdkSuppress
 import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.By
-import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.UiSelector
-import androidx.test.uiautomator.Until
 import org.hamcrest.CoreMatchers.notNullValue
 import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
@@ -19,6 +15,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.MethodSorters
 import java.lang.Thread.sleep
 import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.test.uiautomator.*
 
 
 //@RunWith(AndroidJUnit4ClassRunner::class)
@@ -53,7 +50,7 @@ open class BaseTest {
         Runtime.getRuntime().exec(arrayOf("am", "kill", appName))
     }
 
-    fun startAppFromHomeScreen() {
+    fun startLauncher() {
         // Start from the home screen
         device.pressHome()
         // Wait for launcher
@@ -63,6 +60,10 @@ open class BaseTest {
             Until.hasObject(By.pkg(launcherPackage).depth(0)),
             launchTimeout
         )
+    }
+
+    fun startAppFromHomeScreen() {
+        startLauncher()
         // Launch the app
         val intent = context.packageManager.getLaunchIntentForPackage(appName)?.apply {
             // Clear out any previous instances
@@ -98,6 +99,20 @@ open class BaseTest {
     }
 
     /**
+     * Wait until UI object appears
+     */
+    fun waitExists(uiObject: UiObject, timeout: Long = 500L, pause: Long = 300L): Boolean {
+        return wait(timeout, pause) { uiObject.exists() }
+    }
+
+    /**
+     * Wait until UI object appears, assertion error on timeout
+     */
+    fun assertWaitExists(uiObject: UiObject, timeout: Long = 500L, pause: Long = 300L) {
+        assertWait("Wait $uiObject", timeout, pause) { uiObject.exists() }
+    }
+
+    /**
      * Get string from resources
      */
     fun str(resourceId: Int) = context.getString(resourceId)
@@ -111,7 +126,7 @@ open class BaseTest {
         if (navToggleClose.exists()) return
         val navToggleShow = device.findObject(
             UiSelector().descriptionContains(str(R.string.navigation_drawer_open)))
-        assert(navToggleShow.exists())
+        assertWaitExists(navToggleShow)
         navToggleShow.click()
     }
 
@@ -120,7 +135,7 @@ open class BaseTest {
      */
     fun clickText(text: String): Boolean {
         val uiEl = device.findObject(UiSelector().textContains(text))
-        if (uiEl.exists()) {
+        if (waitExists(uiEl)) {
             uiEl.click()
             return true
         }
@@ -132,7 +147,7 @@ open class BaseTest {
 
     fun assertClickButton(text: String) {
         val button = device.findObject(UiSelector().text(text.uppercase()))
-        assert(button.exists())
+        assertWaitExists(button)
         assert(button.isEnabled)
         button.click()
     }
@@ -145,13 +160,13 @@ open class BaseTest {
         showSideMenu()
 //        clickText(navEntryTextId)
         val navEntry = device.findObject(UiSelector().text(str(navEntryTextId)))
-        assert(navEntry.exists())
+        assertWaitExists(navEntry)
         navEntry.click()
     }
 
     fun inputText(text: String) {
         val textEdit = device.findObject(UiSelector().className(EditText::class.java.name))
-        assert(textEdit.exists())
+        assertWaitExists((textEdit))
         textEdit.text = text
     }
 
