@@ -3,27 +3,21 @@ package net.dcnnt.core
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.net.Uri
 import android.os.Build
 import android.util.Log
 import net.dcnnt.DCWorker
 import net.dcnnt.MainActivity
 import net.dcnnt.R
-import net.dcnnt.plugins.SyncPlugin
 import net.dcnnt.plugins.SyncPluginConf
 import net.dcnnt.plugins.SyncTask
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
-import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.logging.Logger
 import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlin.random.Random
-import kotlin.time.seconds
 
 
 class AppConf(path: String): DCConf(path) {
@@ -59,13 +53,10 @@ class AppConf(path: String): DCConf(path) {
 class App : Application() {
     val TAG = "DConnect/App"
     private val appPlugins = listOf("file", "rcmd", "nots")
-//    val inited = AtomicBoolean(false)
     lateinit var directory: String
     lateinit var conf: AppConf
     lateinit var dm: DeviceManager
     lateinit var pm: PluginManager
-    lateinit var downloadsDirectory: Uri
-    lateinit var rootDirectory: Uri
     lateinit var crashHandler: DCCrashHandler
     private lateinit var logger: DCLogger
     private lateinit var errorLogger: DCLogger

@@ -23,8 +23,8 @@ import kotlin.concurrent.thread
 
 class OpenerFragment: UploadFileFragment() {
     override val TAG = "DC/OpenerUI"
-    private val READ_REQUEST_CODE = 43
     private var intent: Intent? = null
+    override val allowMultipleSelection = false
 
     companion object {
         private const val ARG_INTENT = "intent"
@@ -54,13 +54,6 @@ class OpenerFragment: UploadFileFragment() {
             updateEntriesView(context)
         }
         return true
-    }
-
-    override fun selectEntries(context: Context) {
-        activity?.startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "*/*"
-        }, READ_REQUEST_CODE)
     }
 
     override fun processAllEntries(context: Context) {
@@ -206,15 +199,6 @@ class OpenerFragment: UploadFileFragment() {
         selectedEntries.add(FileEntry( "$titleStr.txt", data.size.toLong(),
             localUri = uriFake, data = data))
         APP.log("Ready to open ${selectedEntries.size} file from user selection")
-    }
-
-    override fun onActivityResult(mainActivity: MainActivity, requestCode: Int,
-                                  resultCode: Int, data: Intent?): Boolean {
-        Log.d(TAG, "requestCode = $requestCode, resultCode = $resultCode, resultData = $data")
-        if (requestCode == READ_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
-            handleSelectEntries(context ?: return true, data)
-        }
-        return true
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

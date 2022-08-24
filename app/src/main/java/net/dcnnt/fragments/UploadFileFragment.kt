@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.ActivityResultLauncher
 import net.dcnnt.R
 import net.dcnnt.core.*
 import net.dcnnt.plugins.FileTransferPlugin
@@ -20,8 +21,9 @@ import net.dcnnt.ui.*
 
 open class UploadFileFragment: BaseFileFragment() {
     override val TAG = "DC/UploadUI"
-    private val READ_REQUEST_CODE = 42
     private var intent: Intent? = null
+    protected lateinit var selectEntryActivityLauncher: ActivityResultLauncher<Intent>
+    protected open val allowMultipleSelection = true
 
     companion object {
         private const val ARG_INTENT = "intent"
@@ -31,11 +33,11 @@ open class UploadFileFragment: BaseFileFragment() {
     }
 
     override fun selectEntries(context: Context) {
-        activity?.startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+        selectEntryActivityLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, allowMultipleSelection)
             type = "*/*"
-        }, READ_REQUEST_CODE)
+        })
     }
 
     fun loadThumbnails() {
@@ -182,15 +184,6 @@ open class UploadFileFragment: BaseFileFragment() {
         }
     }
 
-    override fun onActivityResult(mainActivity: MainActivity, requestCode: Int,
-                                  resultCode: Int, data: Intent?): Boolean {
-        Log.d(TAG, "requestCode = $requestCode, resultCode = $resultCode, resultData = $data")
-        if (requestCode == READ_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
-            handleSelectEntries(context ?: return true, data)
-        }
-        return true
-    }
-
     open fun processIntent(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_SEND) {
             val uri = getParcelableExtra<Uri>(intent, Intent.EXTRA_STREAM)
@@ -233,6 +226,9 @@ open class UploadFileFragment: BaseFileFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         intent = getParcelable(arguments, ARG_INTENT)
+        selectEntryActivityLauncher = newActivityCaller(this) { _, intent ->
+            handleSelectEntries(context ?: return@newActivityCaller, intent)
+        }
     }
 
     override fun initStrings() {

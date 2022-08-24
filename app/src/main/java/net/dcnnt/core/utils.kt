@@ -1,5 +1,6 @@
 package net.dcnnt.core
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -12,6 +13,10 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultCaller
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import net.dcnnt.R
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -161,4 +166,16 @@ inline fun <reified T: Parcelable> getParcelableArrayListExtra(intent: Intent, k
             }
         }
     }
+}
+
+fun newActivityCaller(caller: ActivityResultCaller, okResultOnly: Boolean = true,
+                       handler: (resultCode: Int, intent: Intent?) -> Unit):
+        ActivityResultLauncher<Intent> {
+    val launcher = caller.registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+            if ((result.resultCode == Activity.RESULT_OK) or (!okResultOnly)) {
+                handler(result.resultCode, result.data)
+            }
+    }
+    return launcher
 }

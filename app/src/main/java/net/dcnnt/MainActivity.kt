@@ -5,16 +5,16 @@ import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.os.Parcelable
 import android.provider.Settings
 import android.text.TextUtils
 import android.util.Log
 import android.view.Gravity
 import android.view.Menu
 import android.widget.FrameLayout
-import android.widget.Toast
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -26,10 +26,10 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.navigation.NavigationView
 import net.dcnnt.core.APP
 import net.dcnnt.core.ENABLED_NOTIFICATION_LISTENERS
+import net.dcnnt.core.newActivityCaller
 import net.dcnnt.core.simplifyFilename
 import net.dcnnt.fragments.*
 import net.dcnnt.ui.*
-import java.util.*
 import kotlin.system.exitProcess
 
 
@@ -138,14 +138,13 @@ class Navigation(private val toolbarView: Toolbar,
 
 class MainActivity : AppCompatActivity() {
     val TAG = "DC/UI"
-    private val CODE_NOTIFICATIONS = 42
     private val CODE_RESTART = 1337
     lateinit var toolbarEl: Toolbar
     lateinit var drawerEl: DrawerLayout
     lateinit var navMenuEl: NavigationView
     lateinit var fragmentEl: FrameLayout
     lateinit var navigation: Navigation
-    var onNotificationAccessActivityResult = {}
+    val notificationAccessActivityLauncher = newActivityCaller(this) { _, _ -> }
 
     /**
      * Init basic UI and navigation menu then go to start fragment
@@ -372,24 +371,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             if (!navigation.back()) {
                 super.onBackPressed()
-            }
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        val fragment = navigation.currentFragment
-        Log.d(TAG, "requestCode = $requestCode, resultCode = $resultCode")
-        if (!fragment.onActivityResult(this, requestCode, resultCode, data)) return
-        when (requestCode) {
-            CODE_NOTIFICATIONS -> onNotificationAccessActivityResult()
-            else -> {
-                if (resultCode != RESULT_OK) return
-                APP.rootDirectory = data?.data ?: return
-                grantUriPermission(packageName, APP.rootDirectory,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                contentResolver.takePersistableUriPermission(APP.rootDirectory,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
             }
         }
     }

@@ -19,6 +19,7 @@ import net.dcnnt.MainActivity
 import net.dcnnt.R
 import net.dcnnt.core.ACTION_NOTIFICATION_LISTENER_SETTINGS
 import net.dcnnt.core.APP
+import net.dcnnt.core.newActivityCaller
 import net.dcnnt.core.nowString
 import net.dcnnt.ui.BoolInputView
 import net.dcnnt.ui.ConfListView
@@ -30,10 +31,38 @@ class SettingsFragment: DCFragment() {
     val TAG = "DC/SettingsFragment"
     private var notificationConfView: BoolInputView? = null
     private var downloadDirectoryView: TextInputView? = null
-    private val CODE_SAVE_SETTINGS = 141
-    private val CODE_LOAD_SETTINGS = 142
-    private val CODE_SELECT_DOWNLOAD_DIRECTORY = 143
     private lateinit var confListView: ConfListView
+    private val saveSettingsActivityLauncher = newActivityCaller(this) { _, intent ->
+        val contentResolver = context?.contentResolver ?: return@newActivityCaller
+        val uri = intent?.data ?: return@newActivityCaller
+        try {
+            APP.dumpSettingsToFile(contentResolver.openOutputStream(uri)
+                ?: return@newActivityCaller)
+            Toast.makeText(context, "OK", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show()
+        }
+    }
+    private val loadSettingsActivityLauncher = newActivityCaller(this) { _, intent ->
+        val contentResolver = context?.contentResolver ?: return@newActivityCaller
+        val uri = intent?.data ?: return@newActivityCaller
+        try {
+            val res = APP.loadSettingsFromFile(contentResolver.openInputStream(uri)
+                ?: return@newActivityCaller)
+            Toast.makeText(context, "OK", Toast.LENGTH_SHORT).show()
+            mainActivity.restartApp()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show()
+        }
+    }
+    private val selectDownloadDirectoryActivityLauncher = newActivityCaller(this) { _, intent ->
+        val uri = intent?.data ?: return@newActivityCaller
+        Log.d(TAG, "Tree URI: $uri")
+        APP.conf.downloadDirectory.updateValue(uri.toString())
+        updateDownloadDirectoryView()
+        if (arguments?.getInt(ARG_ACTION) == ACTION_DOWNLOAD_DIR) mainActivity.navigation.back()
+    }
 
     companion object {
         private const val ARG_ACTION = "action"
@@ -56,64 +85,30 @@ class SettingsFragment: DCFragment() {
     fun dropSettings(): Boolean {
         APP.dropSettings()
         Toast.makeText(context, "OK", Toast.LENGTH_SHORT).show()
-        (activity as? MainActivity)?.restartApp()
+        mainActivity.restartApp()
         return true
     }
 
     fun dumpSettings(): Boolean {
-        activity?.startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+        saveSettingsActivityLauncher.launch(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             putExtra(Intent.EXTRA_TITLE, "dcnnt-data-${nowString()}.zip")
             type = "application/zip"
-        }, CODE_SAVE_SETTINGS)
+        })
         return true
     }
 
     fun loadSettings(): Boolean {
-        activity?.startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+        loadSettingsActivityLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "application/zip"
-        }, CODE_LOAD_SETTINGS)
-        return true
-    }
-
-    override fun onActivityResult(mainActivity: MainActivity, requestCode: Int,
-                                  resultCode: Int, data: Intent?): Boolean {
-        Log.d(TAG, "requestCode = $requestCode, resultCode = $resultCode")
-        val contentResolver = context?.contentResolver ?: return true
-        val uri = data?.data ?: return true
-        if ((requestCode == CODE_SAVE_SETTINGS) and (resultCode == Activity.RESULT_OK)) {
-            try {
-                APP.dumpSettingsToFile(contentResolver.openOutputStream(uri) ?: return false)
-                Toast.makeText(context, "OK", Toast.LENGTH_SHORT).show()
-                return false
-            } catch (e: Exception) {
-                Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show()
-            }
-        }
-        if ((requestCode == CODE_LOAD_SETTINGS) and (resultCode == Activity.RESULT_OK)) {
-            try {
-                val res = APP.loadSettingsFromFile(contentResolver.openInputStream(uri) ?: return false)
-                Toast.makeText(context, "OK", Toast.LENGTH_SHORT).show()
-                (activity as? MainActivity)?.restartApp()
-                return false
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show()
-            }
-        }
-        if ((requestCode == CODE_SELECT_DOWNLOAD_DIRECTORY) and (resultCode == Activity.RESULT_OK)) {
-            Log.d(TAG, "Tree URI: $uri")
-            APP.conf.downloadDirectory.updateValue(uri.toString())
-            updateDownloadDirectoryView()
-            if (arguments?.getInt(ARG_ACTION) == ACTION_DOWNLOAD_DIR) (activity as? MainActivity)?.navigation?.back()
-        }
+        })
         return true
     }
 
     fun checkNotificationAccess() {
         val view = notificationConfView ?: return
-        val res = (activity as? MainActivity)?.isNotificationServiceEnabled() ?: false
+        val res = mainActivity.isNotificationServiceEnabled() ?: false
         Log.d(TAG, "Notification access = $res")
         view.value = res
         Log.d(TAG, "notificationConfView.value = ${view.value}")
@@ -133,18 +128,19 @@ class SettingsFragment: DCFragment() {
             (confViews[APP.conf.notificationListenerService.name] as? BoolInputView)?.also {
                 notificationConfView = it
                 it.onInput = { _ ->
-                    context.startActivity(Intent(ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    mainActivity.notificationAccessActivityLauncher.launch(
+                        Intent(ACTION_NOTIFICATION_LISTENER_SETTINGS))
                     checkNotificationAccess()
                 }
             }
             (confViews[APP.conf.downloadDirectory.name] as? TextInputView)?.also {
                 downloadDirectoryView = it
                 it.setOnClickListener {
-                    activity?.startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                    selectDownloadDirectoryActivityLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                             putExtra(DocumentsContract.EXTRA_INITIAL_URI, APP.conf.downloadDirectory.value)
                         }
-                    }, CODE_SELECT_DOWNLOAD_DIRECTORY)
+                    })
                 }
             }
         })
@@ -163,5 +159,4 @@ class SettingsFragment: DCFragment() {
         container?.context?.also { return fragmentMainView(it) }
         return null
     }
-
 }

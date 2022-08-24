@@ -2,7 +2,11 @@ package net.dcnnt.ui
 
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.Toolbar
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -14,7 +18,7 @@ import java.lang.Exception
  * Base class for all fragments in application
  */
 open class DCFragment: Fragment() {
-    val activityResultHandlers: MutableMap<Int, (Int, Int, Intent?) -> Boolean> = mutableMapOf()
+    lateinit var mainActivity: MainActivity
     /**
      * Reload this function to draw toolbar buttons and menu
      */
@@ -27,18 +31,6 @@ open class DCFragment: Fragment() {
      * @return true if event propagated, otherwise - false
      */
     open fun onBackPressed(): Boolean {
-        return true
-    }
-
-    /**
-     * Handle result of intent activity
-     * @return true if event propagated, otherwise - false
-     */
-    open fun onActivityResult(mainActivity: MainActivity, requestCode: Int,
-                              resultCode: Int, data: Intent?): Boolean {
-        activityResultHandlers[requestCode]?.also { handler ->
-            return handler(requestCode, resultCode, data)
-        }
         return true
     }
 
@@ -56,5 +48,10 @@ open class DCFragment: Fragment() {
         toast(context, "Error: $e")
         APP.log("Error occurred: $e")
         APP.logException(e)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        mainActivity = (activity as? MainActivity) ?: throw RuntimeException("No activity")
     }
 }

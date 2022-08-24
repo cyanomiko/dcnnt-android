@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
 import android.util.Log
+import androidx.activity.result.ActivityResultLauncher
 import androidx.fragment.app.FragmentManager
 import net.dcnnt.MainActivity
 import net.dcnnt.core.*
@@ -17,6 +18,7 @@ import net.dcnnt.fragments.SettingsFragment
 open class ConfListView(context: Context, private val fragment: DCFragment) : VerticalLayout(context) {
     private val r = context.resources
     private val packageName = context.packageName
+    private val activityLaunchers = mutableMapOf<Int, ActivityResultLauncher<Intent>>()
     private lateinit var conf: DCConf
     val confViews = mutableMapOf<String, ListTileView>()
     var alternativeConfNames = listOf<String>()
@@ -31,6 +33,7 @@ open class ConfListView(context: Context, private val fragment: DCFragment) : Ve
         }
     }
 
+    @SuppressLint("DiscouragedApi")
     private fun extractResourceString(entryName: String, stringType: String): String {
         val confNames = mutableListOf(conf.confName)
         confNames.addAll(alternativeConfNames)
@@ -45,7 +48,7 @@ open class ConfListView(context: Context, private val fragment: DCFragment) : Ve
     }
 
     private fun createViewForEntry(entry: DCConfEntry<Any>): ListTileView? {
-        val prefix = "conf_${conf.confName}_${entry.name}"
+//        val prefix = "conf_${conf.confName}_${entry.name}"
 //        val titleId = r.getIdentifier("${prefix}_title", "string", packageName)
 //        val t = if (titleId > 0) r.getString(titleId) else entry.name
 //        val infoId = r.getIdentifier("${prefix}_info", "string", packageName)
@@ -98,30 +101,26 @@ open class ConfListView(context: Context, private val fragment: DCFragment) : Ve
         title = label
         text = entry.value
         onInput = { v -> entry.updateValue(v) }
-        val requestCode = (fragment.activityResultHandlers.keys.maxOrNull() ?: 1000) + 1
-        fragment.activityResultHandlers[requestCode] = { _, resultCode, intent ->
-            var ret = true
-            if (resultCode == Activity.RESULT_OK) {
-                val uri = intent?.data
-                entry.updateValue("$uri")
-                text = Uri.decode(entry.value.split("/").last())
-                if (entry.persistent) {
-                    if (uri != null) {
-                        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                        APP.contentResolver.takePersistableUriPermission(uri, flags)
-                    }
+        val newKey = activityLaunchers.keys.size * 1000 + (0 .. 999).random()
+        val activityResultLauncher = newActivityCaller(fragment) { _, intent ->
+            val uri = intent?.data
+            entry.updateValue("$uri")
+            text = Uri.decode(entry.value.split("/").last())
+            if (entry.persistent) {
+                if (uri != null) {
+                    val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    APP.contentResolver.takePersistableUriPermission(uri, flags)
                 }
-                ret = false
             }
-            ret
+            activityLaunchers.remove(newKey)
         }
+        activityLaunchers[newKey] = activityResultLauncher
         setOnClickListener {
-            val activity = fragment.activity as? MainActivity ?: return@setOnClickListener
-            activity.startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+            activityResultLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     putExtra(DocumentsContract.EXTRA_INITIAL_URI, entry.value)
                 }
-            }, requestCode)
+            })
         }
     }
 }
