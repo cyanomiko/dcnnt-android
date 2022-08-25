@@ -12,6 +12,7 @@ import android.util.Log
 import android.view.Gravity
 import android.view.Menu
 import android.widget.FrameLayout
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -184,6 +185,17 @@ class MainActivity : AppCompatActivity() {
             return@setNavigationItemSelectedListener true
         }
         navigation.start()
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (drawerEl.isDrawerOpen(GravityCompat.START)) {
+                    drawerEl.closeDrawer(GravityCompat.START)
+                } else {
+                    if (!navigation.back()) {
+                        finish()
+                    }
+                }
+            }
+        })
     }
 
     /**
@@ -363,15 +375,5 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         APP.activity = null
-    }
-
-    override fun onBackPressed() {
-        if (drawerEl.isDrawerOpen(GravityCompat.START)) {
-            drawerEl.closeDrawer(GravityCompat.START)
-        } else {
-            if (!navigation.back()) {
-                super.onBackPressed()
-            }
-        }
     }
 }
