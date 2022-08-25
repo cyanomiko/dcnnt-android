@@ -108,7 +108,7 @@ class SettingsFragment: DCFragment() {
 
     fun checkNotificationAccess() {
         val view = notificationConfView ?: return
-        val res = mainActivity.isNotificationServiceEnabled() ?: false
+        val res = mainActivity.isNotificationServiceEnabled()
         Log.d(TAG, "Notification access = $res")
         view.value = res
         Log.d(TAG, "notificationConfView.value = ${view.value}")
