@@ -144,6 +144,7 @@ inline fun <reified T: Parcelable> getParcelable(bundle: Bundle?, key: String): 
     return if (Build.VERSION.SDK_INT >= 33) {
         bundle.getParcelable(key, T::class.java)
     } else {
+        @Suppress("DEPRECATION")
         bundle.getParcelable<Parcelable>(key) as? T
     }
 }
@@ -152,6 +153,7 @@ inline fun <reified T: Parcelable> getParcelableExtra(intent: Intent, key: Strin
     return if (Build.VERSION.SDK_INT >= 33) {
         intent.getParcelableExtra(key, T::class.java)
     } else {
+        @Suppress("DEPRECATION")
         intent.getParcelableExtra<Parcelable>(key) as? T
     }
 }
@@ -161,9 +163,10 @@ inline fun <reified T: Parcelable> getParcelableArrayListExtra(intent: Intent, k
         intent.getParcelableArrayListExtra(key, T::class.java)
     } else {
          ArrayList<T>().apply {
-            intent.getParcelableArrayListExtra<Parcelable>(key)?.forEach {
-                this.add((it as? T) ?: return null)
-            }
+             @Suppress("DEPRECATION")
+             intent.getParcelableArrayListExtra<Parcelable>(key)?.forEach {
+                 this.add((it as? T) ?: return null)
+             }
         }
     }
 }
