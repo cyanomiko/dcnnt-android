@@ -15,6 +15,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
@@ -51,11 +52,13 @@ class SyncTaskView(context: Context, parent: SyncFragment, task: SyncTask): Entr
 
 class SyncFragment: BasePluginFargment() {
     override val TAG = "DC/SyncFragment"
-    val READ_CONTACTS_CODE = 11
     lateinit var tasksNotAtAllStr: String
     lateinit var syncTasksView: VerticalLayout
     var selectedConf: SyncPluginConf? = null
     var hasReadContactsPermission = false
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()) { hasReadContactsPermission = it }
+
 
     private fun updateSelectedConf() {
         selectedConf = null
@@ -70,25 +73,13 @@ class SyncFragment: BasePluginFargment() {
     }
 
     private fun askReadContactsPermission() {
-        Log.d(TAG, "activity = $activity")
-        val activity = activity ?: return
-        if (ContextCompat.checkSelfPermission(activity as Context,
+        if (ContextCompat.checkSelfPermission(mainActivity,
                 Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG, "ask permission")
-            ActivityCompat.requestPermissions(activity,
-                arrayOf(Manifest.permission.READ_CONTACTS), READ_CONTACTS_CODE)
+            requestPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
         } else {
             Log.d(TAG, "already granted")
             hasReadContactsPermission = true
-        }
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            READ_CONTACTS_CODE -> hasReadContactsPermission = (grantResults.isNotEmpty() &&
-                    (grantResults[0] == PackageManager.PERMISSION_GRANTED))
-            else -> {}
         }
     }
 

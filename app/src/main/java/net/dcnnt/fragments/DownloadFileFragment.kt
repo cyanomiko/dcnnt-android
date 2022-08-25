@@ -176,28 +176,6 @@ class DownloadFileFragment: BaseFileFragment() {
         }
     }
 
-    private fun askWritePermission() {
-        val activity = activity ?: return
-        if (ContextCompat.checkSelfPermission(activity as Context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            != PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG, "ask permission")
-            ActivityCompat.requestPermissions(activity,
-                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_EXTERNAL_STORAGE_CODE)
-        } else {
-            Log.d(TAG, "already granted")
-            hasWriteFilePermission = true
-        }
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            WRITE_EXTERNAL_STORAGE_CODE -> hasWriteFilePermission = (grantResults.isNotEmpty() &&
-                    (grantResults[0] == PackageManager.PERMISSION_GRANTED))
-            else -> {}
-        }
-    }
-
     fun setFileSelection(entry: FileEntry, value: Boolean) {
         if (value) {
             selectedEntries.add(entry)

@@ -13,6 +13,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import net.dcnnt.R
@@ -181,7 +182,6 @@ open class BaseFileFragment: BasePluginFargment() {
     val selectedEntries = mutableListOf<FileEntry>()
     val selectedEntriesView = mutableMapOf<String, RunningFileView>()
     val pluginRunning = AtomicBoolean(false)
-    val WRITE_EXTERNAL_STORAGE_CODE = 1
     val isPluginRunning = AtomicBoolean(false)
     var hasWriteFilePermission = false
     lateinit var selectButton: Button
@@ -203,15 +203,15 @@ open class BaseFileFragment: BasePluginFargment() {
     lateinit var notificationFailedStr: String
     var notificationIconId: Int? = null
     var notificationDoneIconId: Int? = null
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()) { hasWriteFilePermission = it }
 
-    private fun askWritePermission() {
-        Log.d(TAG, "activity = $activity")
-        val activity = activity ?: return
-        if (ContextCompat.checkSelfPermission(activity as Context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            != PackageManager.PERMISSION_GRANTED) {
+
+    protected fun askWritePermission() {
+        if (ContextCompat.checkSelfPermission(mainActivity,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG, "ask permission")
-            ActivityCompat.requestPermissions(activity,
-                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), WRITE_EXTERNAL_STORAGE_CODE)
+            requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         } else {
             Log.d(TAG, "already granted")
             hasWriteFilePermission = true
@@ -290,15 +290,6 @@ open class BaseFileFragment: BasePluginFargment() {
         super.onCreate(savedInstanceState)
         initStrings()
         askWritePermission()
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        when (requestCode) {
-            WRITE_EXTERNAL_STORAGE_CODE -> hasWriteFilePermission = (grantResults.isNotEmpty() &&
-                    (grantResults[0] == PackageManager.PERMISSION_GRANTED))
-            else -> {}
-        }
     }
 
     open fun initStrings() {
