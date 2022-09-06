@@ -12,6 +12,7 @@ import net.dcnnt.core.*
 import net.dcnnt.plugins.NotificationFilter
 import net.dcnnt.plugins.NotificationsPlugin
 import org.json.JSONObject
+import java.net.NetworkInterface
 import kotlin.concurrent.thread
 import kotlin.math.absoluteValue
 
@@ -24,12 +25,18 @@ class DCNotificationListenerService : NotificationListenerService() {
      */
     private fun hasConnection(): Boolean {
         val cm = (getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager) ?: return false
-        return cm.allNetworks.all { network ->
-            val cap = cm.getNetworkCapabilities(network) ?: return true
+        var hasConnectedNetwork = cm.allNetworks.any { network ->
+            val cap = cm.getNetworkCapabilities(network) ?: return false
             return cap.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) or
                    cap.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) or
                    (cap.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) and APP.conf.cellularData.value)
         }
+        if (!hasConnectedNetwork and APP.conf.cellularData.value) {
+            hasConnectedNetwork = NetworkInterface.getNetworkInterfaces().toList().any {
+                it.isUp and (!it.isVirtual) and (!it.isLoopback)
+            }
+        }
+        return hasConnectedNetwork
     }
 
     override fun onCreate() {
