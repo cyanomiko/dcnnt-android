@@ -56,8 +56,11 @@ class SyncFragment: BasePluginFargment() {
     lateinit var syncTasksView: VerticalLayout
     var selectedConf: SyncPluginConf? = null
     var hasReadContactsPermission = false
-    private val requestPermissionLauncher = registerForActivityResult(
+    private val requestReadContactsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()) { hasReadContactsPermission = it }
+    var hasReadMessagesPermission = false
+    private val requestReadMessagesPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()) { hasReadMessagesPermission = it }
 
 
     private fun updateSelectedConf() {
@@ -75,11 +78,22 @@ class SyncFragment: BasePluginFargment() {
     private fun askReadContactsPermission() {
         if (ContextCompat.checkSelfPermission(mainActivity,
                 Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG, "ask permission")
-            requestPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+            Log.d(TAG, "ask contacts permission")
+            requestReadContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
         } else {
             Log.d(TAG, "already granted")
             hasReadContactsPermission = true
+        }
+    }
+
+    private fun askReadMessagesPermission() {
+        if (ContextCompat.checkSelfPermission(mainActivity,
+                Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
+            Log.d(TAG, "ask messages permission")
+            requestReadMessagesPermissionLauncher.launch(Manifest.permission.READ_SMS)
+        } else {
+            Log.d(TAG, "already granted")
+            hasReadMessagesPermission = true
         }
     }
 
@@ -98,10 +112,15 @@ class SyncFragment: BasePluginFargment() {
         val conf = selectedConf ?: return
         SelectInputView.showListDialog(context, context.getString(R.string.sync_task_type),
             mutableListOf(
-                Option(context.getString(R.string.sync_dir_short), "sync_dir"),
-                Option(context.getString(R.string.sync_contacts_short), "sync_contacts"),
+                Option(context.getString(R.string.sync_dir_short), SyncTask.CONF_KEY_DIR),
+                Option(context.getString(R.string.sync_contacts_short), SyncTask.CONF_KEY_CONTACTS),
+                Option("Messages", SyncTask.CONF_KEY_MESSAGES),
             )) { _, option ->
-                if ("${option.value}".contains("contacts")) askReadContactsPermission()
+                when ("${option.value}") {
+                    SyncTask.CONF_KEY_CONTACTS -> askReadContactsPermission()
+                    SyncTask.CONF_KEY_MESSAGES -> askReadMessagesPermission()
+                    else -> {}
+                }
                 conf.addTask(conf.getSyncTask("${option.value}"))
                 conf.dump()
                 updateSyncTasksView(context)

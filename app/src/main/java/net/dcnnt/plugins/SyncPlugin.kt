@@ -1,11 +1,12 @@
 package net.dcnnt.plugins
 
+import android.content.ContentResolver
 import android.content.Context
-import android.content.res.AssetFileDescriptor
 import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.provider.ContactsContract
+import android.provider.Telephony
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import net.dcnnt.R
@@ -13,7 +14,12 @@ import net.dcnnt.core.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.*
-import java.nio.ByteBuffer
+import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
 
 
 abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
@@ -29,6 +35,9 @@ abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
 
     companion object {
         val intervalMinutes = hashMapOf( "15m" to 15L, "1h" to 60L, "8h" to 480L, "1d" to 1440L)
+        const val CONF_KEY_DIR = "sync_dir"
+        const val CONF_KEY_CONTACTS = "sync_contacts"
+        const val CONF_KEY_MESSAGES = "sync_messages"
     }
 
     open fun init() {
@@ -57,7 +66,7 @@ data class DirSyncEntry(val name: String, var ts: Long, var crc: Long,
                         val isDir: Boolean, val d: DocumentFile)
 
 class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
-    override val confName = "sync_dir"
+    override val confName = CONF_KEY_DIR
     lateinit var directory: DirEntry
     lateinit var target: StringEntry
     lateinit var mode: SelectEntry
@@ -227,29 +236,137 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
     }
 }
 
+data class MessageSMS(val threadId: Int, val addressFrom: String, val addressTo: String,
+                      val date: Long, val subject: String, val text: String,
+                      var messageId: String = "", var inReplyTo: String = "") {
+    val messageName = "from_${addressFrom}_to_${addressTo}_$date"
+    init {
+        messageId = "$threadId/$addressFrom/$addressTo/$date"
+    }
+
+    fun toEmail(): String {
+        // Date example: Sun, 18 Sep 2022 20:29:56 +0300
+        val fmt = SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.getDefault())
+        val rfcDate = fmt.format(Date(date))
+        var res = ""
+        if (addressFrom.isNotEmpty()) res += "From: $addressFrom\n"
+        if (addressTo.isNotEmpty()) res += "To: $addressTo\n"
+        res += "Date: $rfcDate\n"
+        if (subject.isNotEmpty()) res += "Subject: $subject\n"
+        res += "X-ThreadId: $threadId\n\n$text"
+        return res
+    }
+
+    fun toJSON(): JSONObject {
+        return JSONObject(mapOf(
+            "from" to addressFrom,
+            "to" to addressTo,
+            "subject" to subject,
+            "thread" to threadId,
+            "date" to date,
+            "text" to text
+        ))
+    }
+}
 
 class MessagesSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
-    override val confName = "sync_messages"
+    override val confName = CONF_KEY_MESSAGES
     override val defaultName = "Sync messages"
     override val SUB = "messages"
+    lateinit var mode: SelectEntry
+    lateinit var format: SelectEntry
 
-    override fun getTextInfo(): String {
-        TODO("Not yet implemented")
+    override fun init() {
+        super.init()
+        mode = SelectEntry(this, "mode", listOf(
+            SelectOption("upload", R.string.conf_sync_dir_mode_upload),
+        ), 0).init() as SelectEntry
+        format = SelectEntry(this, "format", listOf(
+            SelectOption("email", R.string.conf_sync_messages_format_email),
+            SelectOption("json", R.string.conf_sync_messages_format_json),
+            SelectOption("json_one", R.string.conf_sync_messages_format_json_one),
+        ), 0).init() as SelectEntry
+    }
+
+    override fun getTextInfo(): String = ""
+
+    fun getMessages(cr: ContentResolver, uri: Uri): List<MessageSMS> {
+        val res = mutableListOf<MessageSMS>()
+        val cursor: Cursor = cr.query(uri, null,null, null, null)
+            ?: throw PluginException("No SMS cursor")
+        while (cursor.moveToNext()) {
+            val addressTo: String
+            val addressFrom: String
+            if (uri == Telephony.Sms.Sent.CONTENT_URI) {
+                addressTo = cursor.getString(cursor.getColumnIndex(Telephony.Sms.ADDRESS)) ?: ""
+                addressFrom = ""
+            } else {
+                addressTo = ""
+                addressFrom = cursor.getString(cursor.getColumnIndex(Telephony.Sms.ADDRESS)) ?: ""
+            }
+            res.add(MessageSMS(
+                cursor.getInt(cursor.getColumnIndex(Telephony.Sms.THREAD_ID)) ?: 0,
+                addressFrom,
+                addressTo,
+                cursor.getLong(cursor.getColumnIndex(Telephony.Sms.DATE)) ?: 0L,
+                cursor.getString(cursor.getColumnIndex(Telephony.Sms.SUBJECT)) ?: "",
+                cursor.getString(cursor.getColumnIndex(Telephony.Sms.BODY)) ?: "",
+            ))
+        }
+        return res
+    }
+
+    fun packDataToSend(sent: List<MessageSMS>, received: List<MessageSMS>): Map<String, ByteArray> {
+        val dataToSend = mutableMapOf<String, ByteArray>()
+        when (format.value) {
+            "json_one" -> {
+                dataToSend["messages.json"] = JSONObject().apply {
+                    put("sent", JSONArray().apply {
+                        sent.forEach { this.put(it.toJSON()) } })
+                    put("received", JSONArray().apply {
+                        received.forEach { this.put(it.toJSON()) } })
+                }.toString(2).toByteArray()
+            }
+            "json" -> {
+                (sent + received).forEach {
+                    dataToSend["${it.messageName}.json"] = it.toJSON().toString(2).toByteArray()
+                }
+            }
+            "email" -> {
+                (sent + received).forEach {
+                    dataToSend["${it.messageName}.eml"] = it.toEmail().toByteArray()
+                }
+            }
+            else -> throw PluginException("Unknown message format")
+        }
+        return dataToSend
     }
 
     override fun execute(plugin: SyncPlugin) {
-        TODO("Not yet implemented")
+        val cr = plugin.context.contentResolver
+        val sentMessages = getMessages(cr, Telephony.Sms.Sent.CONTENT_URI)
+        val receivedMessages = getMessages(cr, Telephony.Sms.Inbox.CONTENT_URI)
+        val dataToSend = packDataToSend(sentMessages, receivedMessages)
+        plugin.connect()
+        dataToSend.keys.forEachIndexed { index, name ->
+            val buf = dataToSend[name] ?: return@forEachIndexed
+            val extra = mapOf("index" to index, "total" to dataToSend.size)
+            val res = plugin.sendStream(buf.inputStream(), name, buf.size.toLong(),
+                { _, _, _ -> }, "messages_upload", extra)
+            if (!res.success) {
+                throw PluginException(res.message)
+            }
+        }
     }
 }
 
 
 class ContactsSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
-    override val confName = "sync_contacts"
+    override val confName = CONF_KEY_CONTACTS
     override val defaultName = "Sync contacts"
     override val SUB = "contacts"
     lateinit var mode: SelectEntry
     lateinit var noPhoto: BoolEntry
-//    lateinit var oneFile: BoolEntry
 
     override fun init() {
         super.init()
@@ -257,7 +374,6 @@ class ContactsSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, ke
             SelectOption("upload", R.string.conf_sync_dir_mode_upload),
         ), 0).init() as SelectEntry
         noPhoto = BoolEntry(this, "noPhoto", false).init() as BoolEntry
-//        oneFile = BoolEntry(this, "oneFile", true).init() as BoolEntry
     }
 
     override fun getTextInfo(): String = ""
@@ -311,8 +427,9 @@ class SyncPluginConf(directory: String, uin: Int): PluginConf(directory, "sync",
     fun getSyncTask(confName: String, key: String? = null): SyncTask {
         val taskKey = key ?: nowString()
         val task = when (confName) {
-            "sync_dir" -> DirectorySyncTask(this, taskKey)
-            "sync_contacts" -> ContactsSyncTask(this, taskKey)
+            SyncTask.CONF_KEY_DIR -> DirectorySyncTask(this, taskKey)
+            SyncTask.CONF_KEY_CONTACTS -> ContactsSyncTask(this, taskKey)
+            SyncTask.CONF_KEY_MESSAGES -> MessagesSyncTask(this, taskKey)
             else -> { throw PluginException("Unknown sync task type '$confName'") }
         }
         task.init()

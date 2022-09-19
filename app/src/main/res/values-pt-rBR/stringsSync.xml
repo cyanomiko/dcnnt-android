@@ -33,5 +33,7 @@
     <string name="conf_sync_dir_onDelete_info">Ação quando usado o comando de excluir</string>
     <string name="conf_sync_dir_onDelete_delete">Excluir</string>
     <string name="conf_sync_dir_onDelete_ignore">Ignorar</string>
-
+    <string name="conf_sync_messages_format_email">Email-like</string>
+    <string name="conf_sync_messages_format_json">JSON</string>
+    <string name="conf_sync_messages_format_json_one">JSON (one file)</string>
 </resources>
