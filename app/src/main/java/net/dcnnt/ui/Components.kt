@@ -181,7 +181,7 @@ open class SelectInputView(context: Context) : ListTileView(context) {
         if (selectDisabled) return
         val dialogIndex = index ?: return
         AlertDialog.Builder(context).apply {
-            setNegativeButton("Cansel") { _, _ -> }
+            setNegativeButton("Cancel") { _, _ -> }
             setPositiveButton("OK") { _, _ -> index?.also { handleInput(it, options[it]) } }
             setTitle(title)
             setSingleChoiceItems(Array(options.size) { options[it].title }, dialogIndex) { d, i ->
