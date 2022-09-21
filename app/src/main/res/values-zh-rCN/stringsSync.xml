@@ -41,7 +41,7 @@
     <string name="conf_sync_contacts_mode_title">同步模式</string>
     <string name="conf_sync_contacts_mode_info">传输目录</string>
     <string name="conf_sync_contacts_mode_upload">上传</string>
-    <string name="conf_sync_messages_format_email">Email-like</string>
+    <string name="conf_sync_messages_format_email">类似电子邮件</string>
     <string name="conf_sync_messages_format_json">JSON</string>
-    <string name="conf_sync_messages_format_json_one">JSON (one file)</string>
+    <string name="conf_sync_messages_format_json_one">JSON （一个文件）</string>
 </resources>
