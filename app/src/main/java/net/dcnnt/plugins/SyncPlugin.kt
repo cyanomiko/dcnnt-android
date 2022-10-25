@@ -14,6 +14,7 @@ import net.dcnnt.core.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.*
+import java.lang.reflect.ParameterizedType
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -186,6 +187,9 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
         toUpload = toUpload.filter { it.isNotEmpty() }
         var toDownload = List<String>(toDownloadArr.length()) { toDownloadArr.optString(it) }
         toDownload = toDownload.filter { it.isNotEmpty() }
+        val totalCountToProcess = (toRename.size + toDelete.size + toCreate.size +
+                toUpload.size + toDownload.size).toLong()
+        var progressCounter = 0L
         APP.log("Scheduled operations: rename - ${toRename.size}, delete - ${toDelete.size} " +
                 "create dirs - ${toCreate.size}, upload to server - ${toUpload.size}, " +
                 "download from server - ${toDownload.size}")
@@ -197,6 +201,8 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
             } else {
                 APP.log("Renamed: '$it' -> '$newName'")
             }
+            progressCounter += 1
+            progressCallback(progressCounter, totalCountToProcess, 1)
         } }
         toDelete.forEach { flatClient[it]?.also { e ->
             ensureRemoved(e.d)
@@ -212,6 +218,8 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
                 ?: throw PluginException("Failed to create directory '$it'")
             APP.log("Create directory: '$it'")
             flatClient[it] = DirSyncEntry(it, 0L, -2L, true, newDir)
+            progressCounter += 1
+            progressCallback(progressCounter, totalCountToProcess, 1)
         }
         val contentResolver = plugin.context.contentResolver
         // Do uploads
@@ -221,6 +229,8 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
             APP.log("Uploading: '$it' (${f.size} bytes)")
             plugin.sendFile(f, contentResolver, { _, _, _ -> },
                 "dir_upload", mapOf("path" to target.value))
+            progressCounter += 1
+            progressCallback(progressCounter, totalCountToProcess, 1)
         }
         // Do downloads
         toDownload.forEach {
@@ -232,6 +242,8 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
             APP.log("Downloading: '$it'")
             plugin.recvFile(parent, f, contentResolver, { _, _, _ -> },
                 "dir_download", mapOf("path" to target.value, "name" to it))
+            progressCounter += 1
+            progressCallback(progressCounter, totalCountToProcess, 1)
         }
     }
 }
@@ -420,7 +432,7 @@ class ContactsSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, ke
         }
         plugin.connect()
         val res = plugin.sendStream(buf.toByteArray().inputStream(), "contacts.vcf",
-            buf.size().toLong(), { _, _, _ -> }, "contacts_upload")
+            buf.size().toLong(), progressCallback, "contacts_upload")
         if (!res.success) {
             throw PluginException(res.message)
         }

@@ -217,7 +217,7 @@ class SyncTaskEditFragment: DCFragment() {
                         task.execute(plugin) { cur, total, _ ->
                             activity?.runOnUiThread {
                                 val progress = cur.toDouble() / total
-                                if (progress - progressPre > 0.001) {
+                                if ((progress - progressPre > 0.001) or ((progressPre == 0.0) and (progress > 0))) {
                                     progressDialog.setProgressText("${(progress * 100).roundToInt()}%")
                                     progressDialog.setProgressValue(progress)
                                 }
