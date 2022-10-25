@@ -20,8 +20,7 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
         const val PART = 65532
     }
 
-    fun sendStream(inp: InputStream, name: String, size: Long,
-                   progressCallback: (cur: Long, total: Long, part: Long) -> Unit,
+    fun sendStream(inp: InputStream, name: String, size: Long, progressCallback: ProgressCallback,
                    rpcMethod: String = "upload", extraArgs: Map<String, Any> = mapOf()): DCResult {
         val resp = (rpc(rpcMethod, mapOf("name" to name, "size" to size) + extraArgs)
                 as? JSONObject) ?: return DCResult(false,"Incorrect response")
@@ -51,8 +50,8 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
     }
 
     fun sendFile(file: FileEntry, contentResolver: ContentResolver,
-                 progressCallback: (cur: Long, total: Long, part: Long) -> Unit,
-                 rpcMethod: String = "upload", extraArgs: Map<String, Any> = mapOf()): DCResult {
+                 progressCallback: ProgressCallback, rpcMethod: String = "upload",
+                 extraArgs: Map<String, Any> = mapOf()): DCResult {
         val inp = if (file.data != null) {
             ByteArrayInputStream(file.data)
         } else {
@@ -77,8 +76,8 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
     }
 
     fun recvFile(downloadDir: DocumentFile, entry: FileEntry, contentResolver: ContentResolver,
-                 progressCallback: (cur: Long, total: Long, part: Long) -> Unit,
-                 rpcMethod: String = "download", extraArgs: Map<String, Any> = mapOf()): DCResult {
+                 progressCallback: ProgressCallback, rpcMethod: String = "download",
+                 extraArgs: Map<String, Any> = mapOf()): DCResult {
         if (Environment.getExternalStorageState() != Environment.MEDIA_MOUNTED) {
             return DCResult(false,"Storage not mounted")
         }

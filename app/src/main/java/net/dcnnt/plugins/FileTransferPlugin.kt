@@ -70,13 +70,13 @@ class FileTransferPlugin(app: App, device: Device): BaseFilePlugin<FileTransferP
     }
 
     fun uploadFile(file: FileEntry, contentResolver: ContentResolver,
-                   progressCallback: (cur: Long, total: Long, part: Long) -> Unit): DCResult {
+                   progressCallback: ProgressCallback): DCResult {
         APP.log("Upload file '${file.name}' (${file.localUri}) to device ${device.uin}")
         return sendFile(file, contentResolver, progressCallback)
     }
 
     fun downloadFile(entry: FileEntry, contentResolver: ContentResolver,
-                     progressCallback: (cur: Long, total: Long, part: Long) -> Unit): DCResult {
+                     progressCallback: ProgressCallback): DCResult {
         APP.log("Download file '${entry.name}' from device ${device.uin}")
         return recvFile(downloadDir, entry, contentResolver, progressCallback)
     }

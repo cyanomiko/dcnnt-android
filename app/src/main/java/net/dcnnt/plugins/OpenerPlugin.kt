@@ -30,7 +30,7 @@ class OpenerPlugin(app: App, device: Device): BaseFilePlugin<OpenerPluginConf>(a
     }
 
     fun openFile(file: FileEntry, contentResolver: ContentResolver,
-                   progressCallback: (cur: Long, total: Long, part: Long) -> Unit): DCResult {
+                 progressCallback: ProgressCallback): DCResult {
         APP.log("Open file '${file.name}' (${file.localUri}) on device ${device.uin}")
         return sendFile(file, contentResolver, progressCallback, "open_file")
     }
