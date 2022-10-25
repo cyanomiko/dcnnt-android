@@ -2,35 +2,33 @@ package net.dcnnt.fragments
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.ProgressDialog
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
-import android.os.Build
 import android.os.Bundle
-import android.provider.DocumentsContract
+import android.text.InputType
 import android.util.Log
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
-import androidx.core.view.marginStart
-import androidx.core.view.setMargins
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import net.dcnnt.MainActivity
 import net.dcnnt.R
 import net.dcnnt.core.*
 import net.dcnnt.plugins.*
 import net.dcnnt.ui.*
 import org.json.JSONArray
+import java.lang.NullPointerException
 import kotlin.concurrent.thread
+import kotlin.math.roundToInt
+
 
 @SuppressLint("ViewConstructor")
 class SyncTaskView(context: Context, parent: SyncFragment, task: SyncTask): EntryView(context) {
@@ -114,7 +112,7 @@ class SyncFragment: BasePluginFargment() {
             mutableListOf(
                 Option(context.getString(R.string.sync_dir_short), SyncTask.CONF_KEY_DIR),
                 Option(context.getString(R.string.sync_contacts_short), SyncTask.CONF_KEY_CONTACTS),
-                Option("Messages", SyncTask.CONF_KEY_MESSAGES),
+                Option(context.getString(R.string.sync_messages_short), SyncTask.CONF_KEY_MESSAGES),
             )) { _, option ->
                 when ("${option.value}") {
                     SyncTask.CONF_KEY_CONTACTS -> askReadContactsPermission()
@@ -194,6 +192,7 @@ class SyncTaskEditFragment: DCFragment() {
     lateinit var conf: SyncPluginConf
     private lateinit var confListView: ConfListView
     private var targetView: TextInputView? = null
+    private lateinit var progressDialog: DCProgressDialog
 
     companion object {
         private const val ARG_UIN = "uin"
@@ -207,15 +206,30 @@ class SyncTaskEditFragment: DCFragment() {
         toolbarView.menu.also { menu ->
             menu.clear()
             menu.add(R.string.do_it_now).setOnMenuItemClickListener {
+                progressDialog.setProgressText("...")
+                progressDialog.setProgressValue(0)
+                progressDialog.show()
                 val plugin = SyncPlugin(APP, device)
                 plugin.init(APP.applicationContext)
                 thread {
                     try {
-                        task.execute(plugin)
+                        var progressPre = 0.0
+                        task.execute(plugin) { cur, total, _ ->
+                            activity?.runOnUiThread {
+                                val progress = cur.toDouble() / total
+                                if (progress - progressPre > 0.001) {
+                                    progressDialog.setProgressText("${(progress * 100).roundToInt()}%")
+                                    progressDialog.setProgressValue(progress)
+                                }
+                                progressPre = progress
+                            }
+                        }
                         context?.also { toast(it, "Task '${task.name.value}' - OK") }
                     } catch (e: Exception) {
                         e.printStackTrace()
                         context?.also { showError(it, e) }
+                    } finally {
+                        activity?.runOnUiThread { progressDialog.hide() }
                     }
                 }
                 true
@@ -282,7 +296,12 @@ class SyncTaskEditFragment: DCFragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         Log.d(TAG, "onCreateView")
-        container?.context?.also { return fragmentMainView(it) }
+        container?.context?.also {
+            progressDialog = DCProgressDialog(it).apply {
+                setTitle(R.string.channel_progress_name)
+            }
+            return fragmentMainView(it)
+        }
         return null
     }
 

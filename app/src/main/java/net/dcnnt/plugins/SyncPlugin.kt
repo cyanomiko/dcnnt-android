@@ -59,7 +59,7 @@ abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
     }
 
     abstract fun getTextInfo(): String
-    abstract fun execute(plugin: SyncPlugin)
+    abstract fun execute(plugin: SyncPlugin, progressCallback: ProgressCallback = { _, _, _ -> })
 }
 
 data class DirSyncEntry(val name: String, var ts: Long, var crc: Long,
@@ -138,7 +138,7 @@ class DirectorySyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
         f.delete()
     }
 
-    override fun execute(plugin: SyncPlugin) {
+    override fun execute(plugin: SyncPlugin, progressCallback: ProgressCallback) {
         APP.log("Start '$SUB' sync task '${name.value}'")
         val base = DocumentFile.fromTreeUri(plugin.context, Uri.parse(directory.value)) ?: return
         // Get local FS data
@@ -342,17 +342,24 @@ class MessagesSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, ke
         return dataToSend
     }
 
-    override fun execute(plugin: SyncPlugin) {
+    override fun execute(plugin: SyncPlugin, progressCallback: ProgressCallback) {
         val cr = plugin.context.contentResolver
         val sentMessages = getMessages(cr, Telephony.Sms.Sent.CONTENT_URI)
         val receivedMessages = getMessages(cr, Telephony.Sms.Inbox.CONTENT_URI)
         val dataToSend = packDataToSend(sentMessages, receivedMessages)
         plugin.connect()
+        var totalBytesToSend = 0L
+        var sentBytes = 0L
+        dataToSend.values.forEach { totalBytesToSend += it.size }
         dataToSend.keys.forEachIndexed { index, name ->
             val buf = dataToSend[name] ?: return@forEachIndexed
             val extra = mapOf("index" to index, "total" to dataToSend.size)
+            val streamProgressCallback: ProgressCallback = { _, _, partSize ->
+                sentBytes += partSize
+                progressCallback(sentBytes, totalBytesToSend, partSize)
+            }
             val res = plugin.sendStream(buf.inputStream(), name, buf.size.toLong(),
-                { _, _, _ -> }, "messages_upload", extra)
+                streamProgressCallback, "messages_upload", extra)
             if (!res.success) {
                 throw PluginException(res.message)
             }
@@ -378,7 +385,7 @@ class ContactsSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, ke
 
     override fun getTextInfo(): String = ""
 
-    override fun execute(plugin: SyncPlugin) {
+    override fun execute(plugin: SyncPlugin, progressCallback: ProgressCallback) {
         val context = plugin.context
         val cursor: Cursor = context.contentResolver.query(
             ContactsContract.Contacts.CONTENT_URI, null, null, null, null

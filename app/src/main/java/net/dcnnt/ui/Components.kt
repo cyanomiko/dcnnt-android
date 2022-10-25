@@ -227,3 +227,31 @@ open class EntryView(context: Context) : ListTileView(context) {
         addView(actionView)
     }
 }
+
+
+class DCProgressDialog(val context: Context) {
+    private val progressTextView = TextView(context).apply {
+        layoutParams = RelativeLayout.LayoutParams(LParam.M, LParam.W)
+    }
+    private val progressBarView = ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal).apply {
+        max = 1000
+        progress = 0
+    }
+    private val dialog = AlertDialog.Builder(context).apply {
+        setTitle("")
+        setView(VerticalLayout(context).apply {
+            padding = context.dip(24)
+            addView(progressTextView)
+            addView(progressBarView)
+        })
+    }.create()
+
+    fun setTitle(value: String) { dialog.setTitle(value) }
+    fun setTitle(value: Int) { dialog.setTitle(value) }
+    fun setProgressText(value: String) { progressTextView.setText(value) }
+    fun setProgressValue(value: Int) { progressBarView.progress = value }
+    fun setProgressValue(value: Double) { progressBarView.progress = (value * 1000).toInt() }
+
+    fun show() { dialog.show() }
+    fun hide() { dialog.hide() }
+}

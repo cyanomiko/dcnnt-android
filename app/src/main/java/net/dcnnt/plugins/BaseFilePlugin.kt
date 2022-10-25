@@ -41,7 +41,7 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
             if (chunkSize != 0) {
                 send(buf.take(chunkSize).toByteArray())
                 sentBytes += chunkSize
-                progressCallback(sentBytes, size, PART.toLong())
+                progressCallback(sentBytes, size, chunkSize.toLong())
             }
         }
         val n = rpcReadNotification() as? JSONObject ?: return DCResult(false, "Fail")

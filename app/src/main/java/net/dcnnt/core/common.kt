@@ -19,6 +19,8 @@ val ACTION_NOTIFICATION_LISTENER_SETTINGS = "android.settings.ACTION_NOTIFICATIO
 val ENABLED_NOTIFICATION_LISTENERS = "enabled_notification_listeners"
 val EVENT_AVAILABLE_DEVICES_UPDATED = "net.dcnnt:EVENT_AVAILABLE_DEVICES_UPDATED"
 
+typealias ProgressCallback = (cur: Long, total: Long, part: Long) -> Unit
+
 fun hashFun(data: ByteArray): ByteArray {
     return MessageDigest.getInstance("SHA-256").digest(data)
 }
