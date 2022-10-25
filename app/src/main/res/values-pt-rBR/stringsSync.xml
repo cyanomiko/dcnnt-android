@@ -33,6 +33,11 @@
     <string name="conf_sync_dir_onDelete_info">Ação quando usado o comando de excluir</string>
     <string name="conf_sync_dir_onDelete_delete">Excluir</string>
     <string name="conf_sync_dir_onDelete_ignore">Ignorar</string>
+    <string name="conf_sync_messages_mode_title">Sync mode</string>
+    <string name="conf_sync_messages_mode_info">Direction of transmission</string>
+    <string name="conf_sync_messages_mode_upload">Upload</string>
+    <string name="conf_sync_messages_format_title">Format</string>
+    <string name="conf_sync_messages_format_info">Format to store messages as files</string>
     <string name="conf_sync_messages_format_email">Email-like</string>
     <string name="conf_sync_messages_format_json">JSON</string>
     <string name="conf_sync_messages_format_json_one">JSON (one file)</string>
