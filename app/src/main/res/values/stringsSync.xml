@@ -3,6 +3,7 @@
     <string name="sync_task_type">Directory</string>
     <string name="sync_dir_short">Directory</string>
     <string name="sync_contacts_short">Contacts</string>
+    <string name="sync_messages_short">Messages</string>
     <string name="do_it_now">Do it now</string>
     <string name="sync_add_task">Add sync task</string>
     <string name="sync_remove_task">Remove sync task?</string>
