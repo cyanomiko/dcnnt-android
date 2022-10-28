@@ -99,7 +99,7 @@ open class ConfListView(context: Context, private val fragment: DCFragment) : Ve
 
     private fun createDirInput(entry: DirEntry, label: String, info: String) = TextInputView(context).apply {
         title = label
-        text = entry.value
+        text = Uri.decode(entry.value.split("/").last())
         onInput = { v -> entry.updateValue(v) }
         val newKey = activityLaunchers.keys.size * 1000 + (0 .. 999).random()
         val activityResultLauncher = newActivityCaller(fragment) { _, intent ->
