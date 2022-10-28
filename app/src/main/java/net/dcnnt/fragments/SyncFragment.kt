@@ -208,6 +208,7 @@ class SyncTaskEditFragment: DCFragment() {
             menu.add(R.string.do_it_now).setOnMenuItemClickListener {
                 progressDialog.setProgressText("...")
                 progressDialog.setProgressValue(0)
+                progressDialog.setIndeterminate(true)
                 progressDialog.show()
                 val plugin = SyncPlugin(APP, device)
                 plugin.init(APP.applicationContext)
@@ -216,6 +217,7 @@ class SyncTaskEditFragment: DCFragment() {
                         var progressPre = 0.0
                         task.execute(plugin) { cur, total, _ ->
                             activity?.runOnUiThread {
+                                progressDialog.setIndeterminate(false)
                                 val progress = cur.toDouble() / total
                                 if ((progress - progressPre > 0.001) or ((progressPre == 0.0) and (progress > 0))) {
                                     progressDialog.setProgressText("${(progress * 100).roundToInt()}%")
