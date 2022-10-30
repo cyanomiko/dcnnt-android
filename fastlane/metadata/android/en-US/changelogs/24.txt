@@ -1,0 +1,2 @@
+* Periodic SMS sync
+* Some minor UI fixes

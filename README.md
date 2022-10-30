@@ -18,7 +18,7 @@ Android client for https://github.com/cyanomiko/dcnnt-py
 * Download files from pre-defined directories at desktop to phone
 * Show phone notification on desktop
 * Execute pre-defined commands on desktop
-* Periodically running sync tasks (directories, contacts)
+* Periodically running sync tasks (directories, contacts, SMS)
 
 ## Quickstart
 
