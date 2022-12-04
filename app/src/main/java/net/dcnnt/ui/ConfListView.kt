@@ -60,7 +60,8 @@ open class ConfListView(context: Context, private val fragment: DCFragment) : Ve
             ConfTypes.INT -> createIntInput((entry as? IntEntry) ?: return null, t, s)
             ConfTypes.STRING -> createStringInput((entry as? StringEntry) ?: return null, t, s)
             ConfTypes.SELECT -> createSelectInput((entry as? SelectEntry) ?: return null, t, s)
-            ConfTypes.DIR -> createDirInput((entry as? DirEntry) ?: return null, t, s)
+            ConfTypes.DIR -> createPathInput((entry as? DirEntry) ?: return null, t, s)
+            ConfTypes.DOC -> createPathInput((entry as? DocEntry) ?: return null, t, s)
         }
     }
 
@@ -97,11 +98,15 @@ open class ConfListView(context: Context, private val fragment: DCFragment) : Ve
         }
     }
 
-    private fun createDirInput(entry: DirEntry, label: String, info: String) = TextInputView(context).apply {
+    private fun createPathInput(entry: PathEntry, label: String, info: String) = TextInputView(context).apply {
         title = label
         text = Uri.decode(entry.value.split("/").last())
         onInput = { v -> entry.updateValue(v) }
         val newKey = activityLaunchers.keys.size * 1000 + (0 .. 999).random()
+        val intentAction = when (entry.type) {
+            ConfTypes.DIR -> Intent.ACTION_OPEN_DOCUMENT_TREE
+            else -> Intent.ACTION_OPEN_DOCUMENT
+        }
         val activityResultLauncher = newActivityCaller(fragment) { _, intent ->
             val uri = intent?.data
             entry.updateValue("$uri")
@@ -115,8 +120,10 @@ open class ConfListView(context: Context, private val fragment: DCFragment) : Ve
             activityLaunchers.remove(newKey)
         }
         activityLaunchers[newKey] = activityResultLauncher
+
         setOnClickListener {
-            activityResultLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+            activityResultLauncher.launch(Intent(intentAction).apply {
+                if (entry.type != ConfTypes.DIR) type = "*/*"
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     putExtra(DocumentsContract.EXTRA_INITIAL_URI, entry.value)
                 }

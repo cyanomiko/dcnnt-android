@@ -9,7 +9,7 @@ import java.lang.Exception
 /**
  * Types of config entry
  */
-enum class ConfTypes { INT, STRING, BOOL, SELECT, DIR }
+enum class ConfTypes { INT, STRING, BOOL, SELECT, DIR, DOC }
 
 
 /**
@@ -98,11 +98,18 @@ class SelectEntry(conf: DCConf, name: String,
     }
 }
 
+open class PathEntry(conf: DCConf, name: String, default: String, val persistent: Boolean):
+    StringEntry(conf, name, 0, 0xFFFF, default)
+
 class DirEntry(conf: DCConf, name: String, default: String,
-               val persistent: Boolean = false): StringEntry(conf, name, 0, 0xFFFF, default) {
+               persistent: Boolean = false): PathEntry(conf, name, default, persistent) {
     override val type = ConfTypes.DIR
 }
 
+class DocEntry(conf: DCConf, name: String, default: String,
+               persistent: Boolean = false): PathEntry(conf, name, default, persistent) {
+    override val type = ConfTypes.DOC
+}
 
 /**
  * Common part of application and plugin configs
