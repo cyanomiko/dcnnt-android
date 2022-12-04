@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="sync_task_type">Directory</string>
+    <string name="sync_task_type">Sync task</string>
     <string name="sync_dir_short">Directory</string>
+    <string name="sync_file_short">File</string>
     <string name="sync_contacts_short">Contacts</string>
     <string name="sync_messages_short">Messages</string>
     <string name="do_it_now">Do it now</string>
@@ -50,4 +51,9 @@
     <string name="conf_sync_messages_format_email">Email-like</string>
     <string name="conf_sync_messages_format_json">JSON</string>
     <string name="conf_sync_messages_format_json_one">JSON (one file)</string>
+    <string name="conf_sync_file_path_title">File</string>
+    <string name="conf_sync_file_target_title">File on server</string>
+    <string name="conf_sync_file_mode_title">Sync mode</string>
+    <string name="conf_sync_file_onDelete_title">On delete</string>
+    <string name="conf_sync_file_onDelete_info">Action on file delete command</string>
 </resources>

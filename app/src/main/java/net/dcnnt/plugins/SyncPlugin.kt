@@ -37,6 +37,7 @@ abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
     companion object {
         val intervalMinutes = hashMapOf( "15m" to 15L, "1h" to 60L, "8h" to 480L, "1d" to 1440L)
         const val CONF_KEY_DIR = "sync_dir"
+        const val CONF_KEY_FILE = "sync_file"
         const val CONF_KEY_CONTACTS = "sync_contacts"
         const val CONF_KEY_MESSAGES = "sync_messages"
     }
@@ -440,6 +441,40 @@ class ContactsSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, ke
 }
 
 
+class FileSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
+    override val confName = CONF_KEY_FILE
+    override val defaultName = "Sync file"
+    override val SUB = "file"
+    lateinit var file: DocEntry
+    lateinit var target: StringEntry
+    lateinit var mode: SelectEntry
+    lateinit var onDelete: SelectEntry
+
+    override fun init() {
+        super.init()
+        file = DocEntry(this, "path", "", true).init() as DocEntry
+        target = StringEntry(this, "target", 0, 0xFFFF, "").init() as StringEntry
+        mode = SelectEntry(this, "mode", listOf(
+            SelectOption("upload", R.string.conf_sync_dir_mode_upload),
+            SelectOption("download", R.string.conf_sync_dir_mode_download),
+            SelectOption("new", R.string.conf_sync_dir_onConflict_new),
+            SelectOption("merge", R.string.conf_sync_dir_mode_download),
+        ), 0).init() as SelectEntry
+        onDelete = SelectEntry(this, "onDelete", listOf(
+            SelectOption("delete", R.string.conf_sync_dir_onDelete_delete),
+            SelectOption("ignore", R.string.conf_sync_dir_onDelete_ignore)
+        ), 1).init() as SelectEntry
+    }
+
+    override fun getTextInfo(): String = ""
+
+    override fun execute(plugin: SyncPlugin, progressCallback: ProgressCallback) {
+        val context = plugin.context
+        throw PluginException("Not implemented!")
+    }
+}
+
+
 class SyncPluginConf(directory: String, uin: Int): PluginConf(directory, "sync", uin) {
     val tasks: MutableMap<String, SyncTask> = mutableMapOf()
 
@@ -447,6 +482,7 @@ class SyncPluginConf(directory: String, uin: Int): PluginConf(directory, "sync",
         val taskKey = key ?: nowString()
         val task = when (confName) {
             SyncTask.CONF_KEY_DIR -> DirectorySyncTask(this, taskKey)
+            SyncTask.CONF_KEY_FILE -> FileSyncTask(this, taskKey)
             SyncTask.CONF_KEY_CONTACTS -> ContactsSyncTask(this, taskKey)
             SyncTask.CONF_KEY_MESSAGES -> MessagesSyncTask(this, taskKey)
             else -> { throw PluginException("Unknown sync task type '$confName'") }

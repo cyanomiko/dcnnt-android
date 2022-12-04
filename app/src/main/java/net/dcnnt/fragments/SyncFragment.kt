@@ -111,6 +111,7 @@ class SyncFragment: BasePluginFargment() {
         SelectInputView.showListDialog(context, context.getString(R.string.sync_task_type),
             mutableListOf(
                 Option(context.getString(R.string.sync_dir_short), SyncTask.CONF_KEY_DIR),
+                Option(context.getString(R.string.sync_file_short), SyncTask.CONF_KEY_FILE),
                 Option(context.getString(R.string.sync_contacts_short), SyncTask.CONF_KEY_CONTACTS),
                 Option(context.getString(R.string.sync_messages_short), SyncTask.CONF_KEY_MESSAGES),
             )) { _, option ->

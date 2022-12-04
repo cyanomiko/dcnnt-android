@@ -2,6 +2,7 @@
 <resources>
     <string name="sync_task_type">目录</string>
     <string name="sync_dir_short">目录</string>
+    <string name="sync_file_short">File</string>
     <string name="sync_contacts_short">联系人</string>
     <string name="sync_messages_short">消息</string>
     <string name="sync_add_task">添加同步任务</string>
@@ -50,4 +51,9 @@
     <string name="conf_sync_messages_format_email">类似电子邮件</string>
     <string name="conf_sync_messages_format_json">JSON</string>
     <string name="conf_sync_messages_format_json_one">JSON （一个文件）</string>
+    <string name="conf_sync_file_path_title">File</string>
+    <string name="conf_sync_file_target_title">File on server</string>
+    <string name="conf_sync_file_mode_title">Sync mode</string>
+    <string name="conf_sync_file_onDelete_title">On delete</string>
+    <string name="conf_sync_file_onDelete_info">Action on file delete command</string>
 </resources>
