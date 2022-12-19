@@ -9,6 +9,7 @@ import org.json.JSONObject
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStream
+import java.io.OutputStream
 import java.nio.ByteBuffer
 
 
@@ -61,6 +62,11 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
         return sendStream(inp, file.name, file.size, progressCallback, rpcMethod, extraArgs)
     }
 
+    fun sendFile(file: FileEntry, contentResolver: ContentResolver,
+                 rpcMethod: String = "upload", extraArgs: Map<String, Any> = mapOf()): DCResult {
+        return sendFile(file, contentResolver, { _, _, _ -> }, rpcMethod, extraArgs)
+    }
+
     protected fun safeFileName(downloadDir: DocumentFile, initialName: String): String? {
         val existingNames: MutableSet<String> = mutableSetOf()
         downloadDir.listFiles().forEach { f -> f.name?.also { existingNames.add(it) } }
@@ -75,21 +81,9 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
         return null
     }
 
-    fun recvFile(downloadDir: DocumentFile, entry: FileEntry, contentResolver: ContentResolver,
-                 progressCallback: ProgressCallback, rpcMethod: String = "download",
-                 extraArgs: Map<String, Any> = mapOf()): DCResult {
-        if (Environment.getExternalStorageState() != Environment.MEDIA_MOUNTED) {
-            return DCResult(false,"Storage not mounted")
-        }
-        val fileName = safeFileName(downloadDir, entry.name)
-            ?: return DCResult(false, "No safe name for file")
-        val file = downloadDir.createFile("*/*", fileName)
-            ?: return DCResult(false, "Failed to create file")
-        val uri = file.uri
-        entry.localUri = uri
-        Log.d(TAG, "Open new file URI: $uri")
-        val fd = contentResolver.openOutputStream(uri)
-            ?: return DCResult(false, "Could not open file")
+    fun recvFileToStream(out: OutputStream, entry: FileEntry,
+                         progressCallback: ProgressCallback, rpcMethod: String = "download",
+                         extraArgs: Map<String, Any> = mapOf()): DCResult  {
         Log.d(TAG, "send request")
         val params = mapOf("index" to entry.remoteIndex, "size" to entry.size) + extraArgs
         val resp = (rpc(rpcMethod, params) as? JSONObject)
@@ -115,7 +109,7 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
                 }
 //                Log.d(TAG, "recBytes = $recBytes, entry.size = ${entry.size}")
                 buf = read()
-                fd.write(buf)
+                out.write(buf)
                 dataBuf?.put(buf)
                 recBytes += buf.size
                 progressCallback(recBytes, entry.size, PART.toLong())
@@ -125,6 +119,29 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
             return DCResult(true,"OK", data = entry.name)
         }
         return DCResult(false,"Request rejected")
+    }
+
+    fun recvFileToStream(out: OutputStream, entry: FileEntry, rpcMethod: String = "download",
+                         extraArgs: Map<String, Any> = mapOf()): DCResult {
+        return recvFileToStream(out, entry, { _, _, _ -> }, rpcMethod, extraArgs)
+    }
+
+    fun recvFile(downloadDir: DocumentFile, entry: FileEntry, contentResolver: ContentResolver,
+                 progressCallback: ProgressCallback, rpcMethod: String = "download",
+                 extraArgs: Map<String, Any> = mapOf()): DCResult {
+        if (Environment.getExternalStorageState() != Environment.MEDIA_MOUNTED) {
+            return DCResult(false,"Storage not mounted")
+        }
+        val fileName = safeFileName(downloadDir, entry.name)
+            ?: return DCResult(false, "No safe name for file")
+        val file = downloadDir.createFile("*/*", fileName)
+            ?: return DCResult(false, "Failed to create file")
+        val uri = file.uri
+        entry.localUri = uri
+        Log.d(TAG, "Open new file URI: $uri")
+        val fd = contentResolver.openOutputStream(uri)
+            ?: return DCResult(false, "Could not open file")
+        return recvFileToStream(fd, entry, progressCallback, rpcMethod, extraArgs)
     }
 
 }
