@@ -442,7 +442,7 @@ class ContactsSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, ke
 
 
 class FileSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
-    override val confName = CONF_KEY_FILE
+    override val confName  = CONF_KEY_FILE
     override val defaultName = "Sync file"
     override val SUB = "file"
     lateinit var file: DocEntry
@@ -458,7 +458,7 @@ class FileSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
             SelectOption("upload", R.string.conf_sync_dir_mode_upload),
             SelectOption("download", R.string.conf_sync_dir_mode_download),
             SelectOption("new", R.string.conf_sync_dir_onConflict_new),
-            SelectOption("merge", R.string.conf_sync_dir_mode_download),
+            SelectOption("merge", R.string.conf_sync_file_mode_merge),
         ), 0).init() as SelectEntry
         onDelete = SelectEntry(this, "onDelete", listOf(
             SelectOption("delete", R.string.conf_sync_dir_onDelete_delete),
@@ -468,9 +468,61 @@ class FileSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
 
     override fun getTextInfo(): String = ""
 
+    fun getFileInfo(plugin: SyncPlugin): Pair<Boolean, Long> {
+        val res = plugin.rpc("file_info", mapOf("path" to target.value)) as JSONObject
+        return Pair(res.getBoolean("exists"), res.getLong("ts"))
+    }
+
     override fun execute(plugin: SyncPlugin, progressCallback: ProgressCallback) {
         val context = plugin.context
-        throw PluginException("Not implemented!")
+        val uri = Uri.parse(file.value)
+        val doc = DocumentFile.fromSingleUri(context, uri)
+            ?: throw PluginException("Could not open '$uri'")
+        // ToDo: Process not existing files
+        if (!doc.isFile) throw PluginException("Sync object is not file")
+        val exists = doc.exists()
+        val ts = doc.lastModified()
+        val fileEntry = FileEntry(name = target.value, localUri = uri, size = doc.length())
+        plugin.connect()
+        val remoteInfo = getFileInfo(plugin)
+        fun upload() {
+            if (exists) {
+                if (plugin.sendFile(fileEntry, context.contentResolver,
+                    "file_upload", mapOf("path" to target.value)).success) {
+                    APP.log("File '$uri' uploaded")
+                } else {
+                    throw PluginException("Failed to upload '$uri'")
+                }
+            } else {
+                APP.log("File '$uri' not exists")
+            }
+        }
+        fun download() {
+            if (remoteInfo.first) {
+                val out = context.contentResolver.openOutputStream(uri)
+                    ?: throw PluginException("Could not open '$uri'")
+                if (plugin.recvFileToStream(out, fileEntry,
+                        "file_upload", mapOf("path" to target.value)).success) {
+                    APP.log("File '${target.value}' downloaded")
+                } else {
+                    throw PluginException("Failed to download '${target.value}'")
+                }
+            } else {
+                if (onDelete.value == "delete") {
+                    if (!doc.delete()) throw PluginException("Could not delete '$uri'")
+                    APP.log("File '$uri' removed")
+                }
+            }
+        }
+        when (mode.value) {
+            "upload" -> upload()
+            "download" -> download()
+            "new" -> if (ts > remoteInfo.second) upload() else download()
+            "merge" -> {
+                throw PluginException("Merge mode is not implemented!")
+            }
+            else -> throw PluginException("Unknown mode '${mode.value}'")
+        }
     }
 }
 

@@ -266,7 +266,8 @@ class SyncTaskEditFragment: DCFragment() {
                 SelectInputView.showListDialog(context, title, options) { _, option ->
                     val v = option.value.toString()
                     view.text = v
-                    (task as? DirectorySyncTask ?: return@showListDialog).target.updateValue(v)
+                    (task as? DirectorySyncTask)?.target?.updateValue(v)
+                    (task as? FileSyncTask)?.target?.updateValue(v)
                 }
             }
         }
