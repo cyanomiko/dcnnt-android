@@ -54,6 +54,7 @@
     <string name="conf_sync_file_path_title">File</string>
     <string name="conf_sync_file_target_title">File on server</string>
     <string name="conf_sync_file_mode_title">Sync mode</string>
+    <string name="conf_sync_file_mode_merge">Merge</string>
     <string name="conf_sync_file_onDelete_title">On delete</string>
     <string name="conf_sync_file_onDelete_info">Action on file delete command</string>
 </resources>
