@@ -461,9 +461,9 @@ class FileSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
             SelectOption("merge", R.string.conf_sync_file_mode_merge),
         ), 0).init() as SelectEntry
         onDelete = SelectEntry(this, "onDelete", listOf(
-            SelectOption("delete", R.string.conf_sync_dir_onDelete_delete),
+//            SelectOption("delete", R.string.conf_sync_dir_onDelete_delete),
             SelectOption("ignore", R.string.conf_sync_dir_onDelete_ignore)
-        ), 1).init() as SelectEntry
+        ), 0).init() as SelectEntry
     }
 
     override fun getTextInfo(): String = ""
@@ -478,9 +478,8 @@ class FileSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
         val uri = Uri.parse(file.value)
         val doc = DocumentFile.fromSingleUri(context, uri)
             ?: throw PluginException("Could not open '$uri'")
-        // ToDo: Process not existing files
-        if (!doc.isFile) throw PluginException("Sync object is not file")
         val exists = doc.exists()
+        if (!doc.isFile and exists) throw PluginException("Sync object is not file")
         val ts = doc.lastModified()
         val fileEntry = FileEntry(name = target.value, localUri = uri, size = doc.length())
         plugin.connect()
@@ -499,21 +498,24 @@ class FileSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
         }
         fun download() {
             if (remoteInfo.first) {
-                val out = context.contentResolver.openOutputStream(uri)
+                val out = context.contentResolver.openOutputStream(uri, "wt")
                     ?: throw PluginException("Could not open '$uri'")
+                fileEntry.size = -1
                 if (plugin.recvFileToStream(out, fileEntry,
-                        "file_upload", mapOf("path" to target.value)).success) {
+                        "file_download", mapOf("path" to target.value)).success) {
                     APP.log("File '${target.value}' downloaded")
                 } else {
                     throw PluginException("Failed to download '${target.value}'")
                 }
             } else {
-                if (onDelete.value == "delete") {
-                    if (!doc.delete()) throw PluginException("Could not delete '$uri'")
-                    APP.log("File '$uri' removed")
-                }
+                APP.log("File '${target.value}' removed on server")
+//                if (onDelete.value == "delete") {
+//                    if (!doc.delete()) throw PluginException("Could not delete '$uri'")
+//                    APP.log("File '$uri' removed")
+//                }
             }
         }
+        Log.d(TAG, "cts = $ts, rts = ${remoteInfo.second} ${ts > remoteInfo.second}")
         when (mode.value) {
             "upload" -> upload()
             "download" -> download()
@@ -579,7 +581,7 @@ class SyncPluginConf(directory: String, uin: Int): PluginConf(directory, "sync",
     }
 
     fun getTasks() = tasks.values.toList()
-
+    
     override fun onLoad() {
         loadTasks()
     }
