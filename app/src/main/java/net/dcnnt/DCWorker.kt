@@ -42,7 +42,7 @@ class DCWorker(appContext: Context, workerParams: WorkerParameters):
             try {
                 val plugin = SyncPlugin(APP, device)
                 plugin.init(applicationContext)
-                val tasks = plugin.conf.getTasks()
+                val tasks = plugin.conf.getTasks().filter { it.enabled.value }
                 if (tasks.isNotEmpty()) {
                     if (!searchDone) {
                         APP.dm.syncSearch(APP.conf)
