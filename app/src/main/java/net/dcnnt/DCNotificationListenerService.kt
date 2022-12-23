@@ -117,11 +117,11 @@ class DCNotificationListenerService : NotificationListenerService() {
      */
     fun sendNotificationToAll(event: String, sbn: StatusBarNotification) {
         if (!hasConnection()) {
-            APP.log("Skip notification ($event) from ${sbn.packageName} - no connection")
+//            APP.log("Skip notification ($event) from ${sbn.packageName} - no connection")
             return
         }
         if (!NotificationsPlugin.checkIfNotificationAllowedForAnyDevice(APP, sbn.packageName)) {
-            APP.log("Skip notification ($event) from ${sbn.packageName} - filtered")
+//            APP.log("Skip notification ($event) from ${sbn.packageName} - filtered")
             return
         }
         APP.log("Process notification ($event) from ${sbn.packageName}")
