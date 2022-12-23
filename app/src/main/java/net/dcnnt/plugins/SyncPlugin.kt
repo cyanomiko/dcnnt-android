@@ -484,10 +484,10 @@ class FileSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
         val fileEntry = FileEntry(name = target.value, localUri = uri, size = doc.length())
         plugin.connect()
         val remoteInfo = getFileInfo(plugin)
-        fun upload() {
+        fun upload(doMerge: Boolean = false) {
             if (exists) {
-                if (plugin.sendFile(fileEntry, context.contentResolver,
-                    "file_upload", mapOf("path" to target.value)).success) {
+                if (plugin.sendFile(fileEntry, context.contentResolver, "file_upload",
+                        mapOf("path" to target.value, "merge" to doMerge)).success) {
                     APP.log("File '$uri' uploaded")
                 } else {
                     throw PluginException("Failed to upload '$uri'")
@@ -503,8 +503,10 @@ class FileSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
                 fileEntry.size = -1
                 if (plugin.recvFileToStream(out, fileEntry,
                         "file_download", mapOf("path" to target.value)).success) {
+                    out.close()
                     APP.log("File '${target.value}' downloaded")
                 } else {
+                    out.close()
                     throw PluginException("Failed to download '${target.value}'")
                 }
             } else {
@@ -515,14 +517,28 @@ class FileSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
 //                }
             }
         }
+        fun merge() {
+            if (!exists and remoteInfo.first) {
+                APP.log("Local file dos not exists - just download '${target.value}'")
+                return download()
+            } else if (exists and !remoteInfo.first) {
+                APP.log("Remote file dos not exists - just upload '$uri'")
+                return upload()
+            } else if (!exists and !remoteInfo.first) {
+                APP.log("Nor local or remote files exist - do nothing")
+                return
+            } else {
+                APP.log("Merge sync '${target.value}' / '$uri'")
+                upload(true)
+                download()
+            }
+        }
         Log.d(TAG, "cts = $ts, rts = ${remoteInfo.second} ${ts > remoteInfo.second}")
         when (mode.value) {
             "upload" -> upload()
             "download" -> download()
             "new" -> if (ts > remoteInfo.second) upload() else download()
-            "merge" -> {
-                throw PluginException("Merge mode is not implemented!")
-            }
+            "merge" -> merge()
             else -> throw PluginException("Unknown mode '${mode.value}'")
         }
     }
