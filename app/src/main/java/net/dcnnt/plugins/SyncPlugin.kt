@@ -27,6 +27,7 @@ abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
     lateinit var name: StringEntry
     lateinit var enabled: BoolEntry
     lateinit var interval: SelectEntry
+    lateinit var notify: BoolEntry
     val confKey: String
         get() = "$confName/$path"
     val errorOnLoad: Boolean
@@ -51,6 +52,7 @@ abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
             SelectOption("8h", R.string.conf_sync_interval_8h),
             SelectOption("1d", R.string.conf_sync_interval_1d)
         ), 1).init() as SelectEntry
+        notify = BoolEntry(this, "notify", false).init() as BoolEntry
     }
 
     override fun loadJSON() = parent.extra.optJSONObject(confKey) ?: JSONObject()
@@ -572,10 +574,12 @@ class SyncPluginConf(directory: String, uin: Int): PluginConf(directory, "sync",
         Log.d(TAG, "task = $task")
         task.load()
         Log.d(TAG, "task loaded")
-        if (task.errorOnLoad) {
-            removeTask(task)
-        } else {
-            tasks[task.confKey] = task
+        synchronized(tasks) {
+            if (task.errorOnLoad) {
+                removeTask(task)
+            } else {
+                tasks[task.confKey] = task
+            }
         }
     }
 

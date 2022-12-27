@@ -136,11 +136,12 @@ class App : Application() {
 
     private fun createNotificationChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = getString(R.string.channel_progress_name)
             val importance = NotificationManager.IMPORTANCE_LOW
-            val channel = NotificationChannel("net.dcnnt.progress", name, importance)
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+            notificationManager.createNotificationChannel(NotificationChannel(
+                "net.dcnnt.progress", getString(R.string.channel_progress_name), importance))
+            notificationManager.createNotificationChannel(NotificationChannel(
+                "net.dcnnt.sync", getString(R.string.channel_sync_name), importance))
         }
     }
 

@@ -1,6 +1,8 @@
 package net.dcnnt
 
 import android.content.Context
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.work.*
 //import androidx.work.WorkRequest
 //import androidx.work.Worker
@@ -35,6 +37,19 @@ class DCWorker(appContext: Context, workerParams: WorkerParameters):
         }
     }
 
+    fun showResultNotification(title: String, text: String) {
+        val notificationId = (System.currentTimeMillis() and 0xFFFFFF).toInt()
+        val builder = NotificationCompat.Builder(applicationContext, "net.dcnnt.progress")
+        builder.setSmallIcon(R.drawable.ic_sync)
+               .setChannelId("net.dcnnt.sync")
+               .setContentTitle(title)
+               .setContentText(text)
+               .setPriority(NotificationCompat.PRIORITY_LOW)
+               .setOnlyAlertOnce(true)
+               .setDefaults(0)
+        NotificationManagerCompat.from(applicationContext).notify(notificationId, builder.build())
+    }
+
     override fun doWork(): Result {
         APP.log("DCWorker $id - start")
         var searchDone = false
@@ -50,13 +65,26 @@ class DCWorker(appContext: Context, workerParams: WorkerParameters):
                     }
                     if (device.ip != null) {
                         tasks.forEach {
-                            APP.log("task '${it.name.value}'")
-                            it.execute(plugin)
+                            val name = it.name.value
+                            val taskInfo = it.getTextInfo()
+                            val taskInfoPrefix = if (taskInfo.isEmpty()) "" else "$taskInfo - "
+                            APP.log("task '$name': $taskInfo")
+                            try {
+                                it.execute(plugin)
+                                if (it.notify.value) {
+                                    showResultNotification(name, "${taskInfoPrefix}OK")
+                                }
+                            } catch (e: Exception) {
+                                if (it.notify.value) {
+                                    showResultNotification(name,"$${taskInfoPrefix}Failed: $e")
+                                }
+                            }
                         }
                     }
                 }
             } catch (e: Exception) {
                 APP.logException(e)
+//                showResultNotification(APP.getString(R.string.menu_sync), "Error: $e")
             }
         }
         return Result.success()

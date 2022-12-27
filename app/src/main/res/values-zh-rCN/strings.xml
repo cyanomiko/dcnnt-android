@@ -31,6 +31,8 @@
     <string name="search">搜索</string>
     <string name="channel_progress_name">进度</string>
     <string name="channel_progress_info">长时间操作进度</string>
+    <string name="channel_sync_name">Sync tasks</string>
+    <string name="channel_sync_info">Sync results and errors</string>
     <string name="no_devices">无可用设备</string>
     <string name="click_to_search">点击搜索设备</string>
     <string name="no_commands_available">无可用命令</string>

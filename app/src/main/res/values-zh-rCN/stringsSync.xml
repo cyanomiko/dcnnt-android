@@ -19,6 +19,8 @@
     <string name="conf_sync_interval_1h">每小时</string>
     <string name="conf_sync_interval_8h">每 8 小时</string>
     <string name="conf_sync_interval_1d">每天</string>
+    <string name="conf_sync_notify_title">Notification</string>
+    <string name="conf_sync_notify_info">Notify on task completion</string>
     <string name="conf_sync_dir_directory_title">目录</string>
     <string name="conf_sync_dir_target_title">服务器上目录</string>
     <string name="conf_sync_dir_mode_title">同步模式</string>

@@ -31,6 +31,8 @@
     <string name="search">Search</string>
     <string name="channel_progress_name">Progress</string>
     <string name="channel_progress_info">Long operations progress</string>
+    <string name="channel_sync_name">Sync tasks</string>
+    <string name="channel_sync_info">Sync results and errors</string>
     <string name="no_devices">No devices available</string>
     <string name="click_to_search">Click to search devices</string>
     <string name="no_commands_available">No commands available</string>

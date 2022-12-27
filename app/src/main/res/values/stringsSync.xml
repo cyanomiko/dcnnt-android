@@ -19,6 +19,8 @@
     <string name="conf_sync_interval_1h">Hourly</string>
     <string name="conf_sync_interval_8h">Every 8 hours</string>
     <string name="conf_sync_interval_1d">Daily</string>
+    <string name="conf_sync_notify_title">Notification</string>
+    <string name="conf_sync_notify_info">Notify on task completion</string>
     <string name="conf_sync_dir_directory_title">Directory</string>
     <string name="conf_sync_dir_target_title">Directory on server</string>
     <string name="conf_sync_dir_mode_title">Sync mode</string>
