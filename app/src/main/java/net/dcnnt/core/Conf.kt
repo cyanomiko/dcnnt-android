@@ -156,6 +156,7 @@ abstract class DCConf(val path: String) {
         extra.keys().forEach { if (!entriesNames.contains(it)) json.put(it, extra.opt(it)) }
         try {
             dumpJSON(json)
+            needDump = false
             return true
         } catch (e: Exception) {
             Log.e(TAG, "Config '$confName': failed to write JSON to '$path' - $e")
