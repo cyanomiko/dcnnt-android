@@ -468,7 +468,7 @@ class FileSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
         ), 0).init() as SelectEntry
     }
 
-    override fun getTextInfo(): String = ""
+    override fun getTextInfo(): String = Uri.decode(file.value.split('/').last())
 
     fun getFileInfo(plugin: SyncPlugin): Pair<Boolean, Long> {
         val res = plugin.rpc("file_info", mapOf("path" to target.value)) as JSONObject
