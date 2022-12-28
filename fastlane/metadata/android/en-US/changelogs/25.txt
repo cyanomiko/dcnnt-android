@@ -1,0 +1,4 @@
+* Single file sync
+* Fixed enable/disable option in sync tasks
+* Optional notifications on sync tasks completion
+* Some minor UI fixes
