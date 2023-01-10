@@ -500,16 +500,15 @@ class FileSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
         }
         fun download() {
             if (remoteInfo.first) {
-                val out = context.contentResolver.openOutputStream(uri, "wt")
-                    ?: throw PluginException("Could not open '$uri'")
-                fileEntry.size = -1
-                if (plugin.recvFileToStream(out, fileEntry,
-                        "file_download", mapOf("path" to target.value)).success) {
-                    out.close()
-                    APP.log("File '${target.value}' downloaded")
-                } else {
-                    out.close()
-                    throw PluginException("Failed to download '${target.value}'")
+                (context.contentResolver.openOutputStream(uri, "wt")
+                    ?: throw PluginException("Could not open '$uri'")).use { out ->
+                    fileEntry.size = -1
+                    if (plugin.recvFileToStream(out, fileEntry,
+                            "file_download", mapOf("path" to target.value)).success) {
+                        APP.log("File '${target.value}' downloaded")
+                    } else {
+                        throw PluginException("Failed to download '${target.value}'")
+                    }
                 }
             } else {
                 APP.log("File '${target.value}' removed on server")

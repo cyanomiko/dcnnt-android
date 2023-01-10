@@ -139,9 +139,10 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
         val uri = file.uri
         entry.localUri = uri
         Log.d(TAG, "Open new file URI: $uri")
-        val fd = contentResolver.openOutputStream(uri)
-            ?: return DCResult(false, "Could not open file")
-        return recvFileToStream(fd, entry, progressCallback, rpcMethod, extraArgs)
+        (contentResolver.openOutputStream(uri)
+            ?: return DCResult(false, "Could not open file")).use { out ->
+            return recvFileToStream(out, entry, progressCallback, rpcMethod, extraArgs)
+        }
     }
 
 }
