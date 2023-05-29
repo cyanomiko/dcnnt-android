@@ -1,6 +1,7 @@
 package net.dcnnt.fragments
 
 import android.Manifest
+import android.app.Notification
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -218,6 +219,13 @@ open class BaseFileFragment: BasePluginFargment() {
         }
     }
 
+    fun setButtonsVisibilityOnStart() {
+        actionButton.visibility = View.GONE
+        selectButton.visibility = View.GONE
+        repeatButton.visibility = View.GONE
+        cancelButton.visibility = View.VISIBLE
+    }
+
     fun setButtonsVisibilityOnEnd() {
         val hideRepeatButton = selectedEntries.all { it.status == FileStatus.DONE }
         activity?.runOnUiThread {
@@ -300,13 +308,13 @@ open class BaseFileFragment: BasePluginFargment() {
     protected open fun getPolicy(): String = "all"
 
     protected fun notifyDownloadStart(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
-                                    totalSize: Long, totalDoneSize: Long, currentDoneSize: Long) {
+                                    totalSize: Long, totalDoneSize: Long, currentDoneSize: Long): ProgressNotification {
         val policy = getPolicy()
         val currentName = current.name
         val n: ProgressNotification = when (policy) {
             "one" -> notification
-            "all" -> selectedEntriesView[current.idStr]?.notification ?: return
-            else -> return
+//            "all" -> selectedEntriesView[current.idStr]?.notification ?: return
+            else -> throw Exception("Not supported")
         }
         val iconId = notificationIconId ?: R.drawable.ic_wait
         if ((n.isNew and (policy == "one")) or (policy == "all")) {
@@ -316,6 +324,7 @@ open class BaseFileFragment: BasePluginFargment() {
             n.smallIconId = iconId
             n.update("$currentNum/${waiting.size} - $currentName", progress, true)
         }
+        return n
     }
 
     protected fun notifyDownloadProgress(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,

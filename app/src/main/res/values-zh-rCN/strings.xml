@@ -33,6 +33,8 @@
     <string name="channel_progress_info">长时间操作进度</string>
     <string name="channel_sync_name">同步任务</string>
     <string name="channel_sync_info">同步结果和错误</string>
+    <string name="channel_foreground_name">Foreground service</string>
+    <string name="channel_foreground_info">Notification for running service</string>
     <string name="no_devices">无可用设备</string>
     <string name="click_to_search">点击搜索设备</string>
     <string name="no_commands_available">无可用命令</string>

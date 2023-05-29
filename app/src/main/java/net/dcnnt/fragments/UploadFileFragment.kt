@@ -15,6 +15,11 @@ import net.dcnnt.core.*
 import net.dcnnt.plugins.FileTransferPlugin
 import kotlin.concurrent.thread
 import androidx.core.os.bundleOf
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import net.dcnnt.DCForegroundWorker
 import net.dcnnt.MainActivity
 import net.dcnnt.ui.*
 
@@ -98,11 +103,8 @@ open class UploadFileFragment: BaseFileFragment() {
     private fun uploadFiles(context: Context) {
         val device = selectedDevice ?: return
         if (selectedEntries.isEmpty()) return
-        actionButton.visibility = View.GONE
-        selectButton.visibility = View.GONE
-        repeatButton.visibility = View.GONE
-        cancelButton.visibility = View.VISIBLE
-        thread {
+        setButtonsVisibilityOnStart()
+        val taskKey = APP.addTask {
             pluginRunning.set(true)
             try {
                 FileTransferPlugin(APP, device).apply {
@@ -182,6 +184,9 @@ open class UploadFileFragment: BaseFileFragment() {
             setButtonsVisibilityOnEnd()
             pluginRunning.set(false)
         }
+        val work = OneTimeWorkRequestBuilder<DCForegroundWorker>()
+            .setInputData(workDataOf("taskKey" to taskKey)).build()
+        WorkManager.getInstance(context).beginUniqueWork(taskKey, ExistingWorkPolicy.REPLACE, work).enqueue()
     }
 
     open fun processIntent(context: Context, intent: Intent) {
