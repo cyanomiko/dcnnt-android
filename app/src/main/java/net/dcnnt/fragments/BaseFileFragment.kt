@@ -319,7 +319,11 @@ open class BaseFileFragment: BasePluginFargment() {
                 notification.complete(notificationCanceledStr,"${waiting.size}/${waiting.size}")
             } else {
                 notification.smallIconId = notificationDoneIconId
-                notification.complete(notificationCompleteStr, "${waiting.size}/${waiting.size}")
+                if (waiting.size == 1) {
+                    notification.complete(notificationCompleteStr, currentName)
+                } else {
+                    notification.complete(notificationCompleteStr, "${waiting.size}/${waiting.size}")
+                }
             }
         } else {
             val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
