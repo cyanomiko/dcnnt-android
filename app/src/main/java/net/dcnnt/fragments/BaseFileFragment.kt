@@ -287,8 +287,8 @@ open class BaseFileFragment: BasePluginFargment() {
         statusCancelStr = getString(R.string.status_cancel)
     }
 
-    protected fun notifyDownloadStart(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
-                                      totalSize: Long, totalDoneSize: Long, currentDoneSize: Long): ProgressNotification {
+    protected fun notifyStart(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
+                              totalSize: Long, totalDoneSize: Long, currentDoneSize: Long): ProgressNotification {
         val currentName = current.name
         val iconId = notificationIconId ?: R.drawable.ic_wait
         if (notification.isNew) {
@@ -301,15 +301,15 @@ open class BaseFileFragment: BasePluginFargment() {
         return notification
     }
 
-    protected fun notifyDownloadProgress(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
-                                         totalSize: Long, totalDoneSize: Long, currentDoneSize: Long) {
+    protected fun notifyProgress(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
+                                 totalSize: Long, totalDoneSize: Long, currentDoneSize: Long) {
         val currentName = current.name
         val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
         notification.update("$currentNum/${waiting.size} - $currentName", progress)
     }
 
-    protected fun notifyDownloadEnd(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
-                                  totalSize: Long, totalDoneSize: Long, result: DCResult) {
+    protected fun notifyEnd(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
+                            totalSize: Long, totalDoneSize: Long, result: DCResult) {
         val currentName = current.name
         selectedEntriesView[current.idStr]?.also { v ->
             activity?.runOnUiThread { v.updateOnEnd(result, unitBytesStr) }

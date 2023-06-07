@@ -1,6 +1,5 @@
 package net.dcnnt.fragments
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -11,7 +10,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.Toolbar
 import androidx.core.os.bundleOf
-import net.dcnnt.MainActivity
 import net.dcnnt.R
 import net.dcnnt.core.*
 import net.dcnnt.plugins.OpenerPlugin
@@ -108,7 +106,7 @@ class OpenerFragment: UploadFileFragment() {
                         Log.d(TAG, "Upload ${it.localUri} (${it.name})")
                         var progress = 0
                         var res: DCResult
-                        notifyDownloadStart(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
+                        notifyStart(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
                         if (it.entryType == EntryType.FILE) {
                             activity?.runOnUiThread {
                                 selectedEntriesView[it.idStr]?.also { v ->
@@ -129,7 +127,7 @@ class OpenerFragment: UploadFileFragment() {
                                             if (progressCur != progress) {
                                                 progress = progressCur
                                                 v.progressView.progress = progressCur
-                                                notifyDownloadProgress(
+                                                notifyProgress(
                                                     waitingEntries,
                                                     index + 1,
                                                     it,
@@ -163,7 +161,7 @@ class OpenerFragment: UploadFileFragment() {
                             totalSize -= it.size
                             totalDoneSize = totalDoneSizePre
                         }
-                        notifyDownloadEnd(waitingEntries, index + 1, it, totalSize, totalDoneSize, res)
+                        notifyEnd(waitingEntries, index + 1, it, totalSize, totalDoneSize, res)
                     }
                 }
             } catch (e: Exception) {

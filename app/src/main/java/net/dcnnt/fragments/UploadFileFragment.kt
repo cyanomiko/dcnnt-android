@@ -1,6 +1,5 @@
 package net.dcnnt.fragments
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -20,7 +19,6 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import net.dcnnt.DCForegroundWorker
-import net.dcnnt.MainActivity
 import net.dcnnt.ui.*
 
 
@@ -135,7 +133,7 @@ open class UploadFileFragment: BaseFileFragment() {
                         Log.d(TAG, "Upload ${it.localUri} (${it.name})")
                         var progress = 0
                         var res: DCResult
-                        notifyDownloadStart(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
+                        notifyStart(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
                         activity?.runOnUiThread {
                             selectedEntriesView[it.idStr]?.also { v -> v.text = "0/${it.size} $unitBytesStr" }
                         }
@@ -153,7 +151,7 @@ open class UploadFileFragment: BaseFileFragment() {
                                         if (progressCur != progress) {
                                             progress = progressCur
                                             v.progressView.progress = progressCur
-                                            notifyDownloadProgress(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
+                                            notifyProgress(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
                                         }
                                     }
                                 }
@@ -170,7 +168,7 @@ open class UploadFileFragment: BaseFileFragment() {
                             totalSize -= it.size
                             totalDoneSize = totalDoneSizePre
                         }
-                        notifyDownloadEnd(waitingEntries, index + 1, it, totalSize, totalDoneSize, res)
+                        notifyEnd(waitingEntries, index + 1, it, totalSize, totalDoneSize, res)
                     }
                 }
             } catch (e: Exception) {

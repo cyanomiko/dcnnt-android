@@ -1,8 +1,6 @@
 package net.dcnnt.fragments
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
@@ -13,7 +11,6 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ScrollView
 import androidx.appcompat.widget.Toolbar
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import net.dcnnt.MainActivity
@@ -21,7 +18,6 @@ import net.dcnnt.R
 import net.dcnnt.core.*
 import net.dcnnt.plugins.FileTransferPlugin
 import net.dcnnt.ui.*
-import java.util.*
 import kotlin.concurrent.thread
 
 
@@ -289,7 +285,7 @@ class DownloadFileFragment: BaseFileFragment() {
                         }
                         var progress = 0
                         var res: DCResult
-                        notifyDownloadStart(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
+                        notifyStart(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
                         try {
                             res = downloadFile(it, context.contentResolver) { cur: Long, total: Long, _: Long ->
                                 if (cur > currentDoneSize) {
@@ -304,7 +300,7 @@ class DownloadFileFragment: BaseFileFragment() {
                                         if (progressCur != progress) {
                                             progress = progressCur
                                             v.progressView.progress = progressCur
-                                            notifyDownloadProgress(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
+                                            notifyProgress(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
                                         }
                                     }
                                 }
@@ -321,7 +317,7 @@ class DownloadFileFragment: BaseFileFragment() {
                             totalSize -= it.size
                             totalDoneSize = totalDoneSizePre
                         }
-                        notifyDownloadEnd(waitingEntries, index + 1, it, totalSize, totalDoneSize, res)
+                        notifyEnd(waitingEntries, index + 1, it, totalSize, totalDoneSize, res)
                     }
                 }
             } catch (e: Exception) {
