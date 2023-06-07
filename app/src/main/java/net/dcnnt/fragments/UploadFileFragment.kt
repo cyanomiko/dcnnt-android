@@ -98,14 +98,13 @@ open class UploadFileFragment: BaseFileFragment() {
         uploadFiles(context)
     }
 
-    override fun getPolicy(): String = APP.conf.uploadNotificationPolicy.value
-
     private fun uploadFiles(context: Context) {
         val device = selectedDevice ?: return
         if (selectedEntries.isEmpty()) return
         setButtonsVisibilityOnStart()
-        val taskKey = APP.addTask {
+        val taskKey = APP.addTask { worker ->
             pluginRunning.set(true)
+            notification = ProgressNotification(context, worker)
             try {
                 FileTransferPlugin(APP, device).apply {
                     init(context)
@@ -154,8 +153,6 @@ open class UploadFileFragment: BaseFileFragment() {
                                         if (progressCur != progress) {
                                             progress = progressCur
                                             v.progressView.progress = progressCur
-//                                            notification.update("$index/${waitingEntries.size}",
-//                                            1000L * index + progressCur)
                                             notifyDownloadProgress(waitingEntries, index + 1, it, totalSize, totalDoneSize, currentDoneSize)
                                         }
                                     }
@@ -180,7 +177,6 @@ open class UploadFileFragment: BaseFileFragment() {
                 showError(context, e)
                 Log.e(TAG, "$e")
             }
-            //notification.complete(notificationCompleteStr, "")
             setButtonsVisibilityOnEnd()
             pluginRunning.set(false)
         }
@@ -217,7 +213,6 @@ open class UploadFileFragment: BaseFileFragment() {
         Log.d(TAG, "onCreateView")
         mainView?.also { return it }
         container?.context?.also { context ->
-            notification = ProgressNotification(context)
             return fragmentMainView(context).apply {
                 scrollView.addView(VerticalLayout(context).apply { selectedView = this })
                 mainView = this

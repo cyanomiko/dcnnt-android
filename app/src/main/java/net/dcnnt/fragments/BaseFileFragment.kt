@@ -25,11 +25,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class RunningFileView(context: Context,
                       private val fragment: BaseFileFragment,
-                      private val entry: FileEntry,
-                      notification: ProgressNotification? = null): EntryView(context) {
+                      private val entry: FileEntry): EntryView(context) {
     val TAG = "DC/RunningFileView"
-    val notificationIsPrivate = notification != null
-    val notification = notification ?: ProgressNotification(context)
     var thumbnailLoaded = false
     private val THUMBNAIL_SIZE_THRESHOLD = 10 * 1024 * 1024
 
@@ -149,30 +146,15 @@ class RunningFileView(context: Context,
     }
 
     /**
-     * Update view, notifications and listeners on end of download
+     * Update view and listeners on end of download
      */
-    fun updateOnEnd(res: DCResult, unitBytesStr: String, doNotificationStuff: Boolean,
-                    notificationDownloadCanceledStr: String, notificationDownloadCompleteStr: String,
-                    notificationDownloadFailedStr: String, waitingCount: Int, currentNum: Int,
-                    notificationDoneIconId: Int?) {
+    fun updateOnEnd(res: DCResult, unitBytesStr: String) {
         val icon = loadThumbnail()
         if (entry.entryType == EntryType.FILE) text = "${entry.size} $unitBytesStr - ${res.message}"
         if (res.success) {
             updateSuccess(icon)
         } else {
             actionView.setImageResource(R.drawable.ic_block)
-        }
-        if (!doNotificationStuff) return
-        if (entry.status == FileStatus.CANCEL) {
-            notification.complete(notificationDownloadCanceledStr, "$currentNum/$waitingCount - ${entry.name}")
-        } else {
-            if (res.success) {
-                val intent = createFileIntent(true)
-                notification.smallIconId = notificationDoneIconId
-                notification.complete(notificationDownloadCompleteStr, "$currentNum/$waitingCount - ${entry.name}", icon, intent)
-            } else {
-                notification.complete(notificationDownloadFailedStr, "$currentNum/$waitingCount - ${entry.name} : ${res.message}", icon)
-            }
         }
     }
 }
@@ -305,78 +287,43 @@ open class BaseFileFragment: BasePluginFargment() {
         statusCancelStr = getString(R.string.status_cancel)
     }
 
-    protected open fun getPolicy(): String = "all"
-
     protected fun notifyDownloadStart(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
-                                    totalSize: Long, totalDoneSize: Long, currentDoneSize: Long): ProgressNotification {
-        val policy = getPolicy()
+                                      totalSize: Long, totalDoneSize: Long, currentDoneSize: Long): ProgressNotification {
         val currentName = current.name
-        val n: ProgressNotification = when (policy) {
-            "one" -> notification
-//            "all" -> selectedEntriesView[current.idStr]?.notification ?: return
-            else -> throw Exception("Not supported")
-        }
         val iconId = notificationIconId ?: R.drawable.ic_wait
-        if ((n.isNew and (policy == "one")) or (policy == "all")) {
-            n.create(iconId, notificationRunningStr, "0/${current.size} - $currentName", 1000)
-        } else if (policy == "one") {
+        if (notification.isNew) {
+            notification.create(iconId, notificationRunningStr, "0/${current.size} - $currentName", 1000)
+        } else {
             val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
-            n.smallIconId = iconId
-            n.update("$currentNum/${waiting.size} - $currentName", progress, true)
+            notification.smallIconId = iconId
+            notification.update("$currentNum/${waiting.size} - $currentName", progress, true)
         }
-        return n
+        return notification
     }
 
     protected fun notifyDownloadProgress(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
-                                       totalSize: Long, totalDoneSize: Long, currentDoneSize: Long) {
-        val policy = getPolicy()
+                                         totalSize: Long, totalDoneSize: Long, currentDoneSize: Long) {
         val currentName = current.name
-        val n: ProgressNotification = when (policy) {
-            "one" -> notification
-            "all" -> selectedEntriesView[current.idStr]?.notification ?: return
-            else -> return
-        }
-        if (policy == "all") {
-            val progress = if (current.size > 0) (1000L * currentDoneSize) / current.size else 1000L
-            n.update("$currentNum/${waiting.size} - $currentName", progress)
-        } else if (policy == "one") {
-            val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
-            n.update("$currentNum/${waiting.size} - $currentName", progress)
-        }
+        val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
+        notification.update("$currentNum/${waiting.size} - $currentName", progress)
     }
 
     protected fun notifyDownloadEnd(waiting: List<FileEntry>, currentNum: Int, current: FileEntry,
                                   totalSize: Long, totalDoneSize: Long, result: DCResult) {
-        val policy = getPolicy()
         val currentName = current.name
         selectedEntriesView[current.idStr]?.also { v ->
-            activity?.runOnUiThread {
-                v.updateOnEnd(
-                    result,
-                    unitBytesStr,
-                    policy == "all",
-                    notificationCanceledStr,
-                    notificationCompleteStr,
-                    notificationFailedStr,
-                    waiting.size,
-                    currentNum,
-                    notificationDoneIconId
-                )
-            }
+            activity?.runOnUiThread { v.updateOnEnd(result, unitBytesStr) }
         }
-        if (policy == "one") {
-            if (currentNum == waiting.size) {
-                if (selectedEntries.all { it.status == FileStatus.CANCEL }) {
-                    notification.complete(notificationCanceledStr,"${waiting.size}/${waiting.size}")
-                } else {
-                    notification.smallIconId = notificationDoneIconId
-                    notification.complete(notificationCompleteStr, "${waiting.size}/${waiting.size}")
-                }
+        if (currentNum == waiting.size) {
+            if (selectedEntries.all { it.status == FileStatus.CANCEL }) {
+                notification.complete(notificationCanceledStr,"${waiting.size}/${waiting.size}")
             } else {
-                val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
-                notification.update("$currentNum/${waiting.size} - $currentName", progress, true)
+                notification.smallIconId = notificationDoneIconId
+                notification.complete(notificationCompleteStr, "${waiting.size}/${waiting.size}")
             }
+        } else {
+            val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
+            notification.update("$currentNum/${waiting.size} - $currentName", progress, true)
         }
     }
-
 }

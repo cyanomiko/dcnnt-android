@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
 import android.util.Log
+import net.dcnnt.DCForegroundWorker
 import net.dcnnt.DCWorker
 import net.dcnnt.MainActivity
 import net.dcnnt.R
@@ -62,7 +63,7 @@ class App : Application() {
     private lateinit var errorLogger: DCLogger
     var activity: MainActivity? = null
     val isDCNotificationListenerServiceRunning = AtomicBoolean(false)
-    val tasks: MutableMap<String, () -> Unit> = mutableMapOf()
+    val tasks: MutableMap<String, (DCForegroundWorker) -> Unit> = mutableMapOf()
 
     init {
         APP = this
@@ -195,7 +196,7 @@ class App : Application() {
         return true
     }
 
-    fun addTask(f: () -> Unit): String {
+    fun addTask(f: (DCForegroundWorker) -> Unit): String {
         val key = nowString() + "/${(0..100000).random()}"
         tasks[key] = f
         return key

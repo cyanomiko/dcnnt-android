@@ -132,6 +132,8 @@ fun nowString(): String {
     return SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(Calendar.getInstance().time)
 }
 
+fun randId(): Int = (System.currentTimeMillis() and 0x0FFFFF).toInt() + (1673 .. 9574).random()
+
 fun simplifyFilename(filename: String): String {
     return filename.take(21).trim(' ', '-', '.').replace(' ', '_')
         .filter { c -> c.isLetterOrDigit() or (c == '_') }

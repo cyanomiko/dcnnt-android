@@ -240,8 +240,6 @@ class DownloadFileFragment: BaseFileFragment() {
         downloadFiles(context)
     }
 
-    override fun getPolicy(): String = APP.conf.downloadNotificationPolicy.value
-
     fun checkDownloadDirectory() {
         downloadDirectoryOk = try {
             context?.let {
