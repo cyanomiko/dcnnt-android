@@ -6,6 +6,11 @@ import android.util.Log
 import android.widget.*
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import net.dcnnt.DCForegroundWorker
 import net.dcnnt.MainActivity
 import net.dcnnt.R
 import net.dcnnt.core.*
@@ -122,6 +127,13 @@ abstract class BasePluginFargment: DCFragment() {
             }
             onInput = { _, _ -> onSelectedDeviceChanged() }
         }
+    }
+
+    protected fun startTask(f: (DCForegroundWorker) -> Unit) {
+        val taskKey = APP.addTask(f)
+        val work = OneTimeWorkRequestBuilder<DCForegroundWorker>()
+            .setInputData(workDataOf("taskKey" to taskKey)).build()
+        WorkManager.getInstance(context ?: return).beginUniqueWork(taskKey, ExistingWorkPolicy.REPLACE, work).enqueue()
     }
 
     override fun onResume() {

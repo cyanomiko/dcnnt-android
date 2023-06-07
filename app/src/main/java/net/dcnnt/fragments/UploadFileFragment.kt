@@ -100,7 +100,7 @@ open class UploadFileFragment: BaseFileFragment() {
         val device = selectedDevice ?: return
         if (selectedEntries.isEmpty()) return
         setButtonsVisibilityOnStart()
-        val taskKey = APP.addTask { worker ->
+        startTask { worker ->
             pluginRunning.set(true)
             notification = ProgressNotification(context, worker)
             try {
@@ -178,9 +178,6 @@ open class UploadFileFragment: BaseFileFragment() {
             setButtonsVisibilityOnEnd()
             pluginRunning.set(false)
         }
-        val work = OneTimeWorkRequestBuilder<DCForegroundWorker>()
-            .setInputData(workDataOf("taskKey" to taskKey)).build()
-        WorkManager.getInstance(context).beginUniqueWork(taskKey, ExistingWorkPolicy.REPLACE, work).enqueue()
     }
 
     open fun processIntent(context: Context, intent: Intent) {
