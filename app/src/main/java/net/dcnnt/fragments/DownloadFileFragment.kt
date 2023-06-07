@@ -256,8 +256,9 @@ class DownloadFileFragment: BaseFileFragment() {
         var totalSize = (LongArray(waitingEntries.size) { waitingEntries[it].size }).sum()
         var totalDoneSize = 0L
         var totalDoneSizePre = 0L
-        thread {
+        startTask { worker ->
             pluginRunning.set(true)
+            notification = ProgressNotification(context, worker)
             try {
                 FileTransferPlugin(APP, device).apply {
                     init(context)
@@ -349,7 +350,6 @@ class DownloadFileFragment: BaseFileFragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         mainView?.also { return it }
         container?.context?.also { context ->
-            notification = ProgressNotification(context)
             checkDownloadDirectory()
             if (downloadDirectoryOk) {
                 return fragmentMainView(context).apply {
