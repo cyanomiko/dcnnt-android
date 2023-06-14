@@ -31,6 +31,7 @@ import net.dcnnt.core.newActivityCaller
 import net.dcnnt.core.simplifyFilename
 import net.dcnnt.fragments.*
 import net.dcnnt.ui.*
+import java.util.*
 import kotlin.system.exitProcess
 
 
@@ -65,7 +66,7 @@ class Navigation(private val toolbarView: Toolbar,
      * @param args - list of arguments to pass to fragment constructor
      * @param createNew - if true - do not search already existing fragment in stack
      */
-    fun go(link: String, args: List<Any?>, createNew: Boolean = false) {
+    fun go(link: String, args: List<Any?> = listOf(), createNew: Boolean = false) {
         val key = "$link : $args"
         ((if (createNew) null else usedFargments[key]) ?: when (link) {
             "/dm" -> DeviceManagerFragment()
@@ -190,7 +191,12 @@ class MainActivity : AppCompatActivity() {
                 if (drawerEl.isDrawerOpen(GravityCompat.START)) {
                     drawerEl.closeDrawer(GravityCompat.START)
                 } else {
+                    Log.d(TAG, "BACK PRESSED")
+                    navigation.stack.forEach {
+                        Log.d(TAG, "Navigation: $it")
+                    }
                     if (!navigation.back()) {
+                        Log.d(TAG, "FINISH IT")
                         finish()
                     }
                 }
@@ -285,48 +291,55 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-//    fun bundleToString(bundle: Bundle?): String? {
-//        val out = StringBuilder("Bundle[")
-//        if (bundle == null) {
-//            out.append("null")
-//        } else {
-//            var first = true
-//            for (key in bundle.keySet()) {
-//                if (!first) {
-//                    out.append(", ")
-//                }
-//                out.append(key).append('=')
-//                val value = bundle[key]
-//                if (value is IntArray) {
-//                    out.append(Arrays.toString(value as IntArray?))
-//                } else if (value is ByteArray) {
-//                    out.append(Arrays.toString(value as ByteArray?))
-//                } else if (value is BooleanArray) {
-//                    out.append(Arrays.toString(value as BooleanArray?))
-//                } else if (value is ShortArray) {
-//                    out.append(Arrays.toString(value as ShortArray?))
-//                } else if (value is LongArray) {
-//                    out.append(Arrays.toString(value as LongArray?))
-//                } else if (value is FloatArray) {
-//                    out.append(Arrays.toString(value as FloatArray?))
-//                } else if (value is DoubleArray) {
-//                    out.append(Arrays.toString(value as DoubleArray?))
-//                } else if (value is Bundle) {
-//                    out.append(bundleToString(value as Bundle?))
-//                } else {
-//                    out.append(value)
-//                }
-//                first = false
-//            }
-//        }
-//        out.append("]")
-//        return out.toString()
-//    }
+    fun bundleToString(bundle: Bundle?): String? {
+        val out = StringBuilder("Bundle[")
+        if (bundle == null) {
+            out.append("null")
+        } else {
+            var first = true
+            for (key in bundle.keySet()) {
+                if (!first) {
+                    out.append(", ")
+                }
+                out.append(key).append('=')
+                val value = bundle[key]
+                if (value is IntArray) {
+                    out.append(Arrays.toString(value as IntArray?))
+                } else if (value is ByteArray) {
+                    out.append(Arrays.toString(value as ByteArray?))
+                } else if (value is BooleanArray) {
+                    out.append(Arrays.toString(value as BooleanArray?))
+                } else if (value is ShortArray) {
+                    out.append(Arrays.toString(value as ShortArray?))
+                } else if (value is LongArray) {
+                    out.append(Arrays.toString(value as LongArray?))
+                } else if (value is FloatArray) {
+                    out.append(Arrays.toString(value as FloatArray?))
+                } else if (value is DoubleArray) {
+                    out.append(Arrays.toString(value as DoubleArray?))
+                } else if (value is Bundle) {
+                    out.append(bundleToString(value as Bundle?))
+                } else {
+                    out.append(value)
+                }
+                first = false
+            }
+        }
+        out.append("]")
+        return out.toString()
+    }
 
     fun handleStartIntent() {
-//        Log.d(TAG, "===================================================")
-//        Log.d(TAG, bundleToString(intent?.extras).toString())
-//        Log.d(TAG, "===================================================")
+        Log.d(TAG, "===================================================")
+        /*
+        Note: If the launch mode of the designated activity is "standard",
+        it too is removed from the stack and a new instance is launched in
+         its place to handle the incoming intent.
+         That's because a new instance is always created for a new intent when the launch mode is "standard".
+         */
+        Log.d(TAG, "Intent flags: ${intent.flags} (${intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP}, ${intent.flags and Intent.FLAG_ACTIVITY_CLEAR_TOP})")
+        Log.d(TAG, bundleToString(intent?.extras).toString())
+        Log.d(TAG, "===================================================")
         if (intent?.action == Intent.ACTION_SEND_MULTIPLE) {
             // Just save more than one file
             return navigation.go("/upload", listOf(intent), createNew = true)
@@ -356,12 +369,29 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        Log.d(TAG, intent?.getStringExtra("goto").toString())
+        intent?.getStringExtra("goto")?.also {
+            navigation.stack.forEach {
+                Log.d(TAG, "Navigation: $it")
+            }
+            navigation.go(it)
+        }
     }
+
+//    override fun onNewIntent(intent: Intent?) {
+//        super.onNewIntent(intent)
+//        Log.d(TAG, "onNewIntent")
+//    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         APP.activity = this
         setContentView(createUI(this))
+        if (this::navigation.isInitialized) {
+            navigation.stack.forEach {
+                Log.d(TAG, "Navigation: $it")
+            }
+        }
         navigation = Navigation(toolbarEl, supportFragmentManager, fragmentEl.id)
         initUI()
         handleStartIntent()
