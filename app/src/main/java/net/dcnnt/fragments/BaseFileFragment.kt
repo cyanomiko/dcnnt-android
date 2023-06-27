@@ -292,7 +292,8 @@ open class BaseFileFragment: BasePluginFargment() {
         val currentName = current.name
         val iconId = notificationIconId ?: R.drawable.ic_wait
         if (notification.isNew) {
-            notification.create(iconId, notificationRunningStr, "0/${current.size} - $currentName", 1000)
+            notification.create(iconId, notificationRunningStr, "0/${current.size} - $currentName",
+                1000, goto = mainActivity.navigation.linkForCurrent())
         } else {
             val progress = if (totalSize > 0) (1000L * totalDoneSize) / totalSize else 1000L
             notification.smallIconId = iconId

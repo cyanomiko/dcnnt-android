@@ -26,6 +26,7 @@ class ProgressNotification(val context: Context, private val worker: DCForegroun
     private var progressMax: Long = 1000L
     private var builder = NotificationCompat.Builder(context.applicationContext, "net.dcnnt.progress")
     private val notificationId: Int = worker?.notificationId ?: randId()
+    private val requestCode = randId()
     private val pendingFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
     } else {
@@ -67,21 +68,16 @@ class ProgressNotification(val context: Context, private val worker: DCForegroun
                .setOnlyAlertOnce(true)
                .setDefaults(0)
                .setProgress(uiProgressMax, uiProgressCur, false)
-
-        val intent = Intent(context.applicationContext, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("goto", "/upload")
-        }
-        Log.d("DC/PN", "Intent flags: ${intent.flags} (${intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP}, ${intent.flags and Intent.FLAG_ACTIVITY_CLEAR_TOP})")
-        builder.setContentIntent(PendingIntent.getActivity(context, 113, intent, pendingFlags))
-
-
         icon?.also { builder.setLargeIcon(it) }
-//        goto?.also {
-//            val intent = Intent(context, MainActivity::class.java).apply { putExtra("goto", "/upload") }
-//            builder.setContentIntent(PendingIntent.getActivity(context, 113, intent, intentFlags))
-//        }
-//        intent?.also { builder.setContentIntent(PendingIntent.getActivity(context, 113, intent, 0)) }
+        goto?.also {
+            val intent = Intent(context.applicationContext, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("goto", it)
+            }
+            Log.d("DC/PN", "Intent flags: ${intent.flags} (${intent.flags and Intent.FLAG_ACTIVITY_SINGLE_TOP}, ${intent.flags and Intent.FLAG_ACTIVITY_CLEAR_TOP})")
+            Log.d("DC/PN", "Intent: $intent")
+            builder.setContentIntent(PendingIntent.getActivity(context, requestCode, intent, pendingFlags))
+        }
         cancelIntent?.also { builder.addAction(android.R.drawable.ic_delete, context.getString(R.string.cancel), cancelIntent) }
         doNotification()
         isNew = false
@@ -120,7 +116,7 @@ class ProgressNotification(val context: Context, private val worker: DCForegroun
                .setProgress(0, 0, false)
         smallIconId?.also { builder.setSmallIcon(it) }
         icon?.also { builder.setLargeIcon(it) }
-        intent?.also { builder.setContentIntent(PendingIntent.getActivity(context, 113, intent, 0)) }
+        intent?.also { builder.setContentIntent(PendingIntent.getActivity(context, requestCode, intent, 0)) }
         doNotification()
         thread {
             Thread.sleep(500L)
