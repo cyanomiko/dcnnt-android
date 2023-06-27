@@ -285,7 +285,7 @@ class MainActivity : AppCompatActivity() {
                 })
             })
             addView(FrameLayout(context).apply {
-                id = 1001
+                1001.also { id = it }
                 LParam.set(this, LParam.mm())
                 fragmentEl = this
             })
