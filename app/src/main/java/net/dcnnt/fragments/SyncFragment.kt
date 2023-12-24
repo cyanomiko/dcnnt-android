@@ -114,6 +114,7 @@ class SyncFragment: BasePluginFargment() {
                 Option(context.getString(R.string.sync_file_short), SyncTask.CONF_KEY_FILE),
                 Option(context.getString(R.string.sync_contacts_short), SyncTask.CONF_KEY_CONTACTS),
                 Option(context.getString(R.string.sync_messages_short), SyncTask.CONF_KEY_MESSAGES),
+                Option(context.getString(R.string.sync_clipboard_short), SyncTask.CONF_KEY_CLIPBOARD),
             )) { _, option ->
                 when ("${option.value}") {
                     SyncTask.CONF_KEY_CONTACTS -> askReadContactsPermission()
@@ -268,6 +269,7 @@ class SyncTaskEditFragment: DCFragment() {
                     view.text = v
                     (task as? DirectorySyncTask)?.target?.updateValue(v)
                     (task as? FileSyncTask)?.target?.updateValue(v)
+                    (task as? ClipboardSyncTask)?.target?.updateValue(v)
                 }
             }
         }

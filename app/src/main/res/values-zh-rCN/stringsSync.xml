@@ -5,6 +5,7 @@
     <string name="sync_file_short">文件</string>
     <string name="sync_contacts_short">联系人</string>
     <string name="sync_messages_short">消息</string>
+    <string name="sync_clipboard_short">Clipboard</string>
     <string name="sync_add_task">添加同步任务</string>
     <string name="sync_remove_task">删除同步任务？</string>
     <string name="do_it_now">立即执行</string>
@@ -59,4 +60,10 @@
     <string name="conf_sync_file_mode_merge">合并</string>
     <string name="conf_sync_file_onDelete_title">删除时</string>
     <string name="conf_sync_file_onDelete_info">运行文件删除命令时进行操作</string>
+    <string name="conf_sync_clipboard_target_title">Clipboard on server</string>
+    <string name="conf_sync_clipboard_target_info">Clipboard on server</string>
+    <string name="conf_sync_clipboard_mode_title">Sync mode</string>
+    <string name="conf_sync_clipboard_mode_info">Direction of transmission</string>
+    <string name="conf_sync_clipboard_mode_send">Send</string>
+    <string name="conf_sync_clipboard_mode_fetch">Fetch</string>
 </resources>

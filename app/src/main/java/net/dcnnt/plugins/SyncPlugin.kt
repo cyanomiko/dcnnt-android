@@ -1,7 +1,7 @@
 package net.dcnnt.plugins
 
-import android.content.ContentResolver
-import android.content.Context
+import android.content.*
+import android.content.Context.CLIPBOARD_SERVICE
 import android.database.Cursor
 import android.net.Uri
 import android.os.Build
@@ -41,6 +41,7 @@ abstract class SyncTask(val parent: SyncPluginConf, key: String): DCConf(key) {
         const val CONF_KEY_FILE = "sync_file"
         const val CONF_KEY_CONTACTS = "sync_contacts"
         const val CONF_KEY_MESSAGES = "sync_messages"
+        const val CONF_KEY_CLIPBOARD = "sync_clipboard"
     }
 
     open fun init() {
@@ -546,6 +547,51 @@ class FileSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
 }
 
 
+class ClipboardSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, key) {
+    override val confName = CONF_KEY_CLIPBOARD
+    override val defaultName = "Sync clipboard"
+    override val SUB = "clipboard"
+    lateinit var target: StringEntry
+    lateinit var mode: SelectEntry
+
+    override fun init() {
+        super.init()
+        target = StringEntry(this, "target", 0, 0xFFFF, "").init() as StringEntry
+        mode = SelectEntry(this, "mode", listOf(
+            SelectOption("send", R.string.conf_sync_clipboard_mode_send),
+            SelectOption("fetch", R.string.conf_sync_clipboard_mode_fetch),
+        ), 0).init() as SelectEntry
+    }
+
+    override fun getTextInfo(): String = ""
+
+    fun getClipboardText(context: Context): String? {
+        val clipboardManager = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+        clipboardManager.primaryClip?.also {
+            return it.getItemAt(0)?.coerceToText(context).toString()
+        }
+        return null
+    }
+
+    fun setClipboardText(context: Context, label: String, text: String) {
+        val clipboardManager = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+        clipboardManager.setPrimaryClip(
+            ClipData(
+                ClipDescription(label, listOf("text/plain").toTypedArray()),
+                ClipData.Item(text)
+            )
+        )
+    }
+
+    override fun execute(plugin: SyncPlugin, progressCallback: ProgressCallback) {
+        val context = plugin.context
+        Log.d(TAG, "Clipboard: ${getClipboardText(context)}")
+        setClipboardText(context, "Test", nowString())
+        Log.d(TAG, "Clipboard: ${getClipboardText(context)}")
+    }
+}
+
+
 class SyncPluginConf(directory: String, uin: Int): PluginConf(directory, "sync", uin) {
     val tasks: MutableMap<String, SyncTask> = mutableMapOf()
 
@@ -554,6 +600,7 @@ class SyncPluginConf(directory: String, uin: Int): PluginConf(directory, "sync",
         val task = when (confName) {
             SyncTask.CONF_KEY_DIR -> DirectorySyncTask(this, taskKey)
             SyncTask.CONF_KEY_FILE -> FileSyncTask(this, taskKey)
+            SyncTask.CONF_KEY_CLIPBOARD -> ClipboardSyncTask(this, taskKey)
             SyncTask.CONF_KEY_CONTACTS -> ContactsSyncTask(this, taskKey)
             SyncTask.CONF_KEY_MESSAGES -> MessagesSyncTask(this, taskKey)
             else -> { throw PluginException("Unknown sync task type '$confName'") }

@@ -5,6 +5,7 @@
     <string name="sync_file_short">File</string>
     <string name="sync_contacts_short">Contacts</string>
     <string name="sync_messages_short">Messages</string>
+    <string name="sync_clipboard_short">Clipboard</string>
     <string name="do_it_now">Do it now</string>
     <string name="sync_add_task">Add sync task</string>
     <string name="sync_remove_task">Remove sync task?</string>
@@ -59,4 +60,10 @@
     <string name="conf_sync_file_mode_merge">Merge</string>
     <string name="conf_sync_file_onDelete_title">On delete</string>
     <string name="conf_sync_file_onDelete_info">Action on file delete command</string>
+    <string name="conf_sync_clipboard_target_title">Clipboard on server</string>
+    <string name="conf_sync_clipboard_target_info">Clipboard on server</string>
+    <string name="conf_sync_clipboard_mode_title">Sync mode</string>
+    <string name="conf_sync_clipboard_mode_info">Direction of transmission</string>
+    <string name="conf_sync_clipboard_mode_send">Send</string>
+    <string name="conf_sync_clipboard_mode_fetch">Fetch</string>
 </resources>
