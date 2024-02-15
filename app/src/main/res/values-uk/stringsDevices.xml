@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_device_name">Загальний</string>
+    <string name="selected_device">Вибраний пристрій</string>
+    <string name="device_uin">UIN</string>
+    <string name="device_name">Ім\'я</string>
+    <string name="device_description">Опис</string>
+    <string name="device_password">Пароль</string>
+    <string name="device_search">Пошук</string>
+    <string name="device_search_in_progress">Пошук…</string>
+    <string name="device_no_at_all">Немає відомих пристроїв</string>
+    <string name="device_offline">офлайн</string>
+</resources>

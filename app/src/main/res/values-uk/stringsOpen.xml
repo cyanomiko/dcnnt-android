@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="button_open">Відкрити</string>
+    <string name="notification_open">Відкрити</string>
+    <string name="no_entries_selected">Не вибрано жодного запису…</string>
+    <string name="open_link">Відкрити URL</string>
+</resources>
