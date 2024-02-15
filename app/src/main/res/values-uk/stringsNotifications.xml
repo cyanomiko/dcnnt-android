@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="disable_all">Вимкнути всі</string>
+    <string name="as_common">Копіювати із загального</string>
+</resources>

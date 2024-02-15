@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="button_download">Завантажити</string>
+    <string name="sort_by_name">Сортувати за назвою</string>
+    <string name="sort_by_type">Сортувати за типом</string>
+    <string name="sort_by_size">Сортувати за розміром</string>
+    <string name="no_files_info">Немає інформації про файли</string>
+    <string name="no_shared_files">Немає спільних файлів</string>
+    <string name="unit_bytes">байтів</string>
+    <string name="unit_entries">записів</string>
+    <string name="status_cancel">Скасовано</string>
+    <string name="action_open">Відкрити</string>
+    <string name="action_share">Поділитися</string>
+    <string name="notification_download">Завантажити</string>
+    <string name="notification_download_complete">Завантаження завершено</string>
+    <string name="notification_download_canceled">Завантаження скасовано</string>
+    <string name="notification_download_failed">Помилка завантаження</string>
+    <string name="directory_not_set">Каталог завантажень не вказано</string>
+</resources>

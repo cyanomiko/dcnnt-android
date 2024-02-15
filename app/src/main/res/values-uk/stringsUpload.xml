@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="button_upload">Завантажити</string>
+    <string name="notification_upload">Завантажити</string>
+    <string name="notification_upload_complete">Завантаження завершено</string>
+    <string name="notification_upload_canceled">Завантаження скасовано</string>
+    <string name="notification_upload_failed">Помилка завантаження</string>
+    <string name="no_files_selected">Не вибрано жодного файлу...</string>
+</resources>
