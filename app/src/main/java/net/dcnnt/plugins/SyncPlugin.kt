@@ -585,9 +585,28 @@ class ClipboardSyncTask(parent: SyncPluginConf, key: String): SyncTask(parent, k
 
     override fun execute(plugin: SyncPlugin, progressCallback: ProgressCallback) {
         val context = plugin.context
-        Log.d(TAG, "Clipboard: ${getClipboardText(context)}")
-        setClipboardText(context, "Test", nowString())
-        Log.d(TAG, "Clipboard: ${getClipboardText(context)}")
+        val clipboardId = target.value
+        val res: Any? = when (mode.value) {
+            "send" -> {
+                plugin.connect()
+                plugin.rpc("clipboard_send", mapOf("clipboard" to clipboardId,
+                    "text" to (getClipboardText(context) ?: throw PluginException("Couldn't get clipboard content"))))
+            }
+            "fetch" -> {
+                plugin.connect()
+                plugin.rpc("clipboard_fetch", mapOf("clipboard" to clipboardId))
+            }
+            else -> throw PluginException("Unsupported mode '${mode.value}'")
+        }
+        val result = ((res as? JSONObject) ?: throw PluginException("Incorrect response"))
+        val code = result.optInt("code", -1)
+        if (code == 0) {
+            if (mode.value == "fetch") {
+                setClipboardText(context, clipboardId, result.optString("text"))
+            }
+        } else {
+            throw PluginException("Server error (code: $code)")
+        }
     }
 }
 
