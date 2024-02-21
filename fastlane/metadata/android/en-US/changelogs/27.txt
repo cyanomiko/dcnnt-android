@@ -1,0 +1,4 @@
+* Clipboard sync task
+* Ukrainian translation by Sestowner
+* Fix upload/download fails on large files
+* Minor UI improvements

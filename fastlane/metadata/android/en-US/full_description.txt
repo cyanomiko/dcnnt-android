@@ -10,4 +10,4 @@ Features:
 * Download files from pre-defined directories at desktop to phone
 * Show phone notification on desktop
 * Execute pre-defined commands on desktop
-* Periodically running sync tasks (directories, contacts, SMS)
+* Periodically running sync tasks (directories, contacts, SMS, clipboard)
