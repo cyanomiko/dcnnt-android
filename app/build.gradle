@@ -2,11 +2,12 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 33
+    namespace "net.dcnnt"
+    compileSdk 34
     defaultConfig {
         applicationId "net.dcnnt"
         minSdkVersion 22
-        targetSdkVersion 33
+        targetSdkVersion 34
         versionCode 27
         versionName '0.12.0'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -17,28 +18,35 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_18
+        targetCompatibility = JavaVersion.VERSION_18
+    }
+    kotlinOptions {
+        jvmTarget = "18"
+    }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.core:core-ktx:1.10.1'
+    implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'com.google.android.material:material:1.9.0'
-    implementation "androidx.work:work-runtime:2.8.1"
-    implementation "androidx.work:work-runtime-ktx:2.8.1"
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation "androidx.work:work-runtime:2.9.0"
+    implementation "androidx.work:work-runtime-ktx:2.9.0"
     implementation 'androidx.test:core-ktx:1.5.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test:core:1.5.0'
     androidTestImplementation 'androidx.test:runner:1.5.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
+    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.3.0'
 }
 
-task dcnntAndroidTestsEnvironment {
+tasks.register('dcnntAndroidTestsEnvironment') {
     doLast {
         exec {
             commandLine "pkill", "-f", "dcnnt"
@@ -51,14 +59,14 @@ task dcnntAndroidTestsEnvironment {
     }
 }
 
-task dcnntAndroidRestartEmulator {
+tasks.register('dcnntAndroidRestartEmulator') {
     doLast {
         exec {
             commandLine "pkill", "-f", "emulator/qemu"
             ignoreExitValue true
         }
         exec {
-             commandLine "bash", "-c", "rm -f ~/.android/avd/**/*.lock"
+            commandLine "bash", "-c", "rm -f ~/.android/avd/**/*.lock"
         }
         exec {
             commandLine "${android.sdkDirectory}/tools/emulator", "-avd", "test_avd"
