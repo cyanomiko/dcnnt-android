@@ -409,6 +409,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(APP.conf.themeId)
         super.onCreate(savedInstanceState)
         APP.activity = this
         setContentView(createUI(this))

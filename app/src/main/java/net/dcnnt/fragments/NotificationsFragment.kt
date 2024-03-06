@@ -117,7 +117,7 @@ class NotificationsFragment: BasePluginFargment() {
         addView(VerticalLayout(context).apply {
             addView(TextView(context).apply {
                 isSingleLine = true
-                textAppearance = R.style.TextAppearance_AppCompat_Body2
+                textAppearance = androidx.appcompat.R.style.TextAppearance_AppCompat_Body2
                 LParam.set(this, LParam.mw())
                 text = appInfo.title
             })

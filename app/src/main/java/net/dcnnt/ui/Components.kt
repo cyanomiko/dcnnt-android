@@ -26,7 +26,7 @@ open class TextBlockView(context: Context) : LinearLayout(context) {
         isSingleLine = true
         gravity = Gravity.CENTER
         minimumHeight = context.dip(32)
-        textAppearance = R.style.TextAppearance_AppCompat_Body2
+        textAppearance = androidx.appcompat.R.style.TextAppearance_AppCompat_Body2
         LParam.set(this, LParam.mw())
     }
 
@@ -41,7 +41,7 @@ open class TextBlockView(context: Context) : LinearLayout(context) {
 
 open class ListTileView(context: Context) : RelativeLayout(context) {
     val titleView = TextView(context).apply{
-        textAppearance = R.style.TextAppearance_AppCompat_Subhead
+        textAppearance = androidx.appcompat.R.style.TextAppearance_AppCompat_Subhead
         layoutParams = LayoutParams(LParam.M, LParam.W)
     }
     val textView = TextView(context).apply {

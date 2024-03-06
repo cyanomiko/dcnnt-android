@@ -49,6 +49,21 @@ class AppConf(path: String): DCConf(path) {
         SelectOption("upload", R.string.conf_app_actionForSharedFile_upload),
         SelectOption("open", R.string.conf_app_actionForSharedFile_open)
     ), 0).init()
+    val theme = SelectEntry(this, "theme", listOf(
+        SelectOption("compat", R.string.conf_app_theme_compat),
+        SelectOption("m3light", R.string.conf_app_theme_m3light),
+        SelectOption("m3dark", R.string.conf_app_theme_m3dark)
+    ), 0).init()
+
+    /**
+     * Get ID of app theme using config value or default theme
+     */
+    val themeId get() = when (theme.value) {
+        "compat" -> R.style.DCStyleOld
+        "m3light" -> R.style.DCStyleLight
+        "m3dark" -> R.style.DCStyleDark
+        else -> R.style.DCStyleOld
+    }
 }
 
 class App : Application() {

@@ -23,4 +23,9 @@
     <string name="conf_app_actionForSharedFile_ask">Always ask</string>
     <string name="conf_app_actionForSharedFile_open">Open</string>
     <string name="conf_app_actionForSharedFile_upload">Upload</string>
+    <string name="conf_app_theme_title">Theme (after app restart)</string>
+    <string name="conf_app_theme_info">Style of UI</string>
+    <string name="conf_app_theme_compat">Classic</string>
+    <string name="conf_app_theme_m3light">Material 3 Light</string>
+    <string name="conf_app_theme_m3dark">Material 3 Dark</string>
 </resources>
