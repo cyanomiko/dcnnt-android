@@ -3,11 +3,11 @@ apply plugin: 'kotlin-android'
 
 android {
     namespace "net.dcnnt"
-    compileSdk 34
+    compileSdk 35
     defaultConfig {
         applicationId "net.dcnnt"
         minSdkVersion 22
-        targetSdkVersion 34
+        targetSdkVersion 35
         versionCode 27
         versionName '0.12.0'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -30,19 +30,19 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'androidx.core:core-ktx:1.12.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'com.google.android.material:material:1.11.0'
-    implementation "androidx.work:work-runtime:2.9.0"
-    implementation "androidx.work:work-runtime-ktx:2.9.0"
-    implementation 'androidx.test:core-ktx:1.5.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation "androidx.work:work-runtime:2.10.0"
+    implementation "androidx.work:work-runtime-ktx:2.10.0"
+    implementation 'androidx.test:core-ktx:1.6.1'
 
     testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test:core:1.5.0'
-    androidTestImplementation 'androidx.test:runner:1.5.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test:core:1.6.1'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.3.0'
 }
 

@@ -70,12 +70,12 @@ class NotificationsFragment: BasePluginFargment() {
         synchronized(apps) {
             apps.clear()
             context.packageManager.getInstalledPackages(0).forEach { p ->
-                val isSystem = (p.applicationInfo.flags and
+                val isSystem = ((p.applicationInfo?.flags ?: 0) and
                         (ApplicationInfo.FLAG_SYSTEM or ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0
                 if ((systemApps == null) or (systemApps == isSystem)) {
                     apps[p.packageName] = AppInfo(
                         p.packageName,
-                        p.applicationInfo.loadLabel(context.packageManager).toString(),
+                        (p.applicationInfo?.loadLabel(context.packageManager) ?: "Unknown").toString(),
                         packageIcon(context, p.packageName),
                         isSystem,
                         conf.getFilter(p.packageName)

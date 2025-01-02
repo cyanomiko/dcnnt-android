@@ -188,9 +188,17 @@ abstract class Plugin<T: PluginConf>(val app: App, val device: Device) {
     fun rpc(method: String, params: Map<String, Any?>): Any? {
         return rpc(method, JSONObject(params))
     }
+
+    /** ToDo: Determine params of actions and return value
+     * Do user-defined action
+     * @return ...
+     */
+    open fun processAction(action: Action): Boolean {
+        return false
+    }
 }
 
-
+// ToDo: Check `pluginMarks` arg - really used?
 class PluginManager(val app: App, val directory: String, private val pluginMarks: List<String>) {
     val TAG = "DC/PM"
     private val configs = mutableMapOf<Pair<String, Int>, PluginConf>()

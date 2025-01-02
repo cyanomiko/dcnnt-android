@@ -18,6 +18,7 @@ import net.dcnnt.R
 import net.dcnnt.core.*
 import net.dcnnt.plugins.FileTransferPlugin
 import net.dcnnt.ui.*
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
 
@@ -90,7 +91,7 @@ class DownloadFileFragment: BaseFileFragment() {
     override val TAG = "DC/DownloadUI"
     private var remotePath = mutableListOf<FileEntry>()
     private var remoteRoot = FileEntry("root", 0, remoteChildren = listOf())
-    private var downloadViewMode = false
+    private var downloadViewMode = AtomicBoolean(false)
     private var downloadDirectoryOk = false
     private var sortBy: FileSort = FileSort.NAME
     private lateinit var noSharedFilesStr: String
@@ -105,7 +106,7 @@ class DownloadFileFragment: BaseFileFragment() {
     }
 
     override fun onBackPressed(): Boolean {
-        if (downloadViewMode) return true
+        if (downloadViewMode.get()) return true
         if (remotePath.isEmpty()) return true
         openUpperRemoteDir(context)
         return false
@@ -123,7 +124,7 @@ class DownloadFileFragment: BaseFileFragment() {
 
     private fun setSorting(context: Context?, value: FileSort): Boolean {
         sortBy = value
-        if (downloadViewMode) return true
+        if (downloadViewMode.get()) return true
         showRemoteDir(context ?: return false, remotePath.lastOrNull() ?: remoteRoot)
         return true
     }
@@ -196,13 +197,13 @@ class DownloadFileFragment: BaseFileFragment() {
             repeatButton.visibility = View.GONE
             selectedView.removeAllViews()
             selectedEntries.forEach { if (!it.isDir) selectedView.addView(RunningFileView(context, this, it)) }
-            downloadViewMode = true
+            downloadViewMode.set(true)
         }
     }
 
     override fun selectEntries(context: Context) {
         synchronized(downloadViewMode) {
-            downloadViewMode = false
+            downloadViewMode.set(false)
             selectedDevice?.also {
                 val plugin = FileTransferPlugin(APP, it)
                 thread {
@@ -371,7 +372,7 @@ class DownloadFileFragment: BaseFileFragment() {
     override fun onStart() {
         super.onStart()
         context?.also {
-            if (!downloadViewMode and selectedEntries.isEmpty()) selectEntries(it)
+            if (!downloadViewMode.get() and selectedEntries.isEmpty()) selectEntries(it)
         }
     }
 

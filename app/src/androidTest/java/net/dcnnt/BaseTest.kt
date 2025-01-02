@@ -175,7 +175,7 @@ open class BaseTest {
     fun inputText(text: String) {
         val textEdit = device.findObject(UiSelector().className(EditText::class.java.name))
         assertWaitExists((textEdit))
-        textEdit.text = text
+        textEdit.setText(text)
     }
 
     fun assertWaitDialog(header: String) {
