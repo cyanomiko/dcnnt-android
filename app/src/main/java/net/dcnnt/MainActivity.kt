@@ -54,7 +54,6 @@ class Navigation(private val toolbarView: Toolbar,
         usedFargments["/dm"] = fragment
         stack.add("/dm")
         currentFragment = fragment
-        fragment.prepareToolbar(toolbarView)
     }
 
     /**
@@ -112,7 +111,6 @@ class Navigation(private val toolbarView: Toolbar,
                 transaction.commit()
             }
             currentFragment = fragment
-            fragment.prepareToolbar(toolbarView)
         }
     }
 
@@ -131,7 +129,6 @@ class Navigation(private val toolbarView: Toolbar,
                     it.commit()
                 }
                 currentFragment = fragment
-                fragment.prepareToolbar(toolbarView)
                 return true
             }
         }
@@ -409,6 +406,11 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         processNavIntent(intent)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        navigation.currentFragment.prepareToolbar(toolbarEl)
+        return super.onCreateOptionsMenu(menu)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
