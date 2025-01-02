@@ -91,6 +91,7 @@ class Navigation(private val toolbarView: Toolbar,
                 args.filterIsInstance<Intent>().firstOrNull()
             )
             "/commands" -> CommandsFragment()
+            "/clipboard" -> ClipboardFragment()
             "/notifications" -> NotificationsFragment()
             "/sync" -> SyncFragment()
             "/log" -> LogDirectoryFragment()
@@ -174,9 +175,10 @@ class MainActivity : AppCompatActivity() {
             it.add(0, Menu.FIRST + 4, Menu.NONE, R.string.menu_open).setIcon(R.drawable.ic_open)
             it.add(0, Menu.FIRST + 5, Menu.NONE, R.string.menu_download).setIcon(R.drawable.ic_download)
             it.add(0, Menu.FIRST + 6, Menu.NONE, R.string.menu_commands).setIcon(R.drawable.ic_cr)
-            it.add(0, Menu.FIRST + 7, Menu.NONE, R.string.menu_notifications).setIcon(R.drawable.ic_notification)
-            it.add(0, Menu.FIRST + 8, Menu.NONE, R.string.menu_sync).setIcon(R.drawable.ic_sync)
-            it.add(0, Menu.FIRST + 9, Menu.NONE, R.string.menu_exit).setIcon(R.drawable.ic_exit)
+            it.add(0, Menu.FIRST + 7, Menu.NONE, R.string.menu_clipboard).setIcon(R.drawable.ic_clipboard)
+            it.add(0, Menu.FIRST + 8, Menu.NONE, R.string.menu_notifications).setIcon(R.drawable.ic_notification)
+            it.add(0, Menu.FIRST + 9, Menu.NONE, R.string.menu_sync).setIcon(R.drawable.ic_sync)
+            it.add(0, Menu.FIRST + 10, Menu.NONE, R.string.menu_exit).setIcon(R.drawable.ic_exit)
         }
         navMenuEl.setNavigationItemSelectedListener {
             drawerEl.closeDrawer(navMenuEl)
@@ -187,9 +189,10 @@ class MainActivity : AppCompatActivity() {
             if (it.itemId == Menu.FIRST + 4) navigation.go("/open", listOf())
             if (it.itemId == Menu.FIRST + 5) navigation.go("/download", listOf())
             if (it.itemId == Menu.FIRST + 6) navigation.go("/commands", listOf())
-            if (it.itemId == Menu.FIRST + 7) navigation.go("/notifications", listOf())
-            if (it.itemId == Menu.FIRST + 8) navigation.go("/sync", listOf())
-            if (it.itemId == Menu.FIRST + 9) exitDialog()
+            if (it.itemId == Menu.FIRST + 7) navigation.go("/clipboard", listOf())
+            if (it.itemId == Menu.FIRST + 8) navigation.go("/notifications", listOf())
+            if (it.itemId == Menu.FIRST + 9) navigation.go("/sync", listOf())
+            if (it.itemId == Menu.FIRST + 10) exitDialog()
             return@setNavigationItemSelectedListener true
         }
         navigation.start()

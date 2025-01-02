@@ -3,6 +3,7 @@ package net.dcnnt.core
 import android.content.Context
 import android.util.Log
 import net.dcnnt.plugins.*
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.net.Socket
@@ -189,6 +190,20 @@ abstract class Plugin<T: PluginConf>(val app: App, val device: Device) {
         return rpc(method, JSONObject(params))
     }
 
+    fun rpcChecked(method: String, params: Map<String, Any?>): JSONObject {
+        val response = (rpc(method, JSONObject(params)) as? JSONObject)
+            ?: throw PluginException("Incorrect response")
+        val code = response.optInt("code", 0)
+        if (code != 0) {
+            var errorText = response.optString("message")
+            if (errorText.isEmpty()) {
+                errorText = "Error ${code}"
+            }
+            throw PluginException(errorText)
+        }
+        return response
+    }
+
     /** ToDo: Determine params of actions and return value
      * Do user-defined action
      * @return ...
@@ -221,6 +236,7 @@ class PluginManager(val app: App, val directory: String, private val pluginMarks
         "file" -> FileTransferPluginConf(directory, uin)
         "open" -> OpenerPluginConf(directory, uin)
         "rcmd" -> RemoteCommandPluginConf(directory, uin)
+        "clip" -> ClipboardPluginConf(directory, uin)
         "nots" -> NotificationsPluginConf(directory, uin)
         "sync" -> SyncPluginConf(directory, uin)
         else -> throw IllegalArgumentException("Unknown plugin mark")

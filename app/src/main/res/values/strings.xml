@@ -10,6 +10,7 @@
     <string name="menu_open">Open</string>
     <string name="menu_download">Download</string>
     <string name="menu_commands">Commands</string>
+    <string name="menu_clipboard">Clipboard</string>
     <string name="menu_notifications">Notifications</string>
     <string name="menu_sync">Sync</string>
     <string name="menu_exit">Exit</string>
@@ -38,6 +39,7 @@
     <string name="no_devices">No devices available</string>
     <string name="click_to_search">Click to search devices</string>
     <string name="no_commands_available">No commands available</string>
+    <string name="no_clipboards_available">No clipboards available</string>
     <string name="loading_apps">Loading apps…</string>
     <string name="ok">OK</string>
     <string name="delete_device_title">Delete device?</string>
