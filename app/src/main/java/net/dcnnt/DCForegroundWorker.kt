@@ -51,7 +51,7 @@ class DCForegroundWorker(context: Context, parameters: WorkerParameters) : Corou
         val notification = NotificationCompat.Builder(applicationContext, "net.dcnnt.progress")
             .setContentTitle(title)
             .setContentText("...")
-            .setSmallIcon(R.drawable.icon_app)
+            .setSmallIcon(R.mipmap.icon_app_launcher)
             .setOngoing(true)
             // Add the cancel action to the notification which can
             // be used to cancel the worker

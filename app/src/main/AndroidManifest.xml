@@ -18,9 +18,9 @@
     <application
             android:name="net.dcnnt.core.App"
             android:allowBackup="false"
-            android:icon="@drawable/icon_app"
+            android:icon="@mipmap/icon_app_launcher"
+            android:roundIcon="@mipmap/icon_app_launcher_round"
             android:label="@string/app_name"
-            android:roundIcon="@drawable/icon_app_round"
             android:supportsRtl="true"
             android:theme="@style/DCStyleOld">
         <provider
@@ -44,12 +44,16 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
             </intent-filter>
-            <intent-filter android:icon="@drawable/icon_app_upload">
+            <intent-filter
+                    android:icon="@mipmap/icon_app_upload"
+                    android:roundIcon="@mipmap/icon_app_upload_round">
                 <action android:name="android.intent.action.SEND"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:mimeType="*/*"/>
             </intent-filter>
-            <intent-filter android:icon="@drawable/icon_app_upload">
+            <intent-filter
+                    android:icon="@mipmap/icon_app_upload"
+                    android:roundIcon="@mipmap/icon_app_upload_round">
                 <action android:name="android.intent.action.SEND_MULTIPLE" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="*/*" />

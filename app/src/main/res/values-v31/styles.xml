@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="DCStyleOld" parent="Theme.AppCompat">
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/colorIconBackground</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+    <style name="DCStyleLight" parent="Theme.Material3.Light.NoActionBar">
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/colorIconBackground</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorPrimary</item>
+    </style>
+    <style name="DCStyleDark" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/colorIconBackground</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorPrimary</item>
+    </style>
+</resources>
