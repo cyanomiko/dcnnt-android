@@ -331,6 +331,18 @@ class DownloadFileFragment: BaseFileFragment() {
         }
     }
 
+    private fun safeSelectNewEntries() {
+        context?.also {
+            if (!downloadViewMode.get() and selectedEntries.isEmpty()) {
+                selectEntries(it)
+            }
+        }
+    }
+
+    override fun onSelectedDeviceChanged() {
+        safeSelectNewEntries()
+    }
+
     fun fragmentConfigureView(context: Context) = ScrollView(context).apply {
         padding = context.dip(6)
         addView(VerticalLayout(context).apply {
@@ -371,9 +383,7 @@ class DownloadFileFragment: BaseFileFragment() {
 
     override fun onStart() {
         super.onStart()
-        context?.also {
-            if (!downloadViewMode.get() and selectedEntries.isEmpty()) selectEntries(it)
-        }
+        safeSelectNewEntries()
     }
 
     override fun initStrings() {

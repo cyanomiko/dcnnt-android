@@ -126,6 +126,11 @@ abstract class BasePluginFargment: DCFragment() {
                 updateOptions()
             }
             onInput = { _, _ -> onSelectedDeviceChanged() }
+            onUpdateOptons = { _, isSelectedDeviceChanged, options ->
+                if (isSelectedDeviceChanged and options.isNotEmpty()) {
+                    onSelectedDeviceChanged()
+                }
+            }
         }
     }
 

@@ -218,8 +218,6 @@ open class BaseFileFragment: BasePluginFargment() {
         }
     }
 
-    open fun onSelectedDeviceChanged(context: Context) {}
-
     open fun selectEntries(context: Context) {}
 
     open fun processAllEntries(context: Context) {}
@@ -238,9 +236,7 @@ open class BaseFileFragment: BasePluginFargment() {
 
     fun fragmentMainView(context: Context) = VerticalLayout(context).apply {
         padding = context.dip(6)
-        addView(createDeviceSelectView(context).apply {
-            onUpdateOptons = { _, changed, _ -> if (changed) onSelectedDeviceChanged(context) }
-        })
+        addView(createDeviceSelectView(context))
         addView(LinearLayout(context).apply {
             val lp = LinearLayout.LayoutParams(LParam.W, LParam.W, .5F)
             addView(Button(context).apply {
