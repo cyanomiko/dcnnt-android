@@ -3,6 +3,7 @@ package net.dcnnt.ui
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.os.Build
 import android.util.Log
@@ -41,7 +42,11 @@ class ProgressNotification(val context: Context, private val worker: DCForegroun
      */
     private fun doNotification() {
         if (worker != null) {
-            worker.setForegroundAsync(ForegroundInfo(notificationId, builder.build()))
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                worker.setForegroundAsync(ForegroundInfo(notificationId, builder.build()))
+            } else {
+                worker.setForegroundAsync(ForegroundInfo(notificationId, builder.build(), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC))
+            }
         } else {
             NotificationManagerCompat.from(context).notify(notificationId, builder.build())
         }

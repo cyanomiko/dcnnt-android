@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
@@ -57,7 +58,10 @@ class DCForegroundWorker(context: Context, parameters: WorkerParameters) : Corou
             // be used to cancel the worker
             .addAction(android.R.drawable.ic_delete, cancel, intent)
             .build()
-        return ForegroundInfo(notificationId, notification)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return ForegroundInfo(notificationId, notification)
+        }
+        return ForegroundInfo(notificationId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
     }
 
 }
