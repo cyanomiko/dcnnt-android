@@ -1,10 +1,13 @@
 package net.dcnnt
 
+import android.Manifest
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.text.TextUtils
@@ -20,6 +23,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.FragmentManager
@@ -152,6 +156,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var fragmentEl: FrameLayout
     lateinit var navigation: Navigation
     val notificationAccessActivityLauncher = newActivityCaller(this) { _, _ -> }
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()) {}
 
     /**
      * Init basic UI and navigation menu then go to start fragment
@@ -243,6 +249,21 @@ class MainActivity : AppCompatActivity() {
             setNegativeButton(R.string.restart) { _, _ -> restartApp() }
             setPositiveButton(R.string.stop) { _, _ -> stopApp() }
         }.create().show()
+    }
+
+    fun askNotificationsPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                Log.d(TAG, "ask permission")
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                Log.d(TAG, "already granted")
+            }
+        }
     }
 
     /**
@@ -419,6 +440,7 @@ class MainActivity : AppCompatActivity() {
         APP.activity = this
         setContentView(createUI(this))
         navigation = Navigation(toolbarEl, supportFragmentManager, fragmentEl.id)
+        askNotificationsPermission()
         initUI()
         handleStartIntent()
     }

@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.ThumbnailUtils
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -191,12 +192,16 @@ open class BaseFileFragment: BasePluginFargment() {
 
 
     protected fun askWritePermission() {
-        if (ContextCompat.checkSelfPermission(mainActivity,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG, "ask permission")
-            requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(mainActivity,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "ask permission")
+                requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            } else {
+                Log.d(TAG, "already granted")
+                hasWriteFilePermission = true
+            }
         } else {
-            Log.d(TAG, "already granted")
             hasWriteFilePermission = true
         }
     }

@@ -59,6 +59,9 @@ class SettingsFragment: DCFragment() {
     private val selectDownloadDirectoryActivityLauncher = newActivityCaller(this) { _, intent ->
         val uri = intent?.data ?: return@newActivityCaller
         Log.d(TAG, "Tree URI: $uri")
+        val contentResolver = context?.contentResolver ?: return@newActivityCaller
+        val takeFlags: Int = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        contentResolver.takePersistableUriPermission(uri, takeFlags)
         APP.conf.downloadDirectory.updateValue(uri.toString())
         updateDownloadDirectoryView()
         if (arguments?.getInt(ARG_ACTION) == ACTION_DOWNLOAD_DIR) mainActivity.navigation.back()
