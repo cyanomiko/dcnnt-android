@@ -1,0 +1,3 @@
+* Simplified clipboard sync
+* Fixes for Android 15+ support
+* Minor UI fixes
