@@ -203,14 +203,6 @@ abstract class Plugin<T: PluginConf>(val app: App, val device: Device) {
         }
         return response
     }
-
-    /** ToDo: Determine params of actions and return value
-     * Do user-defined action
-     * @return ...
-     */
-    open fun processAction(action: Action): Boolean {
-        return false
-    }
 }
 
 // ToDo: Check `pluginMarks` arg - really used?
