@@ -25,6 +25,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
+import androidx.core.view.WindowCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.fragment.app.FragmentManager
 import com.google.android.material.appbar.AppBarLayout
@@ -292,17 +293,18 @@ class MainActivity : AppCompatActivity() {
      */
     private fun createUI(context: Context) = DrawerLayout(context).apply {
         drawerEl = this
-        fitsSystemWindows = true
         layoutParams = DrawerLayout.LayoutParams(DrawerLayout.LayoutParams.MATCH_PARENT, DrawerLayout.LayoutParams.MATCH_PARENT)
         removeAllViews()
         addView(VerticalLayout(this.context).apply {
             gravity = Gravity.NO_GRAVITY
             LParam.set(this, LParam.mm())
             addView(AppBarLayout(context).apply {
+                fitsSystemWindows = true
                 LParam.set(this, LParam.mw())
                 addView(Toolbar(context).apply {
                     toolbarEl = this
                     title = "Device Connect"
+                    this@MainActivity.setSupportActionBar(this)
                 })
             })
             addView(FrameLayout(context).apply {
@@ -435,9 +437,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        APP.activity = this
         setTheme(APP.conf.themeId)
         super.onCreate(savedInstanceState)
-        APP.activity = this
         setContentView(createUI(this))
         navigation = Navigation(toolbarEl, supportFragmentManager, fragmentEl.id)
         askNotificationsPermission()

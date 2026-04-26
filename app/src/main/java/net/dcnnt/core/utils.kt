@@ -143,7 +143,7 @@ fun simplifyFilename(filename: String): String {
 
 inline fun <reified T: Parcelable> getParcelable(bundle: Bundle?, key: String): T? {
     if (bundle == null) return null
-    return if (Build.VERSION.SDK_INT >= 33) {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         bundle.getParcelable(key, T::class.java)
     } else {
         @Suppress("DEPRECATION")
@@ -152,7 +152,7 @@ inline fun <reified T: Parcelable> getParcelable(bundle: Bundle?, key: String): 
 }
 
 inline fun <reified T: Parcelable> getParcelableExtra(intent: Intent, key: String): T? {
-    return if (Build.VERSION.SDK_INT >= 33) {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         intent.getParcelableExtra(key, T::class.java)
     } else {
         @Suppress("DEPRECATION")
@@ -161,7 +161,7 @@ inline fun <reified T: Parcelable> getParcelableExtra(intent: Intent, key: Strin
 }
 
 inline fun <reified T: Parcelable> getParcelableArrayListExtra(intent: Intent, key: String): ArrayList<T>? {
-    return if (Build.VERSION.SDK_INT >= 33) {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         intent.getParcelableArrayListExtra(key, T::class.java)
     } else {
          ArrayList<T>().apply {

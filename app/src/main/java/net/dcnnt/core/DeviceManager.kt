@@ -183,7 +183,7 @@ class DeviceManager(val path: String) {
             socket.soTimeout = timeout
             socket.bind(InetSocketAddress("0.0.0.0", PORT))
             sendToAll(socket, request, broadcastAddreses)
-            APP.log("Search devices on port $PORT", TAG)
+            APP.log("Search devices on port $PORT, $broadcastAddreses", TAG)
             for (i in 0..triesRead) {
                 if (i % (triesRead / triesSend) == 0) sendToAll(socket, request, broadcastAddreses)
                 try {
