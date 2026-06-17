@@ -71,12 +71,17 @@ abstract class Plugin<T: PluginConf>(val app: App, val device: Device) {
     fun parseHeader(raw: ByteArray): PluginConnectionHeader {
         val buf = ByteBuffer.wrap(raw).order(ByteOrder.BIG_ENDIAN)
         val preamble = ByteArray(16)
-        val pluginMarkEncrypted = ByteArray(36)
+        val pluginMarkEncrypted = ByteArray(getEncryptedPlgLength())
         buf.get(preamble)
         val src = buf.int
         val dst = buf.int
         buf.get(pluginMarkEncrypted)
-        val pluginMark = decrypt(pluginMarkEncrypted, device.keyRecv) ?: throw DCAuthException("Auth fail")
+        val pluginMark: ByteArray
+        try {
+            pluginMark = decrypt(pluginMarkEncrypted, device.keyRecv)
+        } catch (e: DCDecryptionError) {
+            throw DCAuthException("Auth fail")
+        }
         return PluginConnectionHeader(preamble, pluginMark, src, dst)
     }
 
@@ -106,7 +111,7 @@ abstract class Plugin<T: PluginConf>(val app: App, val device: Device) {
 //        Log.d(TAG, "Length bytes: [${lb[0]} ${lb[1]} ${lb[2]} ${lb[3]}]")
         val length = uIntFromBytes(lb)
 //        Log.d(TAG, "Length to read = $length")
-        return decrypt(readAll(length), device.keyRecv) ?: byteArrayOf()
+        return decrypt(readAll(length), device.keyRecv)
     }
 
     open fun init(context: Context? = null): Boolean {

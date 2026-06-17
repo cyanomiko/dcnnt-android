@@ -16,25 +16,32 @@ class Device(val dm: DeviceManager, val uin: Int, var name: String, var descript
     self.key_recv = derive_key(''.join(map(str, (app_uin, self.uin, app_password, self.password))))
     self.key_send = derive_key(''.join(map(str, (self.uin, app_uin, self.password, app_password))))
     */
-    var uinApp = APP.conf.uin.value
-    var passApp = APP.conf.password.value
-    var keyRecv: ByteArray = deriveKey(listOf(uinApp, uin, passApp, password).joinToString(""))
-    var keySend: ByteArray = deriveKey(listOf(uin, uinApp, password, passApp).joinToString(""))
+    var uinApp: Uin = 0
+    var passApp: String = ""
+    var keyRecv: ByteArray = byteArrayOf()
+    var keySend: ByteArray = byteArrayOf()
     var ip: String? = null
     var pairingData: ByteArray? = null
+
+    init {
+        updateKeys()
+    }
 
     fun updateKeys() {
         uinApp = APP.conf.uin.value
         passApp = APP.conf.password.value
-        keyRecv = deriveKey(listOf(uinApp, uin, passApp, password).joinToString(""))
-        keySend = deriveKey(listOf(uin, uinApp, password, passApp).joinToString(""))
+        keyRecv = deriveRecvKey(uinApp, uin, passApp, password)
+        keySend = deriveSendKey(uinApp, uin, passApp, password)
     }
 
     fun processPairData(code: String): DCResult {
         pairingData?.also {
             pairingData = null
-            password = String(decrypt(it, deriveKey("$code$uinApp"))
-                ?: return DCResult(false, "Incorrect pair code"))
+            try {
+                password = String(decrypt(it, derivePairingKey(code, uinApp)))
+            } catch (_: DCDecryptionError) {
+                return DCResult(false, "Incorrect pair code")
+            }
             updateKeys()
             return DCResult(true, "OK")
         }
@@ -164,7 +171,7 @@ class DeviceManager(val path: String) {
         )
         pairInfo?.also {
             requestData["pair"] = String(Base64.encode(encrypt(appConf.password.value.toByteArray(),
-                deriveKey("${it.second}${it.first}")), Base64.DEFAULT))
+                deriveKeyFromString("${it.second}${it.first}")), Base64.DEFAULT))
         }
         val request = JSONObject(requestData.toMap()).toString().toByteArray()
         var availableDevicesCountPre = 0
@@ -174,14 +181,13 @@ class DeviceManager(val path: String) {
         }
         try {
             val broadcastAddreses = getBroadcastAddreses()
-            val socket = DatagramSocket(null)
+            val socket = DatagramSocket(PORT)
             val responseData = ByteArray(4096)
             val response = DatagramPacket(responseData, responseData.size)
             val found = mutableSetOf<Int>()
             socket.broadcast = true
             socket.reuseAddress = true
             socket.soTimeout = timeout
-            socket.bind(InetSocketAddress("0.0.0.0", PORT))
             sendToAll(socket, request, broadcastAddreses)
             APP.log("Search devices on port $PORT, $broadcastAddreses", TAG)
             for (i in 0..triesRead) {
