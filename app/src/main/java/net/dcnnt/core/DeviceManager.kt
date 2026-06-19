@@ -1,17 +1,15 @@
 package net.dcnnt.core
 
-import android.util.Base64
 import android.util.Log
 import org.json.JSONObject
 import java.io.File
 import java.lang.Exception
 import java.net.*
-import java.nio.charset.Charset
 import java.util.concurrent.atomic.AtomicBoolean
 
 
 class Device(val dm: DeviceManager, val uin: Int, var name: String, var description: String,
-             var port: Int, val role: String, var password: String) {
+             var port: Int, val role: String, var password: String): JsonSerializable() {
     /*
     self.key_recv = derive_key(''.join(map(str, (app_uin, self.uin, app_password, self.password))))
     self.key_send = derive_key(''.join(map(str, (self.uin, app_uin, self.password, app_password))))
@@ -52,7 +50,7 @@ class Device(val dm: DeviceManager, val uin: Int, var name: String, var descript
         return password.isEmpty()
     }
 
-    fun toJSON(): JSONObject {
+    override fun toJson(): JSONObject {
         return JSONObject(mapOf(
             "uin" to uin,
             "name" to name,
@@ -62,6 +60,8 @@ class Device(val dm: DeviceManager, val uin: Int, var name: String, var descript
             "port" to port
         ))
     }
+
+    fun toJSON() = toJson()
 
     override fun toString() = name
 }
@@ -157,30 +157,21 @@ class DeviceManager(val path: String) {
     }
 
     fun search(appConf: AppConf, timeout: Int = 10, triesRead: Int = 100, triesSend: Int = 2,
-               pairInfo: Pair<Int, String>? = null,
+               pairInfo: Pair<Uin, String>? = null,
                onAvailableDevice: ((Device) -> Unit)? = null): Boolean {
         searchDone = true
         lastSearchTimestamp = System.currentTimeMillis() / 1000L
         var responseCounter: Int = 0
-        val requestData = mutableMapOf(
-            "plugin" to "search",
-            "action" to "request",
-            "role" to "client",
-            "uin" to appConf.uin.value,
-            "name" to appConf.name.value
-        )
-        pairInfo?.also {
-            requestData["pair"] = String(Base64.encode(encrypt(appConf.password.value.toByteArray(),
-                deriveKeyFromString("${it.second}${it.first}")), Base64.DEFAULT))
-        }
-        val request = JSONObject(requestData.toMap()).toString().toByteArray()
+        val request = LegacySearchMessage(appConf.uin.value, appConf.name.value, encryptedPairingData=pairInfo?.let {
+            encrypt(appConf.password.value.toByteArray(), derivePairingKey(it.second, it.first))
+        }).toByteArray()
         var availableDevicesCountPre = 0
         devices.forEach {
             if (!it.value.isNew() and (it.value.ip != null)) availableDevicesCountPre++
             it.value.ip = null
         }
         try {
-            val broadcastAddreses = getBroadcastAddreses()
+            val broadcastAddresses = getBroadcastAddreses()
             val socket = DatagramSocket(PORT)
             val responseData = ByteArray(4096)
             val response = DatagramPacket(responseData, responseData.size)
@@ -188,47 +179,37 @@ class DeviceManager(val path: String) {
             socket.broadcast = true
             socket.reuseAddress = true
             socket.soTimeout = timeout
-            sendToAll(socket, request, broadcastAddreses)
-            APP.log("Search devices on port $PORT, $broadcastAddreses", TAG)
+            sendToAll(socket, request, broadcastAddresses)
+            APP.log("Search devices on port $PORT, $broadcastAddresses", TAG)
             for (i in 0..triesRead) {
-                if (i % (triesRead / triesSend) == 0) sendToAll(socket, request, broadcastAddreses)
+                if (i % (triesRead / triesSend) == 0) sendToAll(socket, request, broadcastAddresses)
                 try {
                     try {
                         socket.receive(response)
-                    } catch (e: SocketTimeoutException) {
-                        //Log.d(TAG, "No UDP response received")
+                    } catch (_: SocketTimeoutException) {
                         continue
                     }
-                    val ip = response.address.hostAddress ?: "null"
-                    val res = JSONObject(response.data.toString(Charset.forName("UTF-8")))
-                    Log.i(TAG, "$res")
-                    if ((res["plugin"] == "search") and (res["action"] == "response") and (res["uin"] is Int) and
-                        (UIN_MIN <= res["uin"] as Int) and (UIN_MAX >= res["uin"] as Int) and
-                        (res["name"] is String) and (res["role"] is String)
-                    ) {
-                        Log.i(TAG, "Process response")
-                        responseCounter++
-                        val uin: Int = res["uin"] as Int
-                        if (!devices.containsKey(uin)) {
-                            APP.log("Add new '${res["role"]}' device $uin '${res["name"]}', IP: $ip", TAG)
-                            devices[uin] = Device(this, uin, res["name"] as String, "", PORT,
-                                res["role"] as String, "")
-                        }
-                        devices[uin]?.also {
-                            if (!found.contains(uin)) {
-                                APP.log( "Update '${it.role}' device '${it.name}' IP: $ip", TAG)
-                                it.ip = ip
-                                it.name = res["name"] as String
-                                found.add(uin)
-                                val pairString = res.optString("pair", "")
-                                if (pairString.isNotEmpty()) {
-                                    it.pairingData = null
-                                    it.pairingData = Base64.decode(pairString, Base64.DEFAULT)
-                                } else {
-                                    it.pairingData = null
-                                }
-                                onAvailableDevice?.invoke(it)
-                            }
+                    val ip = response.address.hostAddress ?: continue
+                    val r = LegacySearchMessage.fromByteArray(response.data)
+                    Log.d(TAG, "$r")
+                    if (r.action != DeviceSearchAction.RESPONSE) {
+                        continue
+                    }
+                    Log.i(TAG, "Process response")
+                    responseCounter++
+                    val uin: Int = r.uin
+                    if (!devices.containsKey(r.uin)) {
+                        APP.log("Add new '${r.role.name}' device $uin '${r.name}', IP: $ip", TAG)
+                        devices[uin] = Device(this, uin, r.name, "", PORT, r.roleName, "")
+                    }
+                    devices[uin]?.also {
+                        if (!found.contains(uin)) {
+                            APP.log( "Update '${it.role}' device '${it.name}' IP: $ip", TAG)
+                            it.ip = ip
+                            it.name = r.name
+                            found.add(uin)
+                            it.pairingData = r.encryptedPairingData
+                            onAvailableDevice?.invoke(it)
                         }
                     }
                 } catch (e: Exception) {

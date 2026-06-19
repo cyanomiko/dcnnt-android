@@ -55,7 +55,7 @@ fun deriveSendKey(localUin: Uin, remoteUin: Uin, localPassword: String, remotePa
  * @return sent encryption key as byte array
  */
 fun derivePairingKey(pairingCode: String, uin: Uin): ByteArray {
-    return deriveKeyFromString(listOf(pairingCode, uin).joinToString(""))
+    return deriveKeyFromString("$pairingCode$uin")
 }
 
 /**
