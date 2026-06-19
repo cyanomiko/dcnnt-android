@@ -16,7 +16,7 @@ open class TransportDynamicIP(
 
 //    override fun getId(): String = "$TRANSPORT_NAME/$tcpPort/$udpPort/$defaultTimeoutMilliseconds"
 
-    val ipByUin: MutableMap<Uin, String> = mutableMapOf()
+//    val ipByUin: MutableMap<Uin, String> = mutableMapOf()
 
     companion object {
         val DEFAULT_TCP_PORT = 5040
@@ -61,8 +61,9 @@ open class TransportDynamicIP(
         TODO("Not yet implemented")
     }
 
-    override fun connect(device: Device): ConnectionTCP =
-        connectBase(ipByUin[device.uin] ?: throw DCOfflineError(device))
+    fun getDeviceIp(device: Device): String = device.ip ?: throw DCOfflineError(device)
+
+    override fun connect(device: Device): ConnectionTCP = connectBase(getDeviceIp(device))
 
     override fun listen(): Connection {
         TODO("Not yet implemented")
@@ -121,5 +122,9 @@ class ConnectionTCP(override val transport: Transport, val socket: Socket): Conn
                 throw DCTransportTimeout("Network timeout ($timeoutMs ms)")
             }
         }
+    }
+
+    override fun close() {
+        socket.close()
     }
 }

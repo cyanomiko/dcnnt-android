@@ -70,6 +70,11 @@ interface Connection {
      * @param length - number of bytes to read
      */
     fun recv(length: Int, timeoutMilliseconds: Int? = null): ByteArray
+
+    /**
+     * Just close this connection
+     */
+    fun close()
 }
 
 
@@ -287,20 +292,19 @@ class Handshake(
 /**
  * Main Device Connect protocol over stable connection
  */
-class Proto(val local: Device, val remote: Device, val transport: Transport, val encMethodCode: Int, val pluginCode: PluginCode) {
+class Proto(val localUin: Uin, val localPassword: String, val remote: Device, val connection: Connection, val encMethodCode: Int, val pluginCode: PluginCode) {
     val sendEnc = EncryptionMethod.new(
-        deriveRecvKey(
-            local.uin, remote.uin,
-            local.password, remote.password
+        deriveSendKey(
+            localUin, remote.uin,
+            localPassword, remote.password
         ), encMethodCode
     )
     val recvEnc = EncryptionMethod.new(
         deriveRecvKey(
-            local.uin, remote.uin,
-            local.password, remote.password
+            localUin, remote.uin,
+            localPassword, remote.password
         ), encMethodCode
     )
-    lateinit var connection: Connection
 
     companion object {
         const val LENGTH_LENGTH: Int = 4
@@ -308,11 +312,10 @@ class Proto(val local: Device, val remote: Device, val transport: Transport, val
 
     fun createPackedHandshake(): ByteArray {
         val plg = sendEnc.encrypt(pluginCode.value.encodeToByteArray())
-        return Handshake(0UL, 0UL, remote.uin, local.uin, plg).toByteArray()
+        return Handshake(0UL, 0UL, remote.uin, localUin, plg).toByteArray()
     }
 
     fun connect() {
-        val connection = transport.connect(remote)
         connection.send(createPackedHandshake())
         val res = Handshake.fromByteArray(
             connection.recv(
@@ -325,22 +328,21 @@ class Proto(val local: Device, val remote: Device, val transport: Transport, val
         if (res.enc.toInt() != encMethodCode) {
             throw DCHandshakeError("Unsupported encryption method (${res.enc.toInt()})")
         }
-        if (res.dst != local.uin) {
-            throw DCHandshakeError("Incorrect destination ${res.dst}, expected ${local.uin}")
+        if (res.dst != localUin) {
+            throw DCHandshakeError("Incorrect destination ${res.dst}, expected ${localUin}")
         }
-        if (res.dst != remote.uin) {
+        if (res.src != remote.uin) {
             throw DCHandshakeError("Incorrect source ${res.src}, expected ${remote.uin}")
         }
         val responsePluginCode: PluginCode
         try {
             responsePluginCode = PluginCode(recvEnc.decrypt(res.plg).decodeToString())
         } catch (_: DCDecryptionError) {
-            throw DCAuthError(local.uin, remote.uin)
+            throw DCAuthError(localUin, remote.uin)
         }
         if (responsePluginCode != pluginCode) {
             throw DCHandshakeError("Incorrect plugin code '$responsePluginCode', expected '$pluginCode'")
         }
-        this.connection = connection
     }
 
     /**

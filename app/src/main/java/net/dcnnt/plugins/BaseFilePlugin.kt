@@ -104,7 +104,7 @@ abstract class BaseFilePlugin<T: PluginConf>(app: App, device: Device):
             while (recBytes < entry.size) {
                 if (breakTransfer) {
                     Log.i(TAG, "Downloading canceled")
-                    sock.close()
+                    proto.connection.close()
                     return DCResult(false, "Canceled")
                 }
 //                Log.d(TAG, "recBytes = $recBytes, entry.size = ${entry.size}")
