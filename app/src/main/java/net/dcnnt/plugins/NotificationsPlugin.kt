@@ -3,6 +3,7 @@ package net.dcnnt.plugins
 import net.dcnnt.core.App
 import net.dcnnt.core.Device
 import net.dcnnt.core.Plugin
+import net.dcnnt.core.PluginCode
 import net.dcnnt.core.PluginConf
 import org.json.JSONObject
 
@@ -60,7 +61,7 @@ class NotificationsPluginConf(directory: String, uin: Int): PluginConf(directory
 
 class NotificationsPlugin(app: App, device: Device): Plugin<NotificationsPluginConf>(app, device) {
     override val TAG = "DC/Nots"
-    override val MARK = "nots"
+    override val CODE = PluginCode("nots")
     override val NAME = "Notifications"
 
     companion object {

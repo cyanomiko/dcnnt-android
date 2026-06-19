@@ -25,7 +25,7 @@ class FileTransferPluginConf(directory: String, uin: Int):
 
 class FileTransferPlugin(app: App, device: Device): BaseFilePlugin<FileTransferPluginConf>(app, device) {
     override val TAG = "DC/File"
-    override val MARK = "file"
+    override val CODE = PluginCode("file")
     override val NAME = "File Transfer"
 //    var breakTransfer = false
     lateinit var downloadDir: DocumentFile

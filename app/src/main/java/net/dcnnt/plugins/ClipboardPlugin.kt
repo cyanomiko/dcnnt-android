@@ -28,7 +28,7 @@ class ClipboardPluginConf(directory: String, uin: Int): PluginConf(directory, "c
 
 class ClipboardPlugin(app: App, device: Device): Plugin<ClipboardPluginConf>(app, device) {
     override val TAG = "DC/Clipboard"
-    override val MARK = "clip"
+    override val CODE = PluginCode("clip")
     override val NAME = "Clipboard"
     lateinit var context: Context
 

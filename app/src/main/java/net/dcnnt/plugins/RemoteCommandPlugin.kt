@@ -14,7 +14,7 @@ class RemoteCommandPluginConf(directory: String, uin: Int): PluginConf(directory
 
 class RemoteCommandPlugin(app: App, device: Device): Plugin<RemoteCommandPluginConf>(app, device) {
     override val TAG = "DC/RCMD"
-    override val MARK = "rcmd"
+    override val CODE = PluginCode("rcmd")
     override val NAME = "Remote Commands"
 
     fun list(): List<RemoteCommand> {

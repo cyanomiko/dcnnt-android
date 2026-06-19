@@ -675,7 +675,7 @@ class SyncPluginConf(directory: String, uin: Int): PluginConf(directory, "sync",
 
 class SyncPlugin(app: App, device: Device): BaseFilePlugin<SyncPluginConf>(app, device) {
     override val TAG = "DC/Sync"
-    override val MARK = "sync"
+    override val CODE = PluginCode("sync")
     override val NAME = "Sync"
     lateinit var context: Context
 

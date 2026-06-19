@@ -19,7 +19,7 @@ class OpenerPluginConf(directory: String, uin: Int): PluginConf(directory, "open
 
 class OpenerPlugin(app: App, device: Device): BaseFilePlugin<OpenerPluginConf>(app, device) {
     override val TAG = "DC/Open"
-    override val MARK = "open"
+    override val CODE = PluginCode("open")
     override val NAME = "Opener"
     lateinit var context: Context
 

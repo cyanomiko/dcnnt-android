@@ -41,7 +41,7 @@ open class PluginException(message: String): Exception(message)
 
 abstract class Plugin<T: PluginConf>(val app: App, val device: Device) {
     abstract val TAG: String
-    abstract val MARK: String
+    abstract val CODE: PluginCode
     abstract val NAME: String
     lateinit var conf: T
     lateinit var transport: Transport
@@ -54,7 +54,7 @@ abstract class Plugin<T: PluginConf>(val app: App, val device: Device) {
 
     open fun init(context: Context? = null): Boolean {
         transport = TransportDynamicIP()
-        conf = (app.pm.getConfig(MARK, device.uin) as? T) ?: return false
+        conf = (app.pm.getConfig(CODE.value, device.uin) as? T) ?: return false
         return true
     }
 
@@ -62,7 +62,7 @@ abstract class Plugin<T: PluginConf>(val app: App, val device: Device) {
         Log.i(TAG, "Connecting to ${device.ip}...")
         connection = transport.connect(device)
         proto = Proto(app.conf.uin.value, app.conf.password.value,
-            device, connection, DefaultEncryption.CODE, PluginCode(MARK))
+            device, connection, DefaultEncryption.CODE, CODE)
         proto.connect()
     }
 
